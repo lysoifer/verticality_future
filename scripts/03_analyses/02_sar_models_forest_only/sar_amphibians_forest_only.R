@@ -67,6 +67,9 @@ plot(veg$biome)
 
 # subset by biome to avoid threshold value
 
+amph = amph.forests
+rm(amph.forests)
+
 #  * - data check --------------------------------------------------------------
 
 ## SES vert model
@@ -84,12 +87,6 @@ as.data.frame(sesvert) %>%
   facet_wrap(facets = vars(vars), scales = "free_x") +
   theme_classic()
 
-# transform clim_velocity
-# sesvert.t = as.data.frame(sesvert) %>% 
-#   mutate(log_clim_velocity = log10(clim_velocity),
-#          log_temp_sea = log10(temp_sea)) %>% 
-#   dplyr::select(!c(clim_velocity, temp_sea))
-
 sesvert.t = as.data.frame(sesvert) %>% 
   mutate(log_clim_velocity = log10(clim_velocity),
          log_elev = log10(elev),
@@ -103,13 +100,9 @@ sesvert.t %>%
   facet_wrap(facets = vars(vars), scales = "free_x") +
   theme_classic()
 
-# sesvert.t = sesvert.t %>% 
-#   dplyr::select(!c(clim_velocity, temp_sea))
 
 sesvert.t = sesvert.t %>% 
   dplyr::select(!c(clim_velocity, elev, precip_sea))
-
-
 
 
 # scale predictor variables
@@ -118,119 +111,8 @@ sesvert.scale = sesvert.t %>%
 colnames(sesvert.scale) = colnames(sesvert.t)
 
 # SES model
-f = formula(vert.mean.ses ~ elev + log_clim_velocity + precip_dry + precip_sea + precip_wet + temp_diu + log_temp_sea + veg_complexity)
-#f.realm = formula(vert.mean.ses ~ 0 + realm/(elev + log_clim_velocity + precip_dry + precip_sea + precip_wet + temp_diu + log_temp_sea + veg_complexity))
 
 f = formula(vert.mean.ses ~ log_elev + log_clim_velocity + tmax_warm + tmin_cold + precip_dry + log_precip_sea + precip_wet + veg_complexity)
-
-
-sesvert.mod = glm(f , data = sesvert.scale)
-plot(sesvert.mod)
-hist(sesvert.mod$residuals)
-summary(sesvert.mod)
-
-sesvert.scale %>% 
-  mutate(resid = sesvert.mod$residuals) %>% 
-  ggplot(aes(x, y, color = resid)) +
-  geom_point()
-
-# sesvert.glm.realm = glm(f.realm, data = sesvert.scale)
-# summary(sesvert.glm.realm)
-
-# add residuals to dataframe to test for spatial autocorrelation
-sesvert.scale$resid = sesvert.mod$residuals
-
-
-# * - Spatial autocorrelation ---------------------------------------------
-# see https://geo200cn.github.io/spatialreg.html (very helpful tutorial)
-
-# examine spatial autocorrelation in response var with a correlogram
-## take sample to look at spatial autocorrelation
-samp = sesvert.scale %>% sample_n(1000)
-sesvert.cor = ncf::correlog(x = samp$x, y = samp$y, z = samp$vert.mean.ses, increment = 111000, resamp = 99)
-ncf:::plot.correlog(sesvert.cor)
-ncf:::plot.correlog(sesvert.cor, xlim = c(0,5e6))
-
-# make connectivity matrix (i.e., neighborhood matrix)
-
-## distance-based nearest neighbors (1st degree queen's case)
-# neigh.160km = dnearneigh(x = sesvert.scale[,c("x", "y")], d1 = 0, d2 = 160000, longlat = F)
-# 
-# ## distance-based nearest neighbors (2nd degree queen's case)
-# neigh.420km = dnearneigh(x = sesvert.scale[,c("x", "y")], d1 = 0, d2 = 420000, longlat = F)
-# 
-# ## distance-based nearest neighbors (up to 2000km - based on inspection of the correlogram)
-# ## spatial autocorrelation is apparent until approximately 2000km (2million meters)
-# neigh.2000km = dnearneigh(x = sesvert.scale[,c("x", "y")], d1 = 0, d2 = 2000000, longlat = F)
-# 
-# # make neighborhood weights matrix
-# ## row standardized
-# wts.160km = nb2listw(neighbours = neigh.160km, style = "W", zero.policy = T)
-# wts.420km = nb2listw(neighbours = neigh.420km, style = "W", zero.policy = T)
-# wts.2000km = nb2listw(neighbours = neigh.2000km, style = "W", zero.policy = T)
-# 
-# ## distance-based and row standardized weights matrix
-# ### get distance between focal cell and neighbors within 2000km
-# ### use 2000km because this is the distance at which spautocor appears to disappear based on correlogram
-# dists.2000km = nbdists(nb = neigh.2000km, coords = sesvert.scale[,c("x", "y")], longlat = F)
-# 
-# ### inverse distances
-# idists.2000km = lapply(dists.2000km, FUN = function(x){1/x})
-# 
-# ### inverse squared distances
-# idists2.2000km = lapply(dists.2000km, FUN = function(x){1/(x^2)})
-# 
-# ### specify distances when creating weights matrix
-# wts.idists.2000km = nb2listw(neighbours = neigh.2000km, glist = idists.2000km, style = "W", zero.policy = T)
-# wts.idists2.2000km = nb2listw(neighbours = neigh.2000km, glist = idists2.2000km, style = "W", zero.policy = T)
-# 
-# # plot spatial autocorrelation in response var
-# sesvert.scale.r = rast(sesvert.scale, type = "xyz", crs = "+proj=cea +datum=WGS84")
-# plot(sesvert.scale.r$vert.mean.ses)
-# 
-# ## local spatial autocorrelation of ses.vert
-# moran.plot(sesvert.scale$vert.mean.ses, listw = wts.160km)
-# moran.plot(sesvert.scale$vert.mean.ses, listw = wts.420km)
-# moran.plot(sesvert.scale$vert.mean.ses, listw = wts.2000km)
-# moran.plot(sesvert.scale$vert.mean.ses, listw = wts.idists.2000km)
-# moran.plot(sesvert.scale$vert.mean.ses, listw = wts.idists2.2000km)
-# 
-# ## local moran plots show that there is a positive correlation between ses.vert and the average ses.vert among neighbors
-# ## i.e., there is clear spatial autocorrelation that must be accounted for in the models
-# 
-# 
-# # plot spatial autocorrelation in residuals of glm
-# plot(sesvert.scale.r$resid)
-# 
-# ## plot local spatial autocorrelatio in resids
-# moran.plot(sesvert.scale$resid, listw = wts.160km)
-# moran.plot(sesvert.scale$resid, listw = wts.420km)
-# moran.plot(sesvert.scale$resid, listw = wts.2000km)
-# moran.plot(sesvert.scale$resid, listw = wts.idists.2000km)
-# moran.plot(sesvert.scale$resid, listw = wts.idists2.2000km)
-# 
-# ## clear spatial autocorrelation in residuals
-# 
-# # formally test spatial autocorrelation in residuals of glm using Moran's I
-# moran.160km = moran.mc(sesvert.scale$resid, listw = wts.160km, nsim = 99, zero.policy = T)
-# moran.160km
-# 
-# moran.420km = moran.mc(sesvert.scale$resid, listw = wts.420km, nsim = 99, zero.policy = T)
-# moran.420km
-# 
-# moran.2000km = moran.mc(sesvert.scale$resid, listw = wts.2000km, nsim = 99, zero.policy = T)
-# moran.2000km
-# 
-# moran.idists.2000km = moran.mc(sesvert.scale$resid, listw = wts.idists.2000km, nsim = 99, zero.policy = T)
-# moran.idists.2000km
-# 
-# moran.idists2.2000km = moran.mc(sesvert.scale$resid, listw = wts.idists2.2000km, nsim = 99, zero.policy = T)
-# moran.idists2.2000km
-# ## make neighborhood weights matrix
-# 
-# ## test spatial autocorrelation in residuals using lm.morantest()
-# lm.morantest(sesvert.mod, listw = wts.idists.2000km)
-# 
 
 # * - selection of weights matrix ---------------------------------------------
 ## 1) fit full models with each weight matrix
@@ -281,20 +163,6 @@ wts.idist2 <- foreach(i=1:length(dists), .packages = c("spdep")) %dopar% {
 
 stopCluster(cl)
 
-
-# wts.rs = list() # row standardized (#SAR model with row standardized weights (Ver Hoef et al. 2018))
-# wts.idist = list() # inverse distance row standardized
-# wts.idist2 = list() # inverse distance squared row standardized
-# 
-# for (i in 1:length(dists)) {
-#   n = dnearneigh(sesvert.scale[,c("x", "y")], d1 = 0, d2 = dists[i], longlat = F)
-#   wts.rs[[i]] = nb2listw(neighbours = n, style = "W", zero.policy = T)
-#   wts.idist[[i]] = nb2listwdist(neighbours = n, x = sesvert.scale.sf, style = "W", type = "idw", alpha = 1, zero.policy = T)
-#   wts.idist2[[i]] = nb2listwdist(neighbours = n, x = sesvert.scale.sf, style = "W", type = "idw", alpha = 2, zero.policy = T)
-# }
-
-## 2) compare full models using AIC
-
 # row standardized weights
 cl = makeCluster(7)
 registerDoParallel(cl)
@@ -306,11 +174,7 @@ mod.rs <- foreach(i=1:length(dists), .packages = c("spatialreg")) %dopar% {
 
 stopCluster(cl)
 
-# save(mod.rs, file = "results/amphibians_sar_mod_rs.RData")
-
-# returnHcov=F; https://stat.ethz.ch/pipermail/r-sig-geo/2013-October/019450.html
-#testmod = errorsarlm(f, data = sesvert.scale, listw = wts.rs[[1]], method = "LU", zero.policy = T, control = list(returnHcov=FALSE))
-#testmod2 = spautolm(f, data = sesvert.scale, listw = wts.rs[[1]], method = "LU", family = "SAR", verbose = T)
+#save(mod.rs, file = "results/sar_mods_forest_only/amphibians/amphibians_sar_mod_rs.RData")
 
 # inverse distance row standardized weights
 cl = makeCluster(7)
@@ -323,7 +187,7 @@ mod.idist <- foreach(i=1:length(dists), .packages = c("spatialreg")) %dopar% {
 
 stopCluster(cl)
 
-# save(mod.idist, file = "results/amphibians_sar_mod_idist.RData")
+#save(mod.idist, file = "results/sar_mods_forest_only/amphibians/amphibians_sar_mod_idist.RData")
 
 
 # inverse distance squared row standardized weights
@@ -337,7 +201,7 @@ mod.idist2 <- foreach(i=1:length(dists), .packages = c("spatialreg")) %dopar% {
 
 stopCluster(cl)
 
-# save(mod.idist2, file = "results/amphibians_sar_mod_idist2.RData")
+#save(mod.idist2, file = "results/sar_mods_forest_only/amphibians/amphibians_sar_mod_idist2.RData")
 
 
 ## 2) compare full models using AIC
@@ -405,23 +269,16 @@ sesvert.dredge = dredge(global.model = sesvert.full, beta = "none", evaluate = T
 
 stopCluster(clust)
 
-## run dredge to iterate through all possible variable combos
-## tests all combinations of predictor variables (256 models)
-#sesvert.dredge = dredge(sesvert.full, beta = "none", evaluate = T)
-
 ## calculate model average including models with delta AICc <= 2
 sesvert.avg = model.avg(sesvert.dredge, beta = "none", rank = "AICc", subset = delta <= 2, fit = T)
 
 ## model average summary
 summary(sesvert.avg)
 
-# save(sesvert.full, mod.rs, mod.idist, mod.idist2, sesvert.dredge, sesvert.avg, file = "results/amphibians_sar_sesvert.RData")
-
-save(sesvert.full, mod.rs, mod.idist, mod.idist2, sesvert.dredge, sesvert.avg, file = "results/amphibians_sar_sesvert2.RData")
+save(sesvert.full, mod.rs, mod.idist, mod.idist2, sesvert.dredge, sesvert.avg, file = "results/sar_mods_forest_only/amphibians/amphibians_sar_sesvert2.RData")
 
 
 # predict -----------------------------------------------------------------
-
 
 # future env data
 env.future = list.files(path = "data/derivative_data/resampled_env_rasters/chelsa_future/2071_2100/ensemble/", pattern = ".tif", full.names = T)
@@ -430,17 +287,6 @@ env.future = rast(env.future)
 names(env.future)[6] = "precip_ann"
 env.future$temp_sea = env.future$temp_sea/100
 env.future.df = terra::extract(env.future, sesvert.scale[,c('x','y')], xy = T, ID = F)
-
-# transform variables that were previously transformed
-# env.future.df = env.future.df %>% 
-#   mutate(log_temp_sea = log10(temp_sea)) %>% 
-#   dplyr::select(!temp_sea) %>% 
-#   # scale using same scaling factors as original data
-#   mutate(temp_diu = (temp_diu - mean(sesvert.t$temp_diu)) / sd(sesvert.t$temp_diu),
-#          precip_wet = (precip_wet - mean(sesvert.t$precip_wet)) / sd(sesvert.t$precip_wet),
-#          precip_dry = (precip_dry - mean(sesvert.t$precip_dry)) / sd(sesvert.t$precip_dry),
-#          precip_sea = (precip_sea - mean(sesvert.t$precip_sea)) / sd(sesvert.t$precip_sea),
-#          log_temp_sea = (log_temp_sea - mean(sesvert.t$log_temp_sea)) / sd(sesvert.t$log_temp_sea))
 
 env.future.df = env.future.df %>% 
   mutate(log_precip_sea = log10(precip_sea)) %>% 
@@ -451,12 +297,6 @@ env.future.df = env.future.df %>%
          precip_wet = (precip_wet - mean(sesvert.t$precip_wet)) / sd(sesvert.t$precip_wet),
          precip_dry = (precip_dry - mean(sesvert.t$precip_dry)) / sd(sesvert.t$precip_dry),
          log_precip_sea = (log_precip_sea - mean(sesvert.t$log_precip_sea)) / sd(sesvert.t$log_precip_sea))
-
-
-# env.future.df = sesvert.scale %>% 
-#   dplyr::select(x, y, elev, veg_complexity, log_clim_velocity) %>% 
-#   right_join(env.future.df, by = c("x", "y")) %>% 
-#   dplyr::select(x,y,temp_diu, precip_wet, precip_dry, precip_sea, elev, veg_complexity, log_clim_velocity, log_temp_sea)
 
 env.future.df = sesvert.scale %>% 
   dplyr::select(x, y, log_elev, veg_complexity, log_clim_velocity) %>% 
@@ -515,9 +355,6 @@ best_mods_pred <- foreach(r=1:nrow(sesvert.dredge.sel), .packages = c("spatialre
 
 stopCluster(cl)
 
-# save(sesvert.full, mod.rs, mod.idist, mod.idist2, sesvert.dredge, sesvert.avg, best_mods_pred, file = "results/amphibians_sar_sesvert.RData")
-
-
 # check spatial autocorrelation
 lapply(best_mods_pred, "[[", 3) # all okay
 r2 = mean(sapply(best_mods_pred, "[[", 4))
@@ -525,18 +362,19 @@ r2 = mean(sapply(best_mods_pred, "[[", 4))
 sesvert.scale.sub$pred1 = as.vector(best_mods_pred[[1]][["pred"]])
 sesvert.scale.sub$pred2 = as.vector(best_mods_pred[[2]][["pred"]])
 sesvert.scale.sub$pred3 = as.vector(best_mods_pred[[3]][["pred"]])
-# sesvert.scale.sub$pred4 = as.vector(best_mods_pred[[4]][["pred"]])
+sesvert.scale.sub$pred4 = as.vector(best_mods_pred[[4]][["pred"]])
+sesvert.scale.sub$pred5 = as.vector(best_mods_pred[[5]][["pred"]])
 
 # get average of best models
 sesvert.scale.sub = sesvert.scale.sub %>% 
-  mutate(vert.mean.ses.future = rowMeans(select(sesvert.scale.sub, pred1:pred3)))
+  mutate(vert.mean.ses.future = rowMeans(select(sesvert.scale.sub, pred1:pred5)))
 
 sesvert.scale.sub = sesvert.scale.sub %>% 
   dplyr::select(x,y,vert.mean.ses.future) %>% 
   right_join(sesvert.scale, by = c("x", "y"))
 
 save(sesvert.full, wts.rs, wts.idist, wts.idist2, mod.rs, mod.idist, mod.idist2, sesvert.dredge, sesvert.avg, best_mods_pred, 
-     sesvert.scale.sub, file = "results/amphibians_sar_sesvert2.RData")
+     sesvert.scale.sub, file = "results/sar_mods_forest_only/amphibians/amphibians_sar_sesvert2.RData")
 
 
 
@@ -634,6 +472,11 @@ env_vars = vif_func(in_frame = env[c(4, 7:12,17:18,22)], thresh = 5, trace = T)
 
 amph = read.csv("data/derivative_data/gridcell_data/amphibians_comdat/amph_comdat_parallel.csv")
 
+# subset to only forested biomes
+amph = amph %>% 
+  filter(grepl("Forests", biome))
+
+
 #  * - data check --------------------------------------------------------------
 
 ## vert mean model
@@ -651,13 +494,6 @@ as.data.frame(vert) %>%
   facet_wrap(facets = vars(vars), scales = "free_x") +
   theme_classic()
 
-# transform clim_velocity and temp seasonality and elevation
-# vert.t = as.data.frame(vert) %>% 
-#   mutate(log_clim_velocity = log10(clim_velocity),
-#          log_elev = log10(elev),
-#          log_temp_sea = log10(temp_sea),
-#          log_precip_dry = log10(precip_dry))
-
 vert.t = as.data.frame(vert) %>% 
   mutate(log_clim_velocity = log10(clim_velocity),
          log_elev = log10(elev),
@@ -674,9 +510,6 @@ vert.t %>%
   facet_wrap(facets = vars(vars), scales = "free_x") +
   theme_classic()
 
-# vert.t = vert.t %>% 
-#   dplyr::select(!c(clim_velocity, elev, temp_sea, log_precip_dry))
-
 vert.t = vert.t %>% 
   dplyr::select(!c(clim_velocity, elev, precip_wet, log_precip_dry, log_veg_complexity))
 
@@ -686,28 +519,7 @@ vert.scale = vert.t %>%
 colnames(vert.scale) = colnames(vert.t)
 
 # vert mean model
-# f = formula(vert.mean ~ log_elev + log_clim_velocity + precip_dry + precip_sea + precip_wet + temp_diu + log_temp_sea + veg_complexity)
 f = formula(vert.mean ~ log_elev + log_clim_velocity + tmax_warm + tmin_cold + precip_dry + precip_sea + log_precip_wet + veg_complexity)
-
-
-vert.mod = glm(f , data = vert.scale)
-plot(vert.mod)
-hist(vert.mod$residuals)
-summary(vert.mod)
-
-# add residuals to dataframe to test for spatial autocorrelation
-vert.scale$resid = vert.mod$residuals
-
-
-# * - Spatial autocorrelation ---------------------------------------------
-# see https://geo200cn.github.io/spatialreg.html (very helpful tutorial)
-
-# examine spatial autocorrelation in response var with a correlogram
-## take sample to look at spatial autocorrelation
-samp = vert.scale %>% sample_n(1000)
-vert.cor = ncf::correlog(x = samp$x, y = samp$y, z = samp$vert.mean, increment = 111000, resamp = 99)
-ncf:::plot.correlog(vert.cor)
-ncf:::plot.correlog(vert.cor, xlim = c(0,5e6), ylim = c(-2,2))
 
 # * - selection of weights matrix ---------------------------------------------
 ## 1) fit full models with each weight matrix
@@ -773,12 +585,6 @@ mod.rs <- foreach(i=1:length(dists), .packages = c("spatialreg")) %dopar% {
 
 stopCluster(cl)
 
-save(mod.rs, file = "results/amphibians_vertmean_sar_mod_rs.RData")
-
-# returnHcov=F; https://stat.ethz.ch/pipermail/r-sig-geo/2013-October/019450.html
-#testmod = errorsarlm(f, data = vert.scale, listw = wts.rs[[1]], method = "LU", zero.policy = T, control = list(returnHcov=FALSE))
-#testmod2 = spautolm(f, data = vert.scale, listw = wts.rs[[1]], method = "LU", family = "SAR", verbose = T)
-
 # inverse distance row standardized weights
 cl = makeCluster(7)
 registerDoParallel(cl)
@@ -790,9 +596,6 @@ mod.idist <- foreach(i=1:length(dists), .packages = c("spatialreg")) %dopar% {
 
 stopCluster(cl)
 
-save(mod.idist, file = "results/amphibians_vertmean_sar_mod_idist.RData")
-
-
 # inverse distance squared row standardized weights
 cl = makeCluster(7)
 registerDoParallel(cl)
@@ -803,9 +606,6 @@ mod.idist2 <- foreach(i=1:length(dists), .packages = c("spatialreg")) %dopar% {
 }
 
 stopCluster(cl)
-
-save(mod.idist2, file = "results/amphibians_vertmean_sar_mod_idist2.RData")
-
 
 ## 2) compare full models using AIC
 
@@ -839,6 +639,7 @@ mod.idist2.moran = foreach(m = 1:length(mod.idist2), .combine = "c") %do% {
   moran$p.value
 }
 mod.idist2.moran = data.frame(mod = paste0("mod.idist2_", 1:length(mod.idist2)), moran.pval = mod.idist2.moran)
+
 
 # combine moran's I pvalue dataframes
 # and filter to non-significant Moran's I
@@ -876,7 +677,6 @@ stopCluster(clust)
 
 ## run dredge to iterate through all possible variable combos
 ## tests all combinations of predictor variables (256 models)
-#vert.dredge = dredge(vert.full, beta = "none", evaluate = T)
 
 ## calculate model average including models with delta AICc <= 2
 vert.avg = model.avg(vert.dredge, beta = "none", rank = "AICc", subset = delta <= 2, fit = T)
@@ -884,7 +684,7 @@ vert.avg = model.avg(vert.dredge, beta = "none", rank = "AICc", subset = delta <
 ## model average summary
 summary(vert.avg)
 
-save(vert.full, wts.rs, wts.idist, wts.idist2, mod.rs, mod.idist, mod.idist2, vert.dredge, vert.avg, file = "results/amphibians_sar_vertmean.RData")
+save(vert.full, wts.rs, wts.idist, wts.idist2, mod.rs, mod.idist, mod.idist2, vert.dredge, vert.avg, file = "results/sar_mods_forest_only/amphibians/amphibians_sar_vertmean.RData")
 
 
 
@@ -898,17 +698,6 @@ names(env.future)[6] = "precip_ann"
 env.future$temp_sea = env.future$temp_sea/100
 env.future.df = terra::extract(env.future, vert.scale[,c('x','y')], xy = T, ID = F)
 
-# transform variables that were previously transformed
-# env.future.df = env.future.df %>% 
-#   mutate(log_temp_sea = log10(temp_sea)) %>% 
-#   dplyr::select(!temp_sea) %>% 
-#   # scale using same scaling factors as original data
-#   mutate(temp_diu = (temp_diu - mean(vert.t$temp_diu)) / sd(vert.t$temp_diu),
-#          precip_wet = (precip_wet - mean(vert.t$precip_wet)) / sd(vert.t$precip_wet),
-#          precip_dry = (precip_dry - mean(vert.t$precip_dry)) / sd(vert.t$precip_dry),
-#          precip_sea = (precip_sea - mean(vert.t$precip_sea)) / sd(vert.t$precip_sea),
-#          log_temp_sea = (log_temp_sea - mean(vert.t$log_temp_sea)) / sd(vert.t$log_temp_sea))
-# 
 
 env.future.df = env.future.df %>% 
   mutate(log_precip_wet = log10(precip_wet)) %>% 
@@ -921,10 +710,6 @@ env.future.df = env.future.df %>%
          precip_sea = (precip_sea - mean(vert.t$precip_sea)) / sd(vert.t$precip_sea))
 
 
-# env.future.df = vert.scale %>% 
-#   dplyr::select(x, y, log_elev, veg_complexity, log_clim_velocity) %>% 
-#   right_join(env.future.df, by = c("x", "y")) %>% 
-#   dplyr::select(x,y,temp_diu, precip_wet, precip_dry, precip_sea, log_elev, veg_complexity, log_clim_velocity, log_temp_sea)
 
 env.future.df = vert.scale %>% 
   dplyr::select(x, y, log_elev, veg_complexity, log_clim_velocity) %>% 
@@ -983,10 +768,8 @@ best_mods_pred <- foreach(r=1:nrow(vert.dredge.sel), .packages = c("spatialreg",
 
 stopCluster(cl)
 
-# save(vert.full, wts.rs, wts.idist, wts.idist2, mod.rs, mod.idist, mod.idist2, vert.dredge, vert.avg, best_mods_pred, file = "results/amphibians_sar_vertmean.RData")
-
-save(vert.full, wts.rs, wts.idist, wts.idist2, mod.rs, mod.idist, mod.idist2, vert.dredge, vert.avg, best_mods_pred, file = "results/amphibians_sar_vertmean2.RData")
-load("results/amphibians_sar_vertmean2.RData")
+save(vert.full, wts.rs, wts.idist, wts.idist2, mod.rs, mod.idist, mod.idist2, vert.dredge, vert.avg, best_mods_pred, file = "results/sar_mods_forest_only/amphibians/amphibians_sar_vertmean2.RData")
+load("results/sar_mods_forest_only/amphibians/amphibians_sar_vertmean2.RData")
 
 # check spatial autocorrelation
 lapply(best_mods_pred, "[[", 3) # all okay
@@ -997,15 +780,21 @@ r2 = mean(sapply(best_mods_pred, "[[", 4))
 vert.scale.sub$pred1 = as.vector(best_mods_pred[[1]][["pred"]])
 vert.scale.sub$pred2 = as.vector(best_mods_pred[[2]][["pred"]])
 vert.scale.sub$pred3 = as.vector(best_mods_pred[[3]][["pred"]])
-#vert.scale.sub$pred4 = as.vector(best_mods_pred[[4]][["pred"]])
-#vert.scale.sub$pred5 = as.vector(best_mods_pred[[5]][["pred"]])
-#vert.scale.sub$pred6 = as.vector(best_mods_pred[[6]][["pred"]])
+vert.scale.sub$pred4 = as.vector(best_mods_pred[[4]][["pred"]])
+vert.scale.sub$pred5 = as.vector(best_mods_pred[[5]][["pred"]])
+vert.scale.sub$pred6 = as.vector(best_mods_pred[[6]][["pred"]])
+vert.scale.sub$pred7 = as.vector(best_mods_pred[[7]][["pred"]])
+vert.scale.sub$pred8 = as.vector(best_mods_pred[[8]][["pred"]])
+vert.scale.sub$pred9 = as.vector(best_mods_pred[[9]][["pred"]])
+vert.scale.sub$pred10 = as.vector(best_mods_pred[[10]][["pred"]])
+vert.scale.sub$pred11 = as.vector(best_mods_pred[[11]][["pred"]])
+vert.scale.sub$pred12 = as.vector(best_mods_pred[[12]][["pred"]])
+vert.scale.sub$pred13 = as.vector(best_mods_pred[[13]][["pred"]])
+vert.scale.sub$pred14 = as.vector(best_mods_pred[[14]][["pred"]])
 
-# vert.scale.sub = vert.scale.sub %>% 
-#   mutate(vert.mean.future = rowMeans(select(vert.scale.sub, pred1:pred6)))
 
 vert.scale.sub = vert.scale.sub %>% 
-  mutate(vert.mean.future = rowMeans(select(vert.scale.sub, pred1:pred3)))
+  mutate(vert.mean.future = rowMeans(select(vert.scale.sub, pred1:pred14)))
 
 # Plot results ------------------------------------------------------------
 
@@ -1078,4 +867,4 @@ hist + mp + plot_layout(design = "12
 
 
 save(vert.full, wts.rs, wts.idist, wts.idist2, mod.rs, mod.idist, mod.idist2, vert.dredge,
-     vert.avg, best_mods_pred, vert.scale.sub, file = "results/amphibians_sar_vertmean2.RData")
+     vert.avg, best_mods_pred, vert.scale.sub, file = "results/sar_mods_forest_only/amphibians/amphibians_sar_vertmean2.RData")
