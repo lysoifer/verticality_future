@@ -163,3 +163,141 @@ repts.plt
 mammals.plt
 birds.plt
 
+
+# plot ses vert mean FOREST ONLY ------------------------------------------------------
+
+load("results/sar_mods_forest_only/amphibians/amphibians_sar_sesvert2.RData")
+amph = sesvert.scale.sub
+
+load("results/sar_mods_forest_only/mammals/mammals_sar_sesvert2.RData")
+mammals = sesvert.scale.sub
+
+load("results/sar_mods_forest_only/birds/birdselton_sar_sesvert2.RData")
+birds = sesvert.scale.sub
+
+load("results/sar_mods_forest_only/reptiles/reptiles_sar_sesvert2.RData")
+repts = sesvert.scale.sub
+
+wd = vect("data/original/rnaturalearth_world.shp") %>% 
+  project("epsg:4326") %>% 
+  crop(ext(-180,180,-60,83.64))
+
+amph.r = amph %>% 
+  dplyr::select(x,y,vert.mean.ses, vert.mean.ses.future) %>%
+  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
+  project("epsg:4326")
+
+amph.plt = plt_pres_future(amph.r, v = wd, plot.title = "Amphibians", 
+                           vars = c("vert.mean.ses", "vert.mean.ses.future"), scale = "div")
+
+repts.r = repts %>% 
+  dplyr::select(x,y,vert.mean.ses, vert.mean.ses.future) %>%
+  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
+  project("epsg:4326")
+
+repts.plt = plt_pres_future(repts.r, v = wd, plot.title = "Reptiles", 
+                            vars = c("vert.mean.ses", "vert.mean.ses.future"), scale = "div")
+
+mammals.r = mammals %>% 
+  dplyr::select(x,y,vert.mean.ses, vert.mean.ses.future) %>%
+  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
+  project("epsg:4326")
+
+mammals.plt = plt_pres_future(mammals.r, v = wd, plot.title = "Mammals", 
+                              vars = c("vert.mean.ses", "vert.mean.ses.future"), scale = "div")
+
+birds.r = birds %>% 
+  dplyr::select(x,y,vert.mean.ses, vert.mean.ses.future) %>%
+  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
+  project("epsg:4326")
+
+birds.plt = plt_pres_future(birds.r, v = wd, plot.title = "Birds", 
+                            vars = c("vert.mean.ses", "vert.mean.ses.future"), scale = "div")
+
+png("figures/sesvert_future/forest_only/repts.png", width = 200, height = 100, res = 300, units = "mm")
+repts.plt
+dev.off()
+
+png("figures/sesvert_future/forest_only/birds.png", width = 200, height = 100, res = 300, units = "mm")
+birds.plt
+dev.off()
+
+png("figures/sesvert_future/forest_only/mammals.png", width = 200, height = 100, res = 300, units = "mm")
+mammals.plt
+dev.off()
+
+png("figures/sesvert_future/forest_only/amphibians.png", width = 200, height = 100, res = 300, units = "mm")
+amph.plt
+dev.off()
+
+
+
+
+# plot vert mean FOREST ONLY ------------------------------------------------------
+
+load("results/sar_mods_forest_only/amphibians/amphibians_sar_vertmean2.RData")
+amph = vert.scale.sub
+
+load("results/sar_mods_forest_only/mammals/mammals_sar_vertmean2.RData")
+mammals = vert.scale.sub
+
+load("results/sar_mods_forest_only/birds/birdselton_sar_vertmean.RData")
+birds = vert.scale.sub
+
+load("results/sar_mods_forest_only/reptiles/reptiles_sar_vertmean2.RData")
+repts = vert.scale.sub
+
+wd = vect("data/original/rnaturalearth_world.shp") %>% 
+  project("epsg:4326") %>% 
+  crop(ext(-180,180,-60,83.64))
+
+amph.r = amph %>% 
+  dplyr::select(x,y,vert.mean, vert.mean.future) %>%
+  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
+  project("epsg:4326")
+
+amph.plt = plt_pres_future(amph.r, v = wd, plot.title = "Amphibians", vars = c("vert.mean", "vert.mean.future"), scale = "seq")
+
+repts.r = repts %>% 
+  dplyr::select(x,y,vert.mean, vert.mean.future) %>%
+  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
+  project("epsg:4326")
+
+repts.plt = plt_pres_future(repts.r, v = wd, plot.title = "Reptiles", vars = c("vert.mean", "vert.mean.future"), scale = "seq")
+
+mammals.r = mammals %>% 
+  dplyr::select(x,y,vert.mean, vert.mean.future) %>%
+  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
+  project("epsg:4326")
+
+mammals.plt = plt_pres_future(mammals.r, v = wd, plot.title = "Mammals", vars = c("vert.mean", "vert.mean.future"), scale = "seq")
+
+birds.r = birds %>% 
+  dplyr::select(x,y,vert.mean, vert.mean.future) %>%
+  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
+  project("epsg:4326")
+
+birds.plt = plt_pres_future(birds.r, v = wd, plot.title = "Birds", vars = c("vert.mean", "vert.mean.future"), scale = "seq")
+
+
+amph.plt
+repts.plt
+mammals.plt
+birds.plt
+
+
+png("figures/vert_future/forest_only/repts.png", width = 200, height = 100, res = 300, units = "mm")
+repts.plt
+dev.off()
+
+png("figures/vert_future/forest_only/birds.png", width = 200, height = 100, res = 300, units = "mm")
+birds.plt
+dev.off()
+
+png("figures/vert_future/forest_only/mammals.png", width = 200, height = 100, res = 300, units = "mm")
+mammals.plt
+dev.off()
+
+png("figures/vert_future/forest_only/amphibians.png", width = 200, height = 100, res = 300, units = "mm")
+amph.plt
+dev.off()

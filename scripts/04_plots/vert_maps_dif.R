@@ -15,7 +15,7 @@ plt_rast_margin = function(r, v, plot.title, margin.title, base_text_size = 12, 
   xmax = ext(v)[2]
   
   # get color scale limits
-  col.lims = round(minmax(r),1)
+  col.lims = round(minmax(r),2)
   
   # create main plot
   plot_main = ggplot() +
@@ -95,6 +95,9 @@ plt_rast_margin = function(r, v, plot.title, margin.title, base_text_size = 12, 
 wd = vect("data/original/rnaturalearth_world.shp")
 wd = project(wd, "epsg:4326")
 
+
+# SESVERT DIF -------------------------------------------------------------
+
 load("results/amphibians_sar_sesvert2.RData")
 amph = sesvert.scale.sub
 
@@ -106,10 +109,11 @@ amph.pdat = amph %>%
   dplyr::select(x,y,sesvert.dif) %>% 
   rast(type = "xyz", crs = "epsg:4326")
 
-amph.sesvert.dif.plt = plt_rast_margin(amph.pdat, v = wd, margin.title = "avg. difference by latitude", plot.title = "Amphibians")
+amph.sesvert.dif.plt = plt_rast_margin(amph.pdat, v = wd, margin.title = "avg. difference by latitude",
+                                       plot.title = "Amphibians", var = "sesvert.dif")
 amph.sesvert.dif.plt
 
-png("figs_lydia/maps/sesvert_future_dif/amph.png", width = 200, height = 100, res = 300, units = "mm")
+png("figures/sesvert_future_dif/amph.png", width = 200, height = 100, res = 300, units = "mm")
 amph.sesvert.dif.plt
 dev.off()
 
@@ -125,10 +129,12 @@ mammals.pdat = mammals %>%
   dplyr::select(x,y,sesvert.dif) %>% 
   rast(type = "xyz", crs = "epsg:4326")
 
-mammals.sesvert.dif.plt = plt_rast_margin(mammals.pdat, v = wd, margin.title = "avg. difference by latitude", plot.title = "Mammals")
+mammals.sesvert.dif.plt = plt_rast_margin(mammals.pdat, v = wd,
+                                          margin.title = "avg. difference by latitude", 
+                                          plot.title = "Mammals", var = "sesvert.dif")
 mammals.sesvert.dif.plt
 
-png("figs_lydia/maps/sesvert_future_dif/mammals.png", width = 200, height = 100, res = 300, units = "mm")
+png("figures/sesvert_future_dif/mammals.png", width = 200, height = 100, res = 300, units = "mm")
 mammals.sesvert.dif.plt
 dev.off()
 
@@ -144,10 +150,13 @@ birds.pdat = birds %>%
   dplyr::select(x,y,sesvert.dif) %>% 
   rast(type = "xyz", crs = "epsg:4326")
 
-birds.sesvert.dif.plt = plt_rast_margin(birds.pdat, v = wd, margin.title = "avg. difference by latitude", plot.title = "Birds")
+birds.sesvert.dif.plt = plt_rast_margin(birds.pdat, v = wd, 
+                                        margin.title = "avg. difference by latitude",
+                                        plot.title = "Birds",
+                                        var = "sesvert.dif")
 birds.sesvert.dif.plt
 
-png("figs_lydia/maps/sesvert_future_dif/birds.png", width = 200, height = 100, res = 300, units = "mm")
+png("figures/sesvert_future_dif/birds.png", width = 200, height = 100, res = 300, units = "mm")
 birds.sesvert.dif.plt
 dev.off()
 
@@ -163,7 +172,8 @@ repts.pdat = repts %>%
   dplyr::select(x,y,sesvert.dif) %>% 
   rast(type = "xyz", crs = "epsg:4326")
 
-repts.sesvert.dif.plt = plt_rast_margin(repts.pdat, v = wd, margin.title = "avg. difference by latitude", plot.title = "Reptiles")
+repts.sesvert.dif.plt = plt_rast_margin(repts.pdat, v = wd, margin.title = "avg. difference by latitude",
+                                        plot.title = "Reptiles", var = "sesvert.dif")
 repts.sesvert.dif.plt
 
 png("figs_lydia/maps/sesvert_future_dif/repts.png", width = 200, height = 100, res = 300, units = "mm")
@@ -191,7 +201,7 @@ amph.vert.dif.plt = plt_rast_margin(r = amph.pdat, v = wd, margin.title = "avg. 
                                     plot.title = "Amphibians", var = "vert.dif")
 amph.vert.dif.plt
 
-png("figs_lydia/maps/vert_future_dif/amph.png", width = 200, height = 100, res = 300, units = "mm")
+png("figures/vert_future_dif/amph.png", width = 200, height = 100, res = 300, units = "mm")
 amph.vert.dif.plt
 dev.off()
 
@@ -211,7 +221,7 @@ mammals.vert.dif.plt = plt_rast_margin(mammals.pdat, v = wd, margin.title = "avg
                                        plot.title = "Mammals", var = "vert.dif")
 mammals.vert.dif.plt
 
-png("figs_lydia/maps/vert_future_dif/mammals.png", width = 200, height = 100, res = 300, units = "mm")
+png("figures/vert_future_dif/mammals.png", width = 200, height = 100, res = 300, units = "mm")
 mammals.vert.dif.plt
 dev.off()
 
@@ -230,7 +240,7 @@ birds.pdat = birds %>%
 birds.vert.dif.plt = plt_rast_margin(birds.pdat, v = wd, margin.title = "avg. difference by latitude", plot.title = "Birds", var = "vert.dif")
 birds.vert.dif.plt
 
-png("figs_lydia/maps/vert_future_dif/birds.png", width = 200, height = 100, res = 300, units = "mm")
+png("figures/vert_future_dif/birds.png", width = 200, height = 100, res = 300, units = "mm")
 birds.vert.dif.plt
 dev.off()
 
@@ -249,14 +259,178 @@ repts.pdat = repts %>%
 repts.vert.dif.plt = plt_rast_margin(repts.pdat, v = wd, margin.title = "avg. difference by latitude", plot.title = "Reptiles", var = "vert.dif")
 repts.vert.dif.plt
 
-png("figs_lydia/maps/vert_future_dif/repts.png", width = 200, height = 100, res = 300, units = "mm")
+png("figures/vert_future_dif/repts.png", width = 200, height = 100, res = 300, units = "mm")
 repts.vert.dif.plt
 dev.off()
 
 
 
+# MEAN VERT DIF FOREST ONLY -----------------------------------------------
+wd = vect("data/original/rnaturalearth_world.shp")
+wd = project(wd, "epsg:4326")
+
+load("results/sar_mods_forest_only/amphibians/amphibians_sar_vertmean2.RData")
+amph = vert.scale.sub
+
+amph.pdat = amph %>% 
+  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
+  project("epsg:4326") %>% 
+  as.data.frame(xy = T) %>% 
+  mutate(vert.dif = vert.mean.future-vert.mean) %>% 
+  dplyr::select(x,y,vert.dif) %>% 
+  rast(type = "xyz", crs = "epsg:4326")
+
+amph.vert.dif.plt = plt_rast_margin(r = amph.pdat, v = wd, margin.title = "avg. difference by latitude",
+                                    plot.title = "Amphibians", var = "vert.dif")
+amph.vert.dif.plt
+
+png("figures/vert_future_dif/forest_only/amph.png", width = 200, height = 100, res = 300, units = "mm")
+amph.vert.dif.plt
+dev.off()
 
 
+load("results/sar_mods_forest_only/mammals/mammals_sar_vertmean2.RData")
+mammals = vert.scale.sub
+
+mammals.pdat = mammals %>% 
+  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
+  project("epsg:4326") %>% 
+  as.data.frame(xy = T) %>% 
+  mutate(vert.dif = vert.mean.future-vert.mean) %>% 
+  dplyr::select(x,y,vert.dif) %>% 
+  rast(type = "xyz", crs = "epsg:4326")
+
+mammals.vert.dif.plt = plt_rast_margin(mammals.pdat, v = wd, margin.title = "avg. difference by latitude", 
+                                       plot.title = "Mammals", var = "vert.dif")
+mammals.vert.dif.plt
+
+png("figures/vert_future_dif/forest_only/mammals.png", width = 200, height = 100, res = 300, units = "mm")
+mammals.vert.dif.plt
+dev.off()
+
+
+load("results/sar_mods_forest_only/birds/birdselton_sar_vertmean.RData")
+birds = vert.scale.sub
+
+birds.pdat = birds %>% 
+  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
+  project("epsg:4326") %>% 
+  as.data.frame(xy = T) %>% 
+  mutate(vert.dif = vert.mean.future-vert.mean) %>% 
+  dplyr::select(x,y,vert.dif) %>% 
+  rast(type = "xyz", crs = "epsg:4326")
+
+birds.vert.dif.plt = plt_rast_margin(birds.pdat, v = wd, margin.title = "avg. difference by latitude", plot.title = "Birds", var = "vert.dif")
+birds.vert.dif.plt
+
+png("figures/vert_future_dif/forest_only/birds.png", width = 200, height = 100, res = 300, units = "mm")
+birds.vert.dif.plt
+dev.off()
+
+
+load("results/sar_mods_forest_only/reptiles/reptiles_sar_vertmean2.RData")
+repts = vert.scale.sub
+
+repts.pdat = repts %>% 
+  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
+  project("epsg:4326") %>% 
+  as.data.frame(xy = T) %>% 
+  mutate(vert.dif = vert.mean.future-vert.mean) %>% 
+  dplyr::select(x,y,vert.dif) %>% 
+  rast(type = "xyz", crs = "epsg:4326")
+
+repts.vert.dif.plt = plt_rast_margin(repts.pdat, v = wd, margin.title = "avg. difference by latitude", plot.title = "Reptiles", var = "vert.dif")
+repts.vert.dif.plt
+
+png("figures/vert_future_dif/forest_only/repts.png", width = 200, height = 100, res = 300, units = "mm")
+repts.vert.dif.plt
+dev.off()
+
+
+
+# SESVERT DIF FOREST ONLY -------------------------------------------------------------
+
+load("results/sar_mods_forest_only/amphibians/amphibians_sar_sesvert2.RData")
+amph = sesvert.scale.sub
+
+amph.pdat = amph %>% 
+  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
+  project("epsg:4326") %>% 
+  as.data.frame(xy = T) %>% 
+  mutate(sesvert.dif = vert.mean.ses.future-vert.mean.ses) %>% 
+  dplyr::select(x,y,sesvert.dif) %>% 
+  rast(type = "xyz", crs = "epsg:4326")
+
+amph.sesvert.dif.plt = plt_rast_margin(amph.pdat, v = wd, margin.title = "avg. difference by latitude", 
+                                       plot.title = "Amphibians", var = "sesvert.dif")
+amph.sesvert.dif.plt
+
+png("figures/sesvert_future_dif/forest_only/amph.png", width = 200, height = 100, res = 300, units = "mm")
+amph.sesvert.dif.plt
+dev.off()
+
+
+load("results/sar_mods_forest_only/mammals/mammals_sar_sesvert2.RData")
+mammals = sesvert.scale.sub
+
+mammals.pdat = mammals %>% 
+  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
+  project("epsg:4326") %>% 
+  as.data.frame(xy = T) %>% 
+  mutate(sesvert.dif = vert.mean.ses.future-vert.mean.ses) %>% 
+  dplyr::select(x,y,sesvert.dif) %>% 
+  rast(type = "xyz", crs = "epsg:4326")
+
+mammals.sesvert.dif.plt = plt_rast_margin(mammals.pdat, v = wd, 
+                                          margin.title = "avg. difference by latitude", 
+                                          plot.title = "Mammals", var = "sesvert.dif")
+mammals.sesvert.dif.plt
+
+png("figures/sesvert_future_dif/forest_only/mammals.png", width = 200, height = 100, res = 300, units = "mm")
+mammals.sesvert.dif.plt
+dev.off()
+
+
+load("results/sar_mods_forest_only/birds/birdselton_sar_sesvert2.RData")
+birds = sesvert.scale.sub
+
+birds.pdat = birds %>% 
+  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
+  project("epsg:4326") %>% 
+  as.data.frame(xy = T) %>% 
+  mutate(sesvert.dif = vert.mean.ses.future-vert.mean.ses) %>% 
+  dplyr::select(x,y,sesvert.dif) %>% 
+  rast(type = "xyz", crs = "epsg:4326")
+
+birds.sesvert.dif.plt = plt_rast_margin(birds.pdat, v = wd,
+                                        margin.title = "avg. difference by latitude", 
+                                        plot.title = "Birds", var = "sesvert.dif")
+birds.sesvert.dif.plt
+
+png("figures/sesvert_future_dif/forest_only/birds.png", width = 200, height = 100, res = 300, units = "mm")
+birds.sesvert.dif.plt
+dev.off()
+
+
+load("results/sar_mods_forest_only/reptiles/reptiles_sar_sesvert2.RData")
+repts = sesvert.scale.sub
+
+repts.pdat = repts %>% 
+  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
+  project("epsg:4326") %>% 
+  as.data.frame(xy = T) %>% 
+  mutate(sesvert.dif = vert.mean.ses.future-vert.mean.ses) %>% 
+  dplyr::select(x,y,sesvert.dif) %>% 
+  rast(type = "xyz", crs = "epsg:4326")
+
+repts.sesvert.dif.plt = plt_rast_margin(repts.pdat, v = wd, 
+                                        margin.title = "avg. difference by latitude", 
+                                        plot.title = "Reptiles", var = "sesvert.dif")
+repts.sesvert.dif.plt
+
+png("figures/sesvert_future_dif/forest_only/repts.png", width = 200, height = 100, res = 300, units = "mm")
+repts.sesvert.dif.plt
+dev.off()
 
 
 

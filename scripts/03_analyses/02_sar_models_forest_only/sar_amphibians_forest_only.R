@@ -684,7 +684,7 @@ vert.avg = model.avg(vert.dredge, beta = "none", rank = "AICc", subset = delta <
 ## model average summary
 summary(vert.avg)
 
-save(vert.full, wts.rs, wts.idist, wts.idist2, mod.rs, mod.idist, mod.idist2, vert.dredge, vert.avg, file = "results/sar_mods_forest_only/amphibians/amphibians_sar_vertmean.RData")
+save(vert.full, wts.rs, wts.idist, wts.idist2, mod.rs, mod.idist, mod.idist2, vert.dredge, vert.avg, file = "results/sar_mods_forest_only/amphibians/amphibians_sar_vertmean2.RData")
 
 
 

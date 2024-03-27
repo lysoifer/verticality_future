@@ -1,7 +1,5 @@
-source("scripts_lydia/00_functions.R")
-source("scripts_lydia/00_icorrelogram.R")
-source("scripts_lydia/00_functions_predict_sarlm_debug.R")
-source("scripts_lydia/00_icorrelogram.R")
+source("scripts/00_functions/00_functions.R")
+source("scripts/00_functions/00_functions_predict_sarlm_debug.R")
 library(tidyverse)
 library(vegan)
 library(pgirmess)
@@ -19,6 +17,8 @@ library(terra)
 library(colorspace)
 library(patchwork)
 library(broom)
+
+options(na.action = "na.omit")
 
 # VIF variable selection
 env = read.csv("data/derivative_data/env_data.csv")
