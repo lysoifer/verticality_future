@@ -53,7 +53,7 @@ sesvert.t = as.data.frame(sesvert) %>%
   mutate(log_clim_velocity = log10(clim_velocity),
          log_elev = log10(elev),
          log_precip_sea = log10(precip_sea),
-         log_precip_dry = log10(precip_dry))
+         log_precip_dry = log10(precip_dry+1))
 
 sesvert.t %>% 
   pivot_longer(cols = 6:ncol(sesvert.t), names_to = "vars", values_to = "val") %>% 
@@ -65,7 +65,7 @@ sesvert.t %>%
 
 # keep log transformation for climate velocity and elevation
 sesvert.t = sesvert.t %>% 
-  dplyr::select(!c(clim_velocity, elev, log_precip_sea, log_precip_dry))
+  dplyr::select(!c(clim_velocity, elev, log_precip_sea, precip_dry))
 # add quadratic term to model for tmin_cold
 
 
@@ -73,10 +73,11 @@ sesvert.t = sesvert.t %>%
 sesvert.scale = sesvert.t %>% 
   mutate_at(.vars = 6:ncol(sesvert.t), .funs = function(x){scale(x)})
 colnames(sesvert.scale) = colnames(sesvert.t)
+sesvert.scale$id = 1:nrow(sesvert.scale)
 
 # SES model
 
-f = formula(vert.mean.ses ~ log_elev + log_clim_velocity + tmax_warm + tmin_cold + I(tmin_cold^2) + precip_dry + precip_sea + precip_wet + veg_complexity)
+f = formula(vert.mean.ses ~ log_elev + log_clim_velocity + tmax_warm + tmin_cold + log_precip_dry + precip_sea + precip_wet + veg_complexity)
 
 # * - selection of weights matrix ---------------------------------------------
 ## 1) fit full models with each weight matrix
@@ -133,7 +134,8 @@ registerDoParallel(cl)
 
 # row standardized (SAR model with row standardized weights (Ver Hoef et al. 2018))
 mod.rs <- foreach(i=1:length(dists), .packages = c("spatialreg")) %dopar% {
-  errorsarlm(f, data = sesvert.scale, listw = wts.rs[[i]], method = "LU", zero.policy = T, control = list(returnHcov=FALSE))
+  errorsarlm(f, data = sesvert.scale, listw = wts.rs[[i]], method = "LU", zero.policy = T, 
+             control = list(pWOrder = 500, returnHcov=T))
 }
 
 stopCluster(cl)
@@ -146,7 +148,8 @@ registerDoParallel(cl)
 
 # row standardized (SAR model with row standardized weights (Ver Hoef et al. 2018))
 mod.idist <- foreach(i=1:length(dists), .packages = c("spatialreg")) %dopar% {
-  errorsarlm(f, data = sesvert.scale, listw = wts.idist[[i]], method = "LU", zero.policy = T, control = list(returnHcov=FALSE))
+  errorsarlm(f, data = sesvert.scale, listw = wts.idist[[i]], method = "LU", zero.policy = T, 
+             control = list(pWOrder = 500, returnHcov=T))
 }
 
 stopCluster(cl)
@@ -160,7 +163,8 @@ registerDoParallel(cl)
 
 # row standardized (SAR model with row standardized weights (Ver Hoef et al. 2018))
 mod.idist2 <- foreach(i=1:length(dists), .packages = c("spatialreg")) %dopar% {
-  errorsarlm(f, data = sesvert.scale, listw = wts.idist2[[i]], method = "LU", zero.policy = T, control = list(returnHCov=FALSE))
+  errorsarlm(f, data = sesvert.scale, listw = wts.idist2[[i]], method = "LU", zero.policy = T, 
+             control = list(pWOrder = 500, returnHcov=T))
 }
 
 stopCluster(cl)
@@ -177,7 +181,7 @@ names(mod.rs) = paste0("mod.rs_", 1:length(mod.rs))
 names(mod.idist) = paste0("mod.idist_", 1:length(mod.idist))
 names(mod.idist2) = paste0("mod.idist2_", 1:length(mod.idist2))
 
-sel = model.sel(c(mod.rs, mod.idist, mod.idist2), beta = "none", rank = "AIC")
+sel = model.sel(c(mod.rs, mod.idist, mod.idist2), beta = "none", rank = "AICc")
 
 
 # spatial autocorrelation check -------------------------------------------
@@ -233,14 +237,59 @@ sesvert.dredge = dredge(global.model = sesvert.full, beta = "none", evaluate = T
 
 stopCluster(clust)
 
+# fit all of the best models so inspect for lambdas and spatial autocorrelation
+sesvert.dredge.sel = sesvert.dredge %>% 
+  filter(delta <= 2)
+
+fms <- foreach(r=1:nrow(sesvert.dredge.sel)) %do% {
+  var = which(!is.na(sesvert.dredge.sel[r,2:9]))
+  var = colnames(sesvert.dredge.sel[r,2:9])[var]
+  ids = paste(var, collapse = " + ")
+  fm = paste0("vert.mean.ses ~ ", ids)
+}  
+
+cl = makeCluster(7)
+registerDoParallel(cl)
+
+# these are the best models identified by dredge function with deltaAICc <= 2
+best_mods <- foreach(r=1:nrow(sesvert.dredge.sel), .packages = c("spatialreg", "spdep", "broom")) %dopar% {
+  
+  # neighborhood weights matrix for data subset without nas
+  .GlobalEnv$fms <- fms
+  .GlobalEnv$r <- r
+  msar.err = errorsarlm(formula = fms[[r]], data = sesvert.scale, listw = wts.idist2[[i]], zero.policy = T, method = "LU", control = list(pWOrder=500, returnHcov=TRUE))
+  
+  return(msar.err)
+}
+
+stopCluster(cl)
+
 ## calculate model average including models with delta AICc <= 2
 sesvert.avg = model.avg(sesvert.dredge, beta = "none", rank = "AICc", subset = delta <= 2, fit = T)
 
 ## model average summary
 summary(sesvert.avg)
 
-save(sesvert.full, mod.rs, mod.idist, mod.idist2, sesvert.dredge, sesvert.avg, file = "results/sar_mods_forestOnly_forestSES/amphibians/amphibians_sar_sesvert.RData")
+# predict model
+pred = predict(sesvert.avg)
+
+# pseudo-r2 (see https://onlinelibrary.wiley.com/doi/full/10.1111/j.1466-8238.2007.00334.x)
+r2 = cor(pred, sesvert.scale$vert.mean.ses)^2
+
+# predict model with only the trend
+pred.trend = predict(sesvert.avg, newdata = sesvert.scale, type = "response", 
+                     pred.type = "TS", listw = wts.idist2[[2]])
+r2.trend = cor(pred.trend, sesvert.scale$vert.mean.ses)
+
+save.image(file = "results/sar_mods_forestOnly_forestSES/amphibians/amphibians_sar_sesvert.RData")
 load("results/sar_mods_forestOnly_forestSES/amphibians/amphibians_sar_sesvert.RData")
+
+plot(sesvert.scale$vert.mean.ses, pred)
+plot(pred, sesvert.scale$vert.mean.ses-pred)
+
+plot(sesvert.scale$vert.mean.ses, pred.trend)
+abline(a = 0, b = 1, col = "red")
+plot(pred.trend, sesvert.scale$vert.mean.ses-pred.trend)
 
 # predict -----------------------------------------------------------------
 
@@ -253,92 +302,48 @@ env.future$temp_sea = env.future$temp_sea/100
 env.future.df = terra::extract(env.future, sesvert.scale[,c('x','y')], xy = T, ID = F)
 
 env.future.df = env.future.df %>% 
+  mutate(log_precip_dry = log10(precip_dry+1)) %>% 
   # scale using same scaling factors as original data
   mutate(tmax_warm = (max_temp_warm - mean(sesvert.t$tmax_warm)) / sd(sesvert.t$tmax_warm),
          tmin_cold = (min_temp_cold - mean(sesvert.t$tmin_cold)) / sd(sesvert.t$tmin_cold),
          precip_wet = (precip_wet - mean(sesvert.t$precip_wet)) / sd(sesvert.t$precip_wet),
-         precip_dry = (precip_dry - mean(sesvert.t$precip_dry)) / sd(sesvert.t$precip_dry),
+         log_precip_dry = (log_precip_dry - mean(sesvert.t$log_precip_dry)) / sd(sesvert.t$log_precip_dry),
          precip_sea = (precip_sea - mean(sesvert.t$precip_sea)) / sd(sesvert.t$precip_sea))
+env.future.df$id = 1:nrow(env.future.df)
 
 env.future.df = sesvert.scale %>% 
   dplyr::select(x, y, log_elev, veg_complexity, log_clim_velocity) %>% 
   right_join(env.future.df, by = c("x", "y")) %>% 
-  dplyr::select(x,y, tmax_warm, tmin_cold, precip_wet, precip_dry, precip_sea, log_elev, veg_complexity, log_clim_velocity)
+  dplyr::select(x,y, tmax_warm, tmin_cold, precip_wet, log_precip_dry, precip_sea, 
+                log_elev, veg_complexity, log_clim_velocity)
 
-
-sesvert.dredge.sel = sesvert.dredge %>% 
-  filter(delta <= 2)
 
 # NA rows cause issue for prediction
 # which rows are NA
-nas = which(is.na(env.future.df$precip_dry))
-
-# remove rows that are NA from original and prediction data frames
-sesvert.scale.sub = sesvert.scale[-nas,]
+nas = which(is.na(env.future.df$log_precip_dry))
 env.future.df = env.future.df[-nas,]
+rownames(env.future.df) = env.future.df$id
+env.future.sf = st_as_sf(env.future.df, coords = c("x", "y"), crs = "+proj=cea +datum=WGS84")
 
-fms <- foreach(r=1:nrow(sesvert.dredge.sel)) %do% {
-  var = which(!is.na(sesvert.dredge.sel[r,2:9]))
-  var = colnames(sesvert.dredge.sel[r,2:9])[var]
-  ids = paste(var, collapse = " + ")
-  fm = paste0("vert.mean.ses ~ ", ids)
-}  
+# Predict averaged model
+neigh = dnearneigh(env.future.df[,c("x", "y")], d1 = 0, d2 = dists[i], longlat = F, row.names = rownames(env.future.df))
+wts.pred = nb2listwdist(neighbours = neigh, x = env.future.sf, style = "W", type = "idw", alpha = 2, zero.policy = T)
+
+pred.future = MuMIn:::predict.averaging(sesvert.avg, newdata = env.future.df, type = "response", 
+                                        pred.type = "TS", listw = wts.pred)
+
+# make dataframe with predictions
+env.future.df$pred.future = pred.future
+sesvert.scale$pred.pres.trend = pred.trend
+sesvert.future = env.future.df %>% dplyr::select(x,y,pred.future)
+sesvert.pres = sesvert.scale %>% dplyr::select(x,y,vert.mean.ses, pred.pres.trend)
+
+pred.df = left_join(sesvert.pres, sesvert.future, by = c('x', "y"))
 
 ## https://stat.ethz.ch/pipermail/r-sig-geo/2009-September/006500.html
 
-cl = makeCluster(3)
-registerDoParallel(cl)
 
-best_mods_pred <- foreach(r=1:nrow(sesvert.dredge.sel), .packages = c("spatialreg", "spdep", "broom")) %dopar% {
-  
-  # neighborhood weights matrix for data subset without nas
-  n.sub = dnearneigh(sesvert.scale.sub[,c("x", "y")], d1 = 0, d2 = dists[i], longlat = F)
-  wts.sub = nb2listwdist(neighbours = n.sub, x = sesvert.scale.sf, style = "W", type = "idw", alpha = 2, zero.policy = T)
-  
-  .GlobalEnv$fms <- fms
-  .GlobalEnv$r <- r
-  msar.err = errorsarlm(formula = fms[[r]], data = sesvert.scale, listw = wts.idist2[[i]], zero.policy = T, method = "LU", control = list(returnHCov=FALSE))
-  
-  # samp = sesvert.scale.sub %>%
-  #   mutate(resid = resid(msar.err)) %>% 
-  #   sample_n(1000)
-  # sar.cor = ncf::correlog(x = samp$x, y = samp$y, z = samp$resid, increment = 111000, resamp = 99)
-  # ncf:::plot.correlog(sar.cor)
-  # ncf:::plot.correlog(sar.cor, xlim = c(0,5e6))
-  
-  moran_test = moran.mc(msar.err$residuals, listw = wts.idist2[[i]], nsim = 99, zero.policy = T)
-  r2 = round(as.numeric(glance(msar.err)[1,1]),2)
-  
-  # in sample prediction (i.e., predicting within same spatial units that the model was fit on)
-  pred = predict.sarlm.debug(msar.err, newdata = env.future.df, listw = wts.idist2[[i]], type = "TC")
-  
-  list(row = r, mod = msar.err, moran = moran_test, r2 = r2, pred = pred)
-}
-
-stopCluster(cl)
-
-# check spatial autocorrelation
-lapply(best_mods_pred, "[[", 3) # all okay
-r2 = mean(sapply(best_mods_pred, "[[", 4))
-
-sesvert.scale.sub$pred1 = as.vector(best_mods_pred[[1]][["pred"]])
-sesvert.scale.sub$pred2 = as.vector(best_mods_pred[[2]][["pred"]])
-sesvert.scale.sub$pred3 = as.vector(best_mods_pred[[3]][["pred"]])
-sesvert.scale.sub$pred4 = as.vector(best_mods_pred[[4]][["pred"]])
-sesvert.scale.sub$pred5 = as.vector(best_mods_pred[[5]][["pred"]])
-sesvert.scale.sub$pred6 = as.vector(best_mods_pred[[6]][["pred"]])
-sesvert.scale.sub$pred7 = as.vector(best_mods_pred[[7]][["pred"]])
-
-# get average of best models
-sesvert.scale.sub = sesvert.scale.sub %>% 
-  mutate(vert.mean.ses.future = rowMeans(select(sesvert.scale.sub, pred1:pred7)))
-
-sesvert.scale.sub = sesvert.scale.sub %>% 
-  dplyr::select(x,y,vert.mean.ses.future) %>% 
-  right_join(sesvert.scale, by = c("x", "y"))
-
-save(sesvert.full, wts.rs, wts.idist, wts.idist2, mod.rs, mod.idist, mod.idist2, sesvert.dredge, sesvert.avg, best_mods_pred, 
-     sesvert.scale.sub, file = "results/sar_mods_forestOnly_forestSES/amphibians/amphibians_sar_sesvert.RData")
+save.image(file = "results/sar_mods_forestOnly_forestSES/amphibians/amphibians_sar_sesvert.RData")
 
 
 
@@ -362,63 +367,9 @@ sesvert.avg.full %>%
   theme_classic() +
   theme(plot.title = element_text(hjust = 0.5))
 
-
-
-
-sesvert.scale.sub.r = rast(sesvert.scale.sub, type = "xyz", crs = "+proj=cea +datum=WGS84")
-plot(sesvert.scale.sub.r$vert.mean.ses.future)
-
-world = rnaturalearth::ne_countries()
-
-mp = sesvert.scale.sub %>% 
-  dplyr::select(x,y,vert.mean.ses, vert.mean.ses.future) %>% 
-  pivot_longer(cols = c(vert.mean.ses, vert.mean.ses.future), names_to = "Time", values_to = "ses.vert.mean") %>% 
-  ggplot() +
-  geom_tile(aes(x = x, y = y, fill = ses.vert.mean)) +
-  geom_sf(data = world, fill = NA) +
-  coord_sf(crs = "+proj=cea +datum=WGS84") +
-  scale_fill_continuous_divergingx(palette = "Spectral", rev = T, na.value = "white") +
-  ggtitle("Amphibians") +
-  facet_wrap(facets = ~Time, nrow = 2) +
-  theme_classic() +
-  theme(axis.text = element_blank(),
-        axis.title = element_blank(),
-        plot.title = element_text(hjust = 0.5))
-
-# g = ggplot_build(mp)
-# cols = g$plot$data %>% 
-#   mutate(PANEL = ifelse(Time == "vert.mean.ses", 1, 2),
-#          PANEL = factor(PANEL)) %>% 
-#   left_join(g$data[[1]], by = c("x", "y", "PANEL")) %>% 
-#   dplyr::arrange(ses.vert.mean) %>% 
-#   drop_na(ses.vert.mean)
-# 
-# bins = opt_bin(.data = cols, .value_col = ses.vert.mean, .iters = 30)
-# 
-# 
-# #%>% 
-# #  summarize(min = min(ses.vert.mean), max = max(ses.vert.mean)) %>% 
-# #  arrange(min)
-# 
-# cols = data.frame(colors = unique(g$data[[1]]["fill"]),
-#                   val = g$plot$data[,g$plot$labels$fill])
-
-
-hist = sesvert.scale.sub %>% 
-  dplyr::select(x,y,vert.mean.ses.future) %>% 
-  right_join(sesvert.scale, by = c("x", "y")) %>% 
-  dplyr::select(x,y,vert.mean.ses, vert.mean.ses.future) %>% 
-  pivot_longer(cols = c(vert.mean.ses, vert.mean.ses.future), names_to = "Time", values_to = "ses.vert.mean") %>% 
-  ggplot(aes(x = ses.vert.mean)) +
-  geom_histogram() +
-  scale_fill_continuous_divergingx(palette = "Spectral", rev = T, na.value = "white") +
-  ggtitle("Amphibians") +
-  facet_wrap(facets = ~Time, nrow = 2) +
-  theme_classic() +
-  theme(plot.title = element_text(hjust = 0.5))
-
-hist + mp + plot_layout(design = "12
-                                  12", widths = c(5,20), heights = c(0.5, 1))
+pred.r = rast(pred.df, type = "xyz", crs = "+proj=cea +datum=WGS84")
+plot(pred.r$pred.future)
+plot(pred.r$pred.future - pred.r$pred.pres.trend)
 
 
 # Mean verticality -----------------------------------------------------
@@ -435,10 +386,6 @@ env_vars = vif_func(in_frame = env[c(4, 7:12,17:18,22)], thresh = 5, trace = T)
 
 
 amph = read.csv("data/derivative_data/gridcell_data/amphibians_comdat/amph_comdat_parallel_forestsOnly.csv")
-
-# subset to only forested biomes
-amph = amph %>% 
-  filter(grepl("Forests", biome))
 
 
 #  * - data check --------------------------------------------------------------
@@ -461,7 +408,7 @@ as.data.frame(vert) %>%
 vert.t = as.data.frame(vert) %>% 
   mutate(log_clim_velocity = log10(clim_velocity),
          log_elev = log10(elev),
-         log_precip_dry = log10(precip_dry),
+         log_precip_dry = log10(precip_dry+1),
          log_precip_wet = log10(precip_wet),
          log_veg_complexity = log10(veg_complexity))
 
@@ -475,15 +422,17 @@ vert.t %>%
   theme_classic()
 
 vert.t = vert.t %>% 
-  dplyr::select(!c(clim_velocity, elev, precip_wet, log_precip_dry, log_veg_complexity))
+  dplyr::select(!c(clim_velocity, elev, precip_wet, precip_dry, log_veg_complexity))
 
 # scale predictor variables
 vert.scale = vert.t %>% 
   mutate_at(.vars = 6:ncol(vert.t), .funs = function(x){scale(x)})
 colnames(vert.scale) = colnames(vert.t)
 
+vert.scale$id = 1:nrow(vert.scale)
+
 # vert mean model
-f = formula(vert.mean ~ log_elev + log_clim_velocity + tmax_warm + tmin_cold + precip_dry + precip_sea + log_precip_wet + veg_complexity)
+f = formula(vert.mean ~ log_elev + log_clim_velocity + tmax_warm + tmin_cold + log_precip_dry + precip_sea + log_precip_wet + veg_complexity)
 
 # * - selection of weights matrix ---------------------------------------------
 ## 1) fit full models with each weight matrix
@@ -544,7 +493,8 @@ registerDoParallel(cl)
 
 # row standardized (SAR model with row standardized weights (Ver Hoef et al. 2018))
 mod.rs <- foreach(i=1:length(dists), .packages = c("spatialreg")) %dopar% {
-  errorsarlm(f, data = vert.scale, listw = wts.rs[[i]], method = "LU", zero.policy = T, control = list(returnHcov=FALSE))
+  errorsarlm(f, data = vert.scale, listw = wts.rs[[i]], method = "LU", zero.policy = T, 
+             control = list(pWOrder = 750, returnHcov=T))
 }
 
 stopCluster(cl)
@@ -555,7 +505,8 @@ registerDoParallel(cl)
 
 # row standardized (SAR model with row standardized weights (Ver Hoef et al. 2018))
 mod.idist <- foreach(i=1:length(dists), .packages = c("spatialreg")) %dopar% {
-  errorsarlm(f, data = vert.scale, listw = wts.idist[[i]], method = "LU", zero.policy = T, control = list(returnHcov=FALSE))
+  errorsarlm(f, data = vert.scale, listw = wts.idist[[i]], method = "LU", zero.policy = T, 
+             control = list(pWOrder = 750, returnHcov=T))
 }
 
 stopCluster(cl)
@@ -566,7 +517,8 @@ registerDoParallel(cl)
 
 # row standardized (SAR model with row standardized weights (Ver Hoef et al. 2018))
 mod.idist2 <- foreach(i=1:length(dists), .packages = c("spatialreg")) %dopar% {
-  errorsarlm(f, data = vert.scale, listw = wts.idist2[[i]], method = "LU", zero.policy = T, control = list(returnHCov=FALSE))
+  errorsarlm(f, data = vert.scale, listw = wts.idist2[[i]], method = "LU", zero.policy = T, 
+             control = list(pWOrder = 750, returnHcov=T))
 }
 
 stopCluster(cl)
@@ -580,7 +532,7 @@ names(mod.rs) = paste0("mod.rs_", 1:length(mod.rs))
 names(mod.idist) = paste0("mod.idist_", 1:length(mod.idist))
 names(mod.idist2) = paste0("mod.idist2_", 1:length(mod.idist2))
 
-sel = model.sel(c(mod.rs, mod.idist, mod.idist2), beta = "none", rank = "AIC")
+sel = model.sel(c(mod.rs, mod.idist, mod.idist2), beta = "none", rank = "AICc")
 
 
 # spatial autocorrelation check -------------------------------------------
@@ -639,8 +591,32 @@ vert.dredge = dredge(global.model = vert.full, beta = "none", evaluate = T, clus
 
 stopCluster(clust)
 
-## run dredge to iterate through all possible variable combos
-## tests all combinations of predictor variables (256 models)
+# fit all of the best models so inspect for lambdas and spatial autocorrelation
+vert.dredge.sel = vert.dredge %>% 
+  filter(delta <= 2)
+
+fms <- foreach(r=1:nrow(vert.dredge.sel)) %do% {
+  var = which(!is.na(vert.dredge.sel[r,2:9]))
+  var = colnames(vert.dredge.sel[r,2:9])[var]
+  ids = paste(var, collapse = " + ")
+  fm = paste0("vert.mean ~ ", ids)
+}  
+
+cl = makeCluster(7)
+registerDoParallel(cl)
+
+# these are the best models identified by dredge function with deltaAICc <= 2
+best_mods <- foreach(r=1:nrow(vert.dredge.sel), .packages = c("spatialreg", "spdep", "broom")) %dopar% {
+  
+  # neighborhood weights matrix for data subset without nas
+  .GlobalEnv$fms <- fms
+  .GlobalEnv$r <- r
+  msar.err = errorsarlm(formula = fms[[r]], data = vert.scale, listw = wts.idist2[[i]], zero.policy = T, method = "LU", control = list(pWOrder=500, returnHcov=TRUE))
+  
+  return(msar.err)
+}
+
+stopCluster(cl)
 
 ## calculate model average including models with delta AICc <= 2
 vert.avg = model.avg(vert.dredge, beta = "none", rank = "AICc", subset = delta <= 2, fit = T)
@@ -648,8 +624,29 @@ vert.avg = model.avg(vert.dredge, beta = "none", rank = "AICc", subset = delta <
 ## model average summary
 summary(vert.avg)
 
-save(vert.full, wts.rs, wts.idist, wts.idist2, mod.rs, mod.idist, mod.idist2, vert.dredge, vert.avg, 
-     file = "results/sar_mods_forestOnly_forestSES/amphibians/amphibians_sar_meanvert.RData")
+# predict model
+pred = predict(vert.avg)
+
+# residuals
+resid = pred - vert.scale$vert.mean
+moran.mc(resid, wts.idist2[[i]], nsim = 100)
+
+# pseudo-r2 (see https://onlinelibrary.wiley.com/doi/full/10.1111/j.1466-8238.2007.00334.x)
+r2 = cor(pred, vert.scale$vert.mean)^2
+
+# predict model with only the trend
+pred.trend = predict(vert.avg, newdata = vert.scale, type = "response", 
+                     pred.type = "TS", listw = wts.idist2[[2]])
+r2.trend = cor(pred.trend, vert.scale$vert.mean)
+
+
+save.image(file = "results/sar_mods_forestOnly_forestSES/amphibians/amphibians_sar_meanvert.RData")
+
+plot(pred, vert.scale$vert.mean)
+plot(pred, vert.scale$vert.mean-pred)
+
+plot(pred.trend, vert.scale$vert.mean)
+plot(pred.trend, vert.scale$vert.mean-pred.trend)
 
 
 
@@ -665,99 +662,48 @@ env.future.df = terra::extract(env.future, vert.scale[,c('x','y')], xy = T, ID =
 
 
 env.future.df = env.future.df %>% 
-  mutate(log_precip_wet = log10(precip_wet)) %>% 
-  dplyr::select(!precip_wet) %>% 
+  mutate(log_precip_wet = log10(precip_wet),
+         log_precip_dry = log10(precip_dry+1)) %>% 
+  dplyr::select(!c(precip_wet, precip_dry)) %>% 
   # scale using same scaling factors as original data
   mutate(tmax_warm = (max_temp_warm - mean(vert.t$tmax_warm)) / sd(vert.t$tmax_warm),
          tmin_cold = (min_temp_cold - mean(vert.t$tmin_cold)) / sd(vert.t$tmin_cold),
          log_precip_wet = (log_precip_wet - mean(vert.t$log_precip_wet)) / sd(vert.t$log_precip_wet),
-         precip_dry = (precip_dry - mean(vert.t$precip_dry)) / sd(vert.t$precip_dry),
+         log_precip_dry = (log_precip_dry - mean(vert.t$log_precip_dry)) / sd(vert.t$log_precip_dry),
          precip_sea = (precip_sea - mean(vert.t$precip_sea)) / sd(vert.t$precip_sea))
-
+env.future.df$id = 1:nrow(env.future.df)
 
 
 env.future.df = vert.scale %>% 
   dplyr::select(x, y, log_elev, veg_complexity, log_clim_velocity) %>% 
   right_join(env.future.df, by = c("x", "y")) %>% 
-  dplyr::select(x,y, tmin_cold, tmax_warm, log_precip_wet, precip_dry, precip_sea, log_elev, veg_complexity, log_clim_velocity)
-
-
-vert.dredge.sel = vert.dredge %>% 
-  filter(delta <= 2)
+  dplyr::select(x,y, tmin_cold, tmax_warm, log_precip_wet, log_precip_dry, precip_sea, 
+                log_elev, veg_complexity, log_clim_velocity)
 
 # NA rows cause issue for prediction
 # which rows are NA
-nas = which(is.na(env.future.df$precip_dry))
-
-# remove rows that are NA from original and prediction data frames
-vert.scale.sub = vert.scale[-nas,]
+nas = which(is.na(env.future.df$log_precip_dry))
 env.future.df = env.future.df[-nas,]
+rownames(env.future.df) = env.future.df$id
+env.future.sf = st_as_sf(env.future.df, coords = c("x", "y"), crs = "+proj=cea +datum=WGS84")
 
-fms <- foreach(r=1:nrow(vert.dredge.sel)) %do% {
-  var = which(!is.na(vert.dredge.sel[r,2:9]))
-  var = colnames(vert.dredge.sel[r,2:9])[var]
-  ids = paste(var, collapse = " + ")
-  fm = paste0("vert.mean ~ ", ids)
-}  
+# Predict averaged model
+neigh = dnearneigh(env.future.df[,c("x", "y")], d1 = 0, d2 = dists[i], longlat = F, row.names = rownames(env.future.df))
+wts.pred = nb2listwdist(neighbours = neigh, x = env.future.sf, style = "W", type = "idw", alpha = 2, zero.policy = T)
 
-## https://stat.ethz.ch/pipermail/r-sig-geo/2009-September/006500.html
+pred.future = MuMIn:::predict.averaging(vert.avg, newdata = env.future.df, type = "response", 
+                                        pred.type = "TS", listw = wts.pred)
 
-cl = makeCluster(3)
-registerDoParallel(cl)
-
-best_mods_pred <- foreach(r=1:nrow(vert.dredge.sel), .packages = c("spatialreg", "spdep", "broom")) %dopar% {
-  
-  # neighborhood weights matrix for data subset without nas
-  n.sub = dnearneigh(vert.scale.sub[,c("x", "y")], d1 = 0, d2 = dists[i], longlat = F)
-  wts.sub = nb2listwdist(neighbours = n.sub, x = vert.scale.sf, style = "W", type = "idw", alpha = 2, zero.policy = T)
-  
-  .GlobalEnv$fms <- fms
-  .GlobalEnv$r <- r
-  msar.err = errorsarlm(formula = fms[[r]], data = vert.scale, listw = wts.idist2[[i]], zero.policy = T, method = "LU", control = list(returnHCov=FALSE))
-  
-  # samp = vert.scale.sub %>%
-  #   mutate(resid = resid(msar.err)) %>% 
-  #   sample_n(1000)
-  # sar.cor = ncf::correlog(x = samp$x, y = samp$y, z = samp$resid, increment = 111000, resamp = 99)
-  # ncf:::plot.correlog(sar.cor)
-  # ncf:::plot.correlog(sar.cor, xlim = c(0,5e6))
-  
-  moran_test = moran.mc(msar.err$residuals, listw = wts.idist2[[i]], nsim = 99, zero.policy = T)
-  r2 = round(as.numeric(glance(msar.err)[1,1]),2)
-  
-  # in sample prediction (i.e., predicting within same spatial units that the model was fit on)
-  pred = predict.sarlm.debug(msar.err, newdata = env.future.df, listw = wts.idist2[[i]], type = "TC")
-  
-  list(row = r, mod = msar.err, moran = moran_test, r2 = r2, pred = pred)
-}
-
-stopCluster(cl)
-
-save(vert.full, wts.rs, wts.idist, wts.idist2, mod.rs, mod.idist, mod.idist2, vert.dredge, vert.avg, best_mods_pred,
-     file = "results/sar_mods_forestOnly_forestSES/amphibians/amphibians_sar_meanvert.RData")
-load("results/sar_mods_forestOnly_forestSES/amphibians/amphibians_sar_meanvert.RData.RData")
-
-# check spatial autocorrelation
-lapply(best_mods_pred, "[[", 3) # all okay
-lapply(best_mods_pred, "[[", 4) # r2
-
-r2 = mean(sapply(best_mods_pred, "[[", 4))
-
-vert.scale.sub$pred1 = as.vector(best_mods_pred[[1]][["pred"]])
-vert.scale.sub$pred2 = as.vector(best_mods_pred[[2]][["pred"]])
-vert.scale.sub$pred3 = as.vector(best_mods_pred[[3]][["pred"]])
-vert.scale.sub$pred4 = as.vector(best_mods_pred[[4]][["pred"]])
-vert.scale.sub$pred5 = as.vector(best_mods_pred[[5]][["pred"]])
-vert.scale.sub$pred6 = as.vector(best_mods_pred[[6]][["pred"]])
-vert.scale.sub$pred7 = as.vector(best_mods_pred[[7]][["pred"]])
-vert.scale.sub$pred8 = as.vector(best_mods_pred[[8]][["pred"]])
-vert.scale.sub$pred9 = as.vector(best_mods_pred[[9]][["pred"]])
-vert.scale.sub$pred10 = as.vector(best_mods_pred[[10]][["pred"]])
-vert.scale.sub$pred11 = as.vector(best_mods_pred[[11]][["pred"]])
+# make dataframe with predicted values
+env.future.df$pred.future = pred.future
+vert.scale$pred.pres.trend = pred.trend # predictions to present data - only trend (i.e., does not include spatial signal)
+vert.future = env.future.df %>% dplyr::select(x,y,pred.future)
+vert.pres = vert.scale %>% dplyr::select(x,y,vert.mean, pred.pres.trend)
 
 
-vert.scale.sub = vert.scale.sub %>% 
-  mutate(vert.mean.future = rowMeans(select(vert.scale.sub, pred1:pred11)))
+pred.df = left_join(vert.pres, vert.future, by = c('x', "y"))
+
+save.image(file = "results/sar_mods_forestOnly_forestSES/amphibians/amphibians_sar_meanvert.RData")
 
 # Plot results ------------------------------------------------------------
 
@@ -774,64 +720,14 @@ vert.avg.full %>%
   ggplot(aes(x = Estimate, y = reorder(var, Estimate), xmin = Estimate-SE, xmax = Estimate+SE, color = p_value<0.05)) +
   geom_pointrange() +
   geom_vline(xintercept = 0, linetype = "dashed") +
-  annotate(geom = "text", x = -0.01, y = 7, label = paste0("R\u00b2 = ", r2)) +
+  #annotate(geom = "text", x = -0.01, y = 7, label = paste0("R\u00b2 = ", r2)) +
   scale_color_manual(values = c("black", "red3")) +
   scale_y_discrete("") +
   ggtitle("Mean Verticality: Amphibians (moura)") +
   theme_classic() +
   theme(plot.title = element_text(hjust = 0.5))
 
-
-vert.scale.sub.r = rast(vert.scale.sub, type = "xyz", crs = "+proj=cea +datum=WGS84")
-plot(vert.scale.sub.r$vert.mean.future)
-
-vert.scale.sub = vert.scale.sub %>% 
-  dplyr::select(x,y,vert.mean.future) %>% 
-  right_join(vert.scale, by = c("x", "y"))
-
-mp = vert.scale.sub %>% 
-  dplyr::select(x,y,vert.mean, vert.mean.future) %>% 
-  pivot_longer(cols = c(vert.mean, vert.mean.future), names_to = "Time", values_to = "vert.mean") %>% 
-  ggplot() +
-  geom_tile(aes(x = x, y = y, fill = vert.mean)) +
-  geom_sf(data = world, fill = NA) +
-  coord_sf(crs = "+proj=cea +datum=WGS84") +
-  scale_fill_continuous_sequential(palette = "Viridis", rev = T, na.value = "white") +
-  #ggtitle("Amphibians mean verticality (moura)") +
-  facet_wrap(facets = ~Time, nrow = 2) +
-  theme_classic() +
-  theme(axis.text = element_blank(),
-        axis.title = element_blank(),
-        plot.title = element_text(hjust = 0.5))
-
-vertmeans = vert.scale.sub %>% 
-  dplyr::select(x,y,vert.mean.future) %>% 
-  right_join(vert.scale, by = c("x", "y")) %>% 
-  dplyr::select(x,y,vert.mean, vert.mean.future) %>% 
-  pivot_longer(cols = c(vert.mean, vert.mean.future), names_to = "Time", values_to = "vert.mean") %>% 
-  group_by(Time) %>% 
-  summarise(mean = mean(vert.mean, na.rm = T))
-
-hist = vert.scale.sub %>% 
-  dplyr::select(x,y,vert.mean, vert.mean.future) %>% 
-  pivot_longer(cols = c(vert.mean, vert.mean.future), names_to = "Time", values_to = "vert.mean") %>% 
-  ggplot(aes(x = vert.mean)) +
-  geom_histogram() +
-  geom_vline(data = vertmeans, aes(xintercept = mean), color = "red3", linetype = "dashed", size = 1) +
-  scale_fill_continuous_sequential(palette = "YlGnBu", rev = T, na.value = "white") +
-  #ggtitle("Amphibians (moura)") +
-  facet_wrap(facets = ~Time, nrow = 2) +
-  theme_classic() +
-  theme(plot.title = element_text(hjust = 0.5))
-
-hist + mp + plot_layout(design = "12
-                                  12", widths = c(5,20), heights = c(0.5, 1)) +
-  plot_annotation(title = "Amphibians: mean verticality (moura)")
-
-
-save(vert.full, wts.rs, wts.idist, wts.idist2, mod.rs, mod.idist, mod.idist2, vert.dredge,
-     vert.avg, best_mods_pred, vert.scale.sub,
-     file = "results/sar_mods_forestOnly_forestSES/amphibians/amphibians_sar_meanvert.RData")
-
-
+pred.r = rast(pred.df, type = "xyz", crs = "+proj=cea +datum=WGS84")
+plot(pred.r$pred.future)
+plot(pred.r$pred.future-pred.r$pred.pres.trend)
 

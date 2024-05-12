@@ -28,14 +28,14 @@ env_vars = vif_func(in_frame = env[c(4, 7:12,17:18,22)], thresh = 5, trace = T)
 
 
 
-# Reptiles --------------------------------------------------------------
+# Mammals --------------------------------------------------------------
 
-reptiles = read.csv("data/derivative_data/gridcell_data/reptiles_comdat/rept_comdat_parallel_forestsOnly.csv")
+mammals = read.csv("data/derivative_data/gridcell_data/mammals_comdat/mammals_comdat_parallel_forestsOnly.csv")
 
 #  * - data check --------------------------------------------------------------
 
 ## SES vert model
-sesvert = reptiles[,c("x", "y", "vert.mean.ses", "biome", "realm", env_vars)] %>% 
+sesvert = mammals[,c("x", "y", "vert.mean.ses", "biome", "realm", env_vars)] %>% 
   drop_na()
 
 hist(sesvert$vert.mean.ses)
@@ -54,6 +54,7 @@ sesvert.t = as.data.frame(sesvert) %>%
          log_elev = log10(elev),
          log_precip_sea = log10(precip_sea),
          log_precip_dry = log10(precip_dry+1))
+# add quadratic to tmaxwarm
 
 sesvert.t %>% 
   pivot_longer(cols = 6:ncol(sesvert.t), names_to = "vars", values_to = "val") %>% 
@@ -65,19 +66,19 @@ sesvert.t %>%
 
 # keep log transformation for climate velocity and elevation
 sesvert.t = sesvert.t %>% 
-  dplyr::select(!c(clim_velocity, elev, log_precip_sea, precip_dry))
+  dplyr::select(!c(clim_velocity, elev, precip_sea, precip_dry))
+# add quadratic term to model for tmin_cold
+
 
 # scale predictor variables
 sesvert.scale = sesvert.t %>% 
   mutate_at(.vars = 6:ncol(sesvert.t), .funs = function(x){scale(x)})
 colnames(sesvert.scale) = colnames(sesvert.t)
-
 sesvert.scale$id = 1:nrow(sesvert.scale)
 
 # SES model
-# log_precip_dry = log10(precip_dry + 1)
-f = formula(vert.mean.ses ~ log_elev + log_clim_velocity + tmax_warm + 
-              tmin_cold + log_precip_dry + precip_sea + precip_wet + veg_complexity)
+
+f = formula(vert.mean.ses ~ log_elev + log_clim_velocity + I(tmax_warm^2) + tmax_warm + tmin_cold + log_precip_dry + log_precip_sea + precip_wet + veg_complexity)
 
 # * - selection of weights matrix ---------------------------------------------
 ## 1) fit full models with each weight matrix
@@ -133,9 +134,10 @@ cl = makeCluster(7)
 registerDoParallel(cl)
 
 # row standardized (SAR model with row standardized weights (Ver Hoef et al. 2018))
+# pwordr = 500 and returnhcov = T to allow model convergence
 mod.rs <- foreach(i=1:length(dists), .packages = c("spatialreg")) %dopar% {
-  errorsarlm(f, data = sesvert.scale, listw = wts.rs[[i]], method = "LU", 
-             zero.policy = T, control = list(pWOrder=500, returnHcov=TRUE))
+  errorsarlm(f, data = sesvert.scale, listw = wts.rs[[i]], method = "LU", zero.policy = T, 
+             control = list(pWOrder = 1000, returnHcov=T))
 }
 
 stopCluster(cl)
@@ -147,30 +149,27 @@ registerDoParallel(cl)
 
 # row standardized (SAR model with row standardized weights (Ver Hoef et al. 2018))
 mod.idist <- foreach(i=1:length(dists), .packages = c("spatialreg")) %dopar% {
-  errorsarlm(f, data = sesvert.scale, listw = wts.idist[[i]], method = "LU", 
-             zero.policy = T, control = list(pWOrder=500, returnHcov=TRUE))
+  errorsarlm(f, data = sesvert.scale, listw = wts.idist[[i]], method = "LU", zero.policy = T, 
+             control = list(pWOrder = 1000, returnHcov=T))
 }
 
 stopCluster(cl)
-
-#save(mod.idist, file = "results/sar_mods_forest_only/amphibians/amphibians_sar_mod_idist.RData")
 
 
 # inverse distance squared row standardized weights
 cl = makeCluster(7)
 registerDoParallel(cl)
 
+# row standardized (SAR model with row standardized weights (Ver Hoef et al. 2018))
 mod.idist2 <- foreach(i=1:length(dists), .packages = c("spatialreg")) %dopar% {
-  errorsarlm(f, data = sesvert.scale, listw = wts.idist2[[i]], method = "LU", 
-             zero.policy = T, control = list(pWOrder=500, returnHcov=TRUE))
+  errorsarlm(f, data = sesvert.scale, listw = wts.idist2[[i]], method = "LU", zero.policy = T, 
+             control = list(pWOrder = 1000, returnHcov=T))
 }
 
 stopCluster(cl)
 
-#save(mod.idist2, file = "results/sar_mods_forest_only/amphibians/amphibians_sar_mod_idist2.RData")
 
-
-## 2) compare full models using AIC
+## 2) compare full models using AICc
 
 ### make lists to store models
 ### one list for each weight type
@@ -255,7 +254,8 @@ best_mods <- foreach(r=1:nrow(sesvert.dredge.sel), .packages = c("spatialreg", "
   # neighborhood weights matrix for data subset without nas
   .GlobalEnv$fms <- fms
   .GlobalEnv$r <- r
-  msar.err = errorsarlm(formula = fms[[r]], data = sesvert.scale, listw = wts.idist2[[i]], zero.policy = T, method = "LU", control = list(pWOrder=500, returnHcov=TRUE))
+  msar.err = errorsarlm(formula = fms[[r]], data = sesvert.scale, listw = wts.idist2[[i]], 
+                        zero.policy = T, method = "LU", control = list(pWOrder=1000, returnHcov=TRUE))
   
   return(msar.err)
 }
@@ -276,24 +276,25 @@ pred = predict(sesvert.avg)
 resid = pred - sesvert.scale$vert.mean.ses
 moran.mc(resid, wts.idist2[[i]], nsim = 100)
 
+
 # pseudo-r2 (see https://onlinelibrary.wiley.com/doi/full/10.1111/j.1466-8238.2007.00334.x)
 r2 = cor(pred, sesvert.scale$vert.mean.ses)^2
 
 # predict model with only the trend
 pred.trend = predict(sesvert.avg, newdata = sesvert.scale, type = "response", 
-               pred.type = "TS", listw = wts.idist2[[2]])
+                     pred.type = "TS", listw = wts.idist2[[2]])
 r2.trend = cor(pred.trend, sesvert.scale$vert.mean.ses)
 
-save(sesvert.full, mod.rs, mod.idist, mod.idist2, sesvert.dredge, sesvert.avg, i, r2, r2.trend,
-     file = "results/sar_mods_forestOnly_forestSES/reptiles/reptiles_sar_sesvert.RData")
-load("results/sar_mods_forestOnly_forestSES/reptiles/reptiles_sar_sesvert.RData")
 
+
+save.image(file = "results/sar_mods_forestOnly_forestSES/mammals/mammals_sar_sesvert.RData")
+load("results/sar_mods_forestOnly_forestSES/mammals/mammals_sar_sesvert.RData")
 
 plot(sesvert.scale$vert.mean.ses, pred)
-plot(sesvert.scale$vert.mean.ses-pred, pred)
+plot(pred, sesvert.scale$vert.mean.ses-pred)
 
 plot(sesvert.scale$vert.mean.ses, pred.trend)
-plot(sesvert.scale$vert.mean.ses-pred, pred.trend)
+plot(pred.trend, sesvert.scale$vert.mean.ses-pred)
 
 # predict -----------------------------------------------------------------
 
@@ -306,30 +307,28 @@ env.future$temp_sea = env.future$temp_sea/100
 env.future.df = terra::extract(env.future, sesvert.scale[,c('x','y')], xy = T, ID = F)
 
 env.future.df = env.future.df %>% 
-  mutate(log_precip_dry = log10(precip_dry + 1)) %>% 
-  dplyr::select(!precip_dry) %>%  
+  mutate(log_precip_sea = log10(precip_sea),
+         log_precip_dry = log10(precip_dry+1)) %>% 
+  dplyr::select(!precip_sea) %>%  
   # scale using same scaling factors as original data
   mutate(tmax_warm = (max_temp_warm - mean(sesvert.t$tmax_warm)) / sd(sesvert.t$tmax_warm),
          tmin_cold = (min_temp_cold - mean(sesvert.t$tmin_cold)) / sd(sesvert.t$tmin_cold),
          precip_wet = (precip_wet - mean(sesvert.t$precip_wet)) / sd(sesvert.t$precip_wet),
-         log_precip_dry = ((log_precip_dry) - mean(sesvert.t$log_precip_dry)) / sd(sesvert.t$log_precip_dry),
-         precip_sea = (precip_sea - mean(sesvert.t$precip_sea)) / sd(sesvert.t$precip_sea))
+         log_precip_dry = (log_precip_dry - mean(sesvert.t$log_precip_dry)) / sd(sesvert.t$log_precip_dry),
+         log_precip_sea = (log_precip_sea - mean(sesvert.t$log_precip_sea)) / sd(sesvert.t$log_precip_sea))
 env.future.df$id = 1:nrow(env.future.df)
 
-
 env.future.df = sesvert.scale %>% 
-  dplyr::select(x, y, id, log_elev, veg_complexity, log_clim_velocity) %>% 
-  right_join(env.future.df, by = c("x", "y", "id")) %>% 
-  dplyr::select(id, x,y, tmin_cold, tmax_warm, precip_wet, log_precip_dry, precip_sea,
+  dplyr::select(x, y, log_elev, veg_complexity, log_clim_velocity) %>% 
+  right_join(env.future.df, by = c("x", "y")) %>% 
+  dplyr::select(x,y, tmax_warm, tmin_cold, precip_wet, log_precip_dry, log_precip_sea, 
                 log_elev, veg_complexity, log_clim_velocity)
+
 
 # NA rows cause issue for prediction
 # which rows are NA
 nas = which(is.na(env.future.df$log_precip_dry))
 env.future.df = env.future.df[-nas,]
-#rownames(env.future.df) <- NULL
-#rownames(env.future.df) = env.future.df$rownames
-#env.future.df = env.future.df %>% dplyr::select(!rownames)
 rownames(env.future.df) = env.future.df$id
 env.future.sf = st_as_sf(env.future.df, coords = c("x", "y"), crs = "+proj=cea +datum=WGS84")
 
@@ -340,14 +339,6 @@ wts.pred = nb2listwdist(neighbours = neigh, x = env.future.sf, style = "W", type
 pred.future = MuMIn:::predict.averaging(sesvert.avg, newdata = env.future.df, type = "response", 
                                         pred.type = "TS", listw = wts.pred)
 
-# test with matrix algebra
-newX = env.future.df[,4:11] %>% 
-  mutate("(Intercept)" = 1) %>% 
-  dplyr::select("(Intercept)", log_elev, log_precip_dry, tmax_warm, tmin_cold, precip_wet, log_clim_velocity, veg_complexity, precip_sea)
-betas = sesvert.avg$coefficients[1,]
-test.pred = as.matrix(newX) %*% betas
-# predictions are the same, so error message about region id's is irrelevant as I accounted for this with row.names argument in dnearneigh()
-######################################
 
 env.future.df$pred.future = pred.future
 sesvert.scale$pred.pres.trend = pred.trend
@@ -356,12 +347,17 @@ sesvert.pres = sesvert.scale %>% dplyr::select(x,y,vert.mean.ses, pred.pres.tren
 
 pred.df = left_join(sesvert.pres, sesvert.future, by = c('x', "y"))
 
+
 ## https://stat.ethz.ch/pipermail/r-sig-geo/2009-September/006500.html
 
-save(sesvert.full, wts.rs, wts.idist, wts.idist2, mod.rs, mod.idist, mod.idist2,
-     sesvert.dredge, sesvert.avg, best_mods, pred.df, r2, i, r2.trend,
-     file = "results/sar_mods_forestOnly_forestSES/reptiles/reptiles_sar_sesvert.RData")
-load("results/sar_mods_forestOnly_forestSES/reptiles/reptiles_sar_sesvert.RData")
+save.image(file = "results/sar_mods_forestOnly_forestSES/mammals/mammals_sar_sesvert.RData")
+load("results/sar_mods_forestOnly_forestSES/mammals/mammals_sar_sesvert.RData")
+
+
+ 
+
+## https://stat.ethz.ch/pipermail/r-sig-geo/2009-September/006500.html
+
 
 
 # Plot results ------------------------------------------------------------
@@ -379,12 +375,13 @@ sesvert.avg.full %>%
   geom_vline(xintercept = 0, linetype = "dashed") +
   scale_color_manual(values = c("black", "red3")) +
   scale_y_discrete("") +
-  ggtitle("SES Mean Verticality: Amphibians") +
+  ggtitle("SES Mean Verticality: Mammals") +
   theme_classic() +
   theme(plot.title = element_text(hjust = 0.5))
 
-
-
+pred.r = rast(pred.df, type = "xyz", crs = "+proj=cea +datum=WGS84")
+plot(pred.r$pred.future)
+plot(pred.r$pred.future - pred.r$pred.pres.trend)
 
 
 # Mean verticality -----------------------------------------------------
@@ -400,13 +397,12 @@ options(na.action = "na.omit")
 env_vars = vif_func(in_frame = env[c(4, 7:12,17:18,22)], thresh = 5, trace = T)
 
 
-reptiles = read.csv("data/derivative_data/gridcell_data/reptiles_comdat/rept_comdat_parallel_forestsOnly.csv")
-
+mammals = read.csv("data/derivative_data/gridcell_data/mammals_comdat/mammals_comdat_parallel_forestsOnly.csv")
 
 #  * - data check --------------------------------------------------------------
 
 ## vert mean model
-vert = reptiles[,c("x", "y", "vert.mean", "biome", "realm", env_vars)] %>% 
+vert = mammals[,c("x", "y", "vert.mean", "biome", "realm", env_vars)] %>% 
   drop_na()
 
 hist(vert$vert.mean)
@@ -425,7 +421,8 @@ vert.t = as.data.frame(vert) %>%
          log_elev = log10(elev),
          log_precip_dry = log10(precip_dry+1),
          log_precip_wet = log10(precip_wet),
-         log_veg_complexity = log10(veg_complexity))
+         log_veg_complexity = log10(veg_complexity),
+         log_precip_sea = log10(precip_sea))
 
 
 vert.t %>% 
@@ -437,17 +434,16 @@ vert.t %>%
   theme_classic()
 
 vert.t = vert.t %>% 
-  dplyr::select(!c(clim_velocity, elev, log_precip_wet, precip_dry, log_veg_complexity))
+  dplyr::select(!c(clim_velocity, elev, precip_sea, log_precip_wet, precip_dry, log_veg_complexity))
 
 # scale predictor variables
 vert.scale = vert.t %>% 
-  mutate_at(.vars = 6:ncol(vert.t), .funs = function(x){scale(x)})
+  mutate_at(.vars = 6:14, .funs = function(x){scale(x)})
 colnames(vert.scale) = colnames(vert.t)
-
 vert.scale$id = 1:nrow(vert.scale)
 
-# vert mean model# vertvert.scale mean model
-f = formula(vert.mean ~ log_elev + log_clim_velocity + tmax_warm + tmin_cold + log_precip_dry + precip_sea + precip_wet + veg_complexity)
+# vert mean model
+f = formula(vert.mean ~ log_elev + log_clim_velocity + I(tmax_warm^2) + tmax_warm + tmin_cold + log_precip_dry + log_precip_sea + precip_wet + veg_complexity)
 
 # * - selection of weights matrix ---------------------------------------------
 ## 1) fit full models with each weight matrix
@@ -509,7 +505,7 @@ registerDoParallel(cl)
 # row standardized (SAR model with row standardized weights (Ver Hoef et al. 2018))
 mod.rs <- foreach(i=1:length(dists), .packages = c("spatialreg")) %dopar% {
   errorsarlm(f, data = vert.scale, listw = wts.rs[[i]], method = "LU", zero.policy = T, 
-             control = list(pWOrder=500, returnHcov=T))
+             control = list(pWOrder = 1000, returnHcov=T))
 }
 
 stopCluster(cl)
@@ -521,7 +517,7 @@ registerDoParallel(cl)
 # row standardized (SAR model with row standardized weights (Ver Hoef et al. 2018))
 mod.idist <- foreach(i=1:length(dists), .packages = c("spatialreg")) %dopar% {
   errorsarlm(f, data = vert.scale, listw = wts.idist[[i]], method = "LU", zero.policy = T, 
-             control = list(pWOrder=500, returnHcov=FALSE))
+             control = list(pWOrder = 1000, returnHcov=T))
 }
 
 stopCluster(cl)
@@ -532,8 +528,8 @@ registerDoParallel(cl)
 
 # row standardized (SAR model with row standardized weights (Ver Hoef et al. 2018))
 mod.idist2 <- foreach(i=1:length(dists), .packages = c("spatialreg")) %dopar% {
-  errorsarlm(f, data = vert.scale, listw = wts.idist2[[i]], method = "LU", zero.policy = T, 
-             control = list(pWOrder=500, returnHcov=FALSE))
+  errorsarlm(f, data = vert.scale, listw = wts.idist2[[i]], method = "LU", zero.policy = T,
+             control = list(pWOrder = 1000, returnHcov=T))
 }
 
 stopCluster(cl)
@@ -582,7 +578,7 @@ sel = sel %>%
   filter(moran.pval > 0.05) %>% 
   column_to_rownames(var = "mod")
 
-vert.full = c(mod.rs, mod.idist, mod.idist2)[[rownames(sel)[1]]]
+vert.full = c(mod.rs, mod.idist, mod.idist2)[[rownames(sel)[2]]] # try adjusting weights due to strong residual patterning
 summary(vert.full)
 
 
@@ -594,7 +590,8 @@ summary(vert.full)
 clusterType <- if(length(find.package("snow", quiet = TRUE))) "SOCK" else "PSOCK"
 clust <- try(makeCluster(getOption("cl.cores", 7), type = clusterType))
 
-i = as.numeric(strsplit(rownames(sel)[1], split = "_")[[1]][2]) # index of best weights matrix in the list
+# adjusted i to second best model due to strong patterning in resiudals when run with wts.rs
+i = as.numeric(strsplit(rownames(sel)[2], split = "_")[[1]][2]) # index of best weights matrix in the list
 
 clusterExport(clust, c("vert.scale", "vert.full", "wts.idist2", "f", "i"))
 clusterEvalQ(clust, library(spatialreg))
@@ -626,7 +623,8 @@ best_mods <- foreach(r=1:nrow(vert.dredge.sel), .packages = c("spatialreg", "spd
   # neighborhood weights matrix for data subset without nas
   .GlobalEnv$fms <- fms
   .GlobalEnv$r <- r
-  msar.err = errorsarlm(formula = fms[[r]], data = vert.scale, listw = wts.idist2[[i]], zero.policy = T, method = "LU", control = list(pWOrder=500, returnHcov=TRUE))
+  msar.err = errorsarlm(formula = fms[[r]], data = vert.scale, listw = wts.idist2[[i]],
+                        zero.policy = T, method = "LU", control = list(pWOrder=1000, returnHcov=TRUE))
   
   return(msar.err)
 }
@@ -634,7 +632,10 @@ best_mods <- foreach(r=1:nrow(vert.dredge.sel), .packages = c("spatialreg", "spd
 stopCluster(cl)
 
 ## calculate model average including models with delta AICc <= 2
-vert.avg = model.avg(vert.dredge, beta = "none", rank = "AICc", subset = delta <= 2, fit = T)
+# not converged within iterations is okay because it only affects the accuracy of the Hausman test
+# see https://stat.ethz.ch/pipermail/r-sig-geo/2013-October/019449.html
+vert.avg = model.avg(vert.dredge, beta = "none", rank = "AICc", subset = delta <= 2, fit = T,
+                     control = list(pWOrder=1000, returnHcov=TRUE))
 
 ## model average summary
 summary(vert.avg)
@@ -642,25 +643,27 @@ summary(vert.avg)
 # predict model
 pred = predict(vert.avg)
 
+# pseudo-r2 (see https://onlinelibrary.wiley.com/doi/full/10.1111/j.1466-8238.2007.00334.x)
+r2 = cor(pred, vert.scale$vert.mean)^2
+
 # residuals
 resid = pred - vert.scale$vert.mean
 moran.mc(resid, wts.idist2[[i]], nsim = 100)
-
-# pseudo-r2 (see https://onlinelibrary.wiley.com/doi/full/10.1111/j.1466-8238.2007.00334.x)
-r2 = cor(pred, vert.scale$vert.mean)^2
 
 # predict model with only the trend
 pred.trend = predict(vert.avg, newdata = vert.scale, type = "response", 
                      pred.type = "TS", listw = wts.idist2[[2]])
 r2.trend = cor(pred.trend, vert.scale$vert.mean)
 
-save.image(file = "results/sar_mods_forestOnly_forestSES/reptiles/reptiles_sar_meanvert.RData")
+
+save.image(file = "results/sar_mods_forestOnly_forestSES/mammals/mammals_sar_meanvert.RData")
+load("results/sar_mods_forestOnly_forestSES/mammals/mammals_sar_meanvert.RData")
 
 plot(vert.scale$vert.mean, pred)
 plot(pred, vert.scale$vert.mean-pred)
 
 plot(vert.scale$vert.mean, pred.trend)
-plot(pred.trend, vert.scale$vert.mean-pred.trend)
+plot(pred.trend, vert.scale$vert.mean-pred.trend) # noticeable patterning in residuals
 
 
 # predict -----------------------------------------------------------------
@@ -675,22 +678,25 @@ env.future.df = terra::extract(env.future, vert.scale[,c('x','y')], xy = T, ID =
 
 
 env.future.df = env.future.df %>% 
-  mutate(log_precip_dry = log10(precip_dry+1)) %>% 
-  dplyr::select(!precip_dry) %>% 
+  mutate(log_precip_sea = log10(precip_sea),
+         log_precip_dry = log10(precip_dry+1)) %>% 
+  dplyr::select(!c(precip_sea, precip_dry)) %>% 
   # scale using same scaling factors as original data
   mutate(tmax_warm = (max_temp_warm - mean(vert.t$tmax_warm)) / sd(vert.t$tmax_warm),
          tmin_cold = (min_temp_cold - mean(vert.t$tmin_cold)) / sd(vert.t$tmin_cold),
          precip_wet = (precip_wet - mean(vert.t$precip_wet)) / sd(vert.t$precip_wet),
          log_precip_dry = (log_precip_dry - mean(vert.t$log_precip_dry)) / sd(vert.t$log_precip_dry),
-         precip_sea = (precip_sea - mean(vert.t$precip_sea)) / sd(vert.t$precip_sea))
-env.future.df$id = 1:nrow(env.future.df)
+         log_precip_sea = (log_precip_sea - mean(vert.t$log_precip_sea)) / sd(vert.t$log_precip_sea))
+
 
 
 env.future.df = vert.scale %>% 
   dplyr::select(x, y, log_elev, veg_complexity, log_clim_velocity) %>% 
   right_join(env.future.df, by = c("x", "y")) %>% 
-  dplyr::select(id, x,y, tmin_cold, tmax_warm, precip_wet, log_precip_dry, precip_sea, 
+  mutate(rownames = 1:nrow(env.future.df)) %>% 
+  dplyr::select(rownames, x,y, tmin_cold, tmax_warm, precip_wet, log_precip_dry, log_precip_sea,
                 log_elev, veg_complexity, log_clim_velocity)
+env.future.df$id = 1:nrow(env.future.df)
 
 # NA rows cause issue for prediction
 # which rows are NA
@@ -716,9 +722,11 @@ vert.pres = vert.scale %>% dplyr::select(x,y,vert.mean, pred.pres.trend)
 pred.df = left_join(vert.pres, vert.future, by = c('x', "y"))
 
 
-save.image(file = "results/sar_mods_forestOnly_forestSES/reptiles/reptiles_sar_meanvert.RData")
-load("results/sar_mods_forestOnly_forestSES/reptiles/reptiles_sar_meanvert.RData")
 
+## https://stat.ethz.ch/pipermail/r-sig-geo/2009-September/006500.html
+
+save.image(file = "results/sar_mods_forestOnly_forestSES/mammals/mammals_sar_meanvert.RData")
+load("results/sar_mods_forestOnly_forestSES/mammals/mammals_sar_meanvert.RData")
 
 # Plot results ------------------------------------------------------------
 
@@ -742,4 +750,6 @@ vert.avg.full %>%
   theme_classic() +
   theme(plot.title = element_text(hjust = 0.5))
 
-
+pred.r = rast(pred.df, type = "xyz", crs = "+proj=cea +datum=WGS84")
+plot(pred.r$pred.future)
+plot(pred.r$pred.future - pred.r$pred.pres.trend)
