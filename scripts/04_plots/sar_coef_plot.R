@@ -1,26 +1,36 @@
 library(tidyverse)
 library(lemon)
 library(ggh4x)
+library(spatialreg)
 
 # VERTMEAN ----------------------------------------------------------------
 
-load("results/amphibians_sar_vertmean2.RData")
+# ADD variable importance weights to the graphs ##
 
-amph.mods = best_mods_pred
+load("results/sar_mods_forestOnly_forestSES/amphibians/amphibians_sar_meanvert.RData")
+
+#amph.mods = best_mods_pred
 amph.avgmod = vert.avg
+amph.r2 = r2
+amph.r2.trend = r2.trend
 
-load("results/mammals_sar_vertmean2.RData")
-mammals.mods = best_mods_pred
+load("results/sar_mods_forestOnly_forestSES/mammals/mammals_sar_meanvert.RData")
+#mammals.mods = best_mods_pred
 mammals.avgmod = vert.avg
+mammals.r2 = r2
+mammals.r2.trend = r2.trend
 
-load("results/reptiles_sar_vertmean2.RData")
-rept.mods = best_mods_pred
+load("results/sar_mods_forestOnly_forestSES/reptiles/reptiles_sar_meanvert.RData")
+#rept.mods = best_mods_pred
 rept.avgmod = vert.avg
+rept.r2 = r2
+rept.r2.trend = r2.trend
 
-load("results/birdselton_sar_vertmean.RData")
-birds.mods = best_mods_pred
-birds.avgmod = vert.full
-
+load("results/sar_mods_forestOnly_forestSES/birds/birds_sar_meanvert.RData")
+#birds.mods = best_mods_pred
+birds.avgmod = vert.avg
+birds.r2 = r2
+birds.r2.trend = r2.trend
 
 # * - get coefficients for each class -----------------------------------------
 amph.sum = summary(amph.avgmod)
@@ -45,7 +55,7 @@ repts.coefs = reptiles.sum$coefmat.full %>%
   mutate(class = "Reptiles")
 
 birds.sum = summary(birds.avgmod)
-birds.coefs = birds.sum$Coef %>% 
+birds.coefs = birds.sum$coefmat.full %>% 
   as.data.frame() %>% 
   rownames_to_column(var = "var") %>% 
   rename(SE = "Std. Error", z_value = "z value", p_value = "Pr(>|z|)") %>% 
@@ -55,18 +65,33 @@ meanvert.coefs = bind_rows(amph.coefs, mammals.coefs, repts.coefs, birds.coefs)%
   mutate(class = factor(class, levels = c("Birds", "Mammals", "Reptiles", "Amphibians")),
          type = "Mean Verticality")
 
+# add variable importance weights
+varimp.amph = data.frame(varimp = amph.avgmod$sw, class = "Amphibians") %>% 
+  rownames_to_column("var")
+varimp.mammals = data.frame(varimp = mammals.avgmod$sw, class = "Mammals") %>% 
+  rownames_to_column("var")
+varimp.rept = data.frame(varimp = rept.avgmod$sw, class = "Reptiles") %>% 
+  rownames_to_column("var")
+varimp.birds = data.frame(varimp = birds.avgmod$sw, class = "Birds") %>% 
+  rownames_to_column("var")
+varimp = rbind(varimp.amph, varimp.mammals, varimp.rept, varimp.birds)
 
+meanvert.coefs = left_join(meanvert.coefs, varimp, by = c("class", "var"))
+meanvert.coefs$varimp = as.numeric(meanvert.coefs$varimp)
 # * - make r2 table -----------------------------------------------------------
 
-amph.r2 = mean(sapply(amph.mods, "[[", 4))
-mammals.r2 = mean(sapply(mammals.mods, "[[", 5))
-repts.r2 = mean(sapply(rept.mods, "[[", 4))
-birds.r2 = mean(sapply(birds.mods, "[[", 4))
+# amph.r2 = mean(sapply(amph.mods, "[[", 4))
+# mammals.r2 = mean(sapply(mammals.mods, "[[", 5))
+# repts.r2 = mean(sapply(rept.mods, "[[", 4))
+# birds.r2 = mean(sapply(birds.mods, "[[", 4))
 
 meanvert.r2 = data.frame(class = c("Amphibians", "Mammals", "Reptiles", "Birds"),
-                r2 = c(amph.r2, mammals.r2, repts.r2, round(birds.r2,2)))%>% 
+                r2 = c(amph.r2, mammals.r2, rept.r2, birds.r2),
+                r2.trend = c(amph.r2.trend, mammals.r2.trend, rept.r2.trend, birds.r2.trend))%>% 
   mutate(class = factor(class, levels = c("Birds", "Mammals", "Reptiles", "Amphibians")),
-         type = "Mean Verticality")
+         type = "Mean Verticality",
+         r2 = round(r2, 2),
+         r2.trend = round(r2.trend, 2))
 
 
 
@@ -74,13 +99,15 @@ meanvert.r2 = data.frame(class = c("Amphibians", "Mammals", "Reptiles", "Birds")
 
 meanvert.coefs %>% 
   filter(var != "(Intercept)") %>% 
-  ggplot(aes(x = Estimate, y = reorder(var, Estimate), xmin = Estimate-SE*1.96, xmax = Estimate+SE*1.96, color = p_value<0.05)) +
-  geom_pointrange() +
+  ggplot() +
+  geom_pointrange(aes(x = Estimate, y = reorder(var, Estimate), xmin = Estimate-SE*1.96, xmax = Estimate+SE*1.96, 
+                      color = p_value<0.05, size = varimp)) +
   geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_text(data = meanvert.r2, aes(label = paste0("R\u00b2 = ", r2)), x = 0.042, y = 1.2, inherit.aes = F, hjust = 1, vjust = 0) +
+  geom_text(data = meanvert.r2, aes(label = paste0("R\u00b2 = ", r2)), x = 0.042, y = 12, inherit.aes = F, hjust = 1, vjust = 0) +
   #annotate(geom = "text", x = -0.005, y = 7, label = paste0("R\u00b2 = ", r2)) +
   scale_color_manual(values = c("black", "red3")) +
   scale_y_discrete("") +
+  coord_cartesian(clip = "off", ylim = c(0,13)) +
   facet_wrap(facets = ~class) +
   ggtitle("Mean Verticality") +
   theme(plot.title = element_text(hjust = 0.5),
@@ -89,24 +116,34 @@ meanvert.coefs %>%
         strip.background = element_rect(color = "black"))
 
 
+
 # SES VERTMEAN ----------------------------------------------------------------
 
-load("results/amphibians_sar_sesvert2.RData")
+load("results/sar_mods_forestOnly_forestSES/amphibians/amphibians_sar_sesvert.RData")
 
-amph.mods = best_mods_pred
+#amph.mods = best_mods_pred
 amph.avgmod = sesvert.avg
+amph.r2 = r2
+amph.r2.trend = r2.trend
 
-load("results/mammals_sar_sesvert2.RData")
-mammals.mods = best_mods_pred
+load("results/sar_mods_forestOnly_forestSES/mammals/mammals_sar_sesvert.RData")
+#mammals.mods = best_mods_pred
 mammals.avgmod = sesvert.avg
+mammals.r2 = r2
+mammals.r2.trend = r2.trend
 
-load("results/reptiles_sar_sesvert2.RData")
-rept.mods = best_mods_pred
+
+load("results/sar_mods_forestOnly_forestSES/reptiles/reptiles_sar_sesvert.RData")
+#rept.mods = best_mods_pred
 rept.avgmod = sesvert.avg
+rept.r2 = r2
+rept.r2.trend = r2.trend
 
-load("results/birdselton_sar_sesvert2.RData")
-birds.mods = best_mods_pred
-birds.avgmod = sesvert.full
+load("results/sar_mods_forestOnly_forestSES/birds/birds_sar_sesvert.RData")
+#birds.mods = best_mods_pred
+birds.avgmod = sesvert.avg
+birds.r2 = r2
+birds.r2.trend = r2.trend
 
 
 # * - get coefficients for each class -----------------------------------------
@@ -132,28 +169,43 @@ repts.coefs = reptiles.sum$coefmat.full %>%
   mutate(class = "Reptiles")
 
 birds.sum = summary(birds.avgmod)
-birds.coefs = birds.sum$Coef %>% 
+birds.coefs = birds.sum$coefmat.full %>% 
   as.data.frame() %>% 
   rownames_to_column(var = "var") %>% 
   rename(SE = "Std. Error", z_value = "z value", p_value = "Pr(>|z|)") %>% 
   mutate(class = "Birds")
+ 
 
 sesvert.coefs = bind_rows(amph.coefs, mammals.coefs, repts.coefs, birds.coefs) %>% 
   mutate(class = factor(class, levels = c("Birds", "Mammals", "Reptiles", "Amphibians")),
          type = "SES Mean Verticality")
 
+varimp.amph = data.frame(varimp = amph.avgmod$sw, class = "Amphibians") %>% 
+  rownames_to_column("var")
+varimp.mammals = data.frame(varimp = mammals.avgmod$sw, class = "Mammals") %>% 
+  rownames_to_column("var")
+varimp.rept = data.frame(varimp = rept.avgmod$sw, class = "Reptiles") %>% 
+  rownames_to_column("var")
+varimp.birds = data.frame(varimp = birds.avgmod$sw, class = "Birds") %>% 
+  rownames_to_column("var")
+varimp = rbind(varimp.amph, varimp.mammals, varimp.rept, varimp.birds)
+varimp$varimp = as.numeric(varimp$varimp)
 
+sesvert.coefs = left_join(sesvert.coefs, varimp, by = c("class", "var"))
 # * - make r2 table -----------------------------------------------------------
 
-amph.r2 = mean(sapply(amph.mods, "[[", 4))
-mammals.r2 = mean(sapply(mammals.mods, "[[", 4))
-repts.r2 = mean(sapply(rept.mods, "[[", 4))
-birds.r2 = mean(sapply(birds.mods, "[[", 4))
+# amph.r2 = mean(sapply(amph.mods, "[[", 4))
+# mammals.r2 = mean(sapply(mammals.mods, "[[", 4))
+# repts.r2 = mean(sapply(rept.mods, "[[", 4))
+# birds.r2 = mean(sapply(birds.mods, "[[", 4))
 
 sesvert.r2 = data.frame(class = c("Amphibians", "Mammals", "Reptiles", "Birds"),
-                r2 = c(amph.r2, mammals.r2, repts.r2, round(birds.r2,2))) %>% 
+                r2 = c(amph.r2, mammals.r2, rept.r2, birds.r2),
+                r2.trend = c(amph.r2.trend, mammals.r2.trend, rept.r2.trend, birds.r2.trend)) %>% 
   mutate(class = factor(class, levels = c("Birds", "Mammals", "Reptiles", "Amphibians")),
-         type = "SES Mean Verticality")
+         type = "SES Mean Verticality",
+         r2 = round(r2, 2),
+         r2.trend = round(r2.trend, 2))
 
 
 
@@ -186,18 +238,20 @@ coefs = bind_rows(sesvert.coefs, meanvert.coefs) %>%
     "precip_sea", "log_precip_sea",
     "I(tmax_warm^2)", "tmax_warm", "tmin_cold")))
 r2 = bind_rows(sesvert.r2, meanvert.r2) %>% 
-  mutate(Estimate = ifelse(type == "SES Mean Verticality", 0.65, 0.022))
+  mutate(Estimate = ifelse(type == "SES Mean Verticality", 1.0, 0.08))
 
 coef.plt = coefs %>%
   ggplot(aes(x = Estimate, y = var, xmin = Estimate-SE*1.96, xmax = Estimate+SE*1.96, color = p_value<0.05)) +
-  geom_pointrange() +
+  geom_pointrange(aes(size = varimp)) +
   geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_text(data = r2, aes(label = paste0("R\u00b2 = ", r2), x = Estimate), y = 0.9, inherit.aes = F, hjust = 1, vjust = 0) +
+  geom_text(data = r2, aes(label = paste0("R\u00b2 = ", r2), x = Estimate), y = 2, inherit.aes = F, hjust = 1, vjust = 0) +
+  geom_text(data = r2, aes(label = paste0("R\u00b2 trend = ", r2.trend), x = Estimate), y = 0.9, inherit.aes = F, hjust = 1, vjust = 0) +
   scale_color_manual(values = c("black", "red3")) +
+  scale_size_continuous(range = c(0.02,0.5)) +
   scale_y_discrete("") +
   facet_grid2(rows = vars(type), cols = vars(class), scales = "free_x", independent = "x") +
-  scale_x_facet(ROW == 1, limits = c(-0.022, 0.022)) +
-  scale_x_facet(ROW == 2, limits = c(-0.62, 0.62)) +
+  scale_x_facet(ROW == 1, limits = c(-0.03, 0.08)) +
+  scale_x_facet(ROW == 2, limits = c(-0.4, 1.0)) +
   #facet_grid(class ~ type, scales = "free") +
   #ggtitle("SES Mean Verticality") +
   theme(plot.title = element_text(hjust = 0.5),
@@ -208,13 +262,16 @@ coef.plt = coefs %>%
         legend.box.margin = margin(0,0,0,0),
         legend.box.spacing = unit(0.1, "mm"))
 
-png("figures/sar_coef_plots/sar_mods.png", width = 220, height = 120, res = 300, units = "mm")
+# png("figures/sar_coef_plots/sar_mods.png", width = 220, height = 120, res = 300, units = "mm")
+# coef.plt
+# dev.off()
+
+png("figures/sar_coef_plots/sar_mods_forestOnly_forestSES.png", width = 250, height = 120, res = 300, units = "mm")
 coef.plt
 dev.off()
 
 
-
-# FOREST ONLY COEF PLOTS --------------------------------------------------
+# FOREST ONLY COEF PLOTS (first iteration without forest based SES and missing some wooded habitats) --------------------------------------------------
 
 # * - VERTMEAN ----------------------------------------------------------------
 
