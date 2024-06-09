@@ -205,6 +205,18 @@ mod.mesh.biome.cv$sum_loglik
 mod.mesh.biorealm.cv$sum_loglik
 mod.mesh.ecoregion.cv$sum_loglik # best model for random effects structure
 
+mod.mesh.spatialvar.cv = sdmTMB_cv(update(f1, ~ . +(1|ecoregion)), 
+                                  data = dat,
+                                  mesh = mesh300km,
+                                  spatial = "on",
+                                  reml = T, 
+                                  fold_ids = folds,
+                                  spatial_varying = ~ 0 + canopy_height,
+                                  k_folds = length(unique(folds)))
+
+mod.mesh.spatialvar.cv$converged
+lapply(mod.mesh.spatialvar.cv$models, sanity)
+
 summ_coefs = function(x, nm){
   mods = x$models
   test = lapply(mods, sanity)
@@ -241,6 +253,7 @@ m.full = sdmTMB_cv(formula = update(f1, ~ . +(1|ecoregion)),
                    spatial = "on",
                    reml = F, 
                    fold_ids = folds,
+                   spatial_varying = ~ 0 + canopy_height,
                    k_folds = length(unique(folds)))
 m.full$converged
 lapply(m.full$models, sanity)
@@ -253,6 +266,7 @@ m.nopoly = sdmTMB_cv(formula = update(f1, ~ . -I(tmax_warm^2) +(1|ecoregion)),
                      spatial = "on",
                      reml = F, 
                      fold_ids = folds,
+                     spatial_varying = ~ 0 + canopy_height,
                      k_folds = length(unique(folds)))
 m.nopoly$converged
 lapply(m.nopoly$models, sanity)
@@ -263,105 +277,54 @@ m.noclimvel = sdmTMB_cv(formula = update(f1, ~ . -log_clim_velocity +(1|ecoregio
                         spatial = "on",
                         reml = F, 
                         fold_ids = folds,
+                        spatial_varying = ~ 0 + canopy_height,
                         k_folds = length(unique(folds)))
 m.noclimvel$converged
 lapply(m.noclimvel$models, sanity)
 
+
+m.noclimvel_nopoly = sdmTMB_cv(formula = update(f1, ~ . -I(tmax_warm^2) -log_clim_velocity +(1|ecoregion)),
+                        data = dat,
+                        mesh = mesh300km,
+                        spatial = "on",
+                        reml = F, 
+                        fold_ids = folds,
+                        spatial_varying = ~ 0 + canopy_height,
+                        k_folds = length(unique(folds)))
+
+m.noclimvel_nopoly$converged
+lapply(m.noclimvel_nopoly$models, sanity)
+sanity(m.noclimvel_nopoly$models[[1]]) # ok
+sanity(m.noclimvel_nopoly$models[[2]]) # ok
+sanity(m.noclimvel_nopoly$models[[3]]) # ok
+sanity(m.noclimvel_nopoly$models[[4]]) # ok
+sanity(m.noclimvel_nopoly$models[[5]]) # ok
+
+test1 = m.noclimvel_nopoly$models[[1]]$tmb_obj$env$parList()
+test2 = m.noclimvel_nopoly$models[[2]]$tmb_obj$env$parList()
+test3 = m.noclimvel_nopoly$models[[3]]$tmb_obj$env$parList()
+test4 = m.noclimvel_nopoly$models[[4]]$tmb_obj$env$parList()
+test5 = m.noclimvel_nopoly$models[[5]]$tmb_obj$env$parList()
+test1$ln_phi
+test2$ln_phi
+test3$ln_phi
+test4$ln_phi
+test5$ln_phi
+
 m.full$sum_loglik 
-m.nopoly$sum_loglik
-m.noclimvel$sum_loglik # performs best
-
-
-# # H1: vegetation
-# m.veg = sdmTMB_cv(formula = vert.mean.ses ~ canopy_height + veg_den + (1|ecoregion),
-#                data = dat,
-#                mesh = mesh300km,
-#                spatial = "on",
-#                reml = F, 
-#                fold_ids = folds,
-#                k_folds = length(unique(folds)))
-# 
-# m.clim =  sdmTMB_cv(formula = vert.mean.ses ~ tmax_warm + precip_dry + tmin_cold + precip_sea + precip_wet + (1|ecoregion),
-#                        data = dat,
-#                        mesh = mesh300km,
-#                        spatial = "on",
-#                        reml = F, 
-#                        fold_ids = folds,
-#                        k_folds = length(unique(folds)))
-# 
-# m.climvel = sdmTMB_cv(formula = vert.mean.ses ~ clim_velocity + (1|ecoregion),
-#                        data = dat,
-#                        mesh = mesh300km,
-#                        spatial = "on",
-#                        reml = F, 
-#                        fold_ids = folds,
-#                        k_folds = length(unique(folds)))
-# 
-# m.vegclim = sdmTMB_cv(formula = vert.mean.ses ~ canopy_height + veg_den + tmax_warm + precip_dry + tmin_cold + precip_sea + precip_wet + (1|ecoregion),
-#                        data = dat,
-#                        mesh = mesh300km,
-#                        spatial = "on",
-#                        reml = F, 
-#                        fold_ids = folds,
-#                        k_folds = length(unique(folds)))
-# 
-# m.vegclimvel = sdmTMB_cv(formula = vert.mean.ses ~ canopy_height + veg_den + clim_velocity + (1|ecoregion),
-#                       data = dat,
-#                       mesh = mesh300km,
-#                       spatial = "on",
-#                       reml = F, 
-#                       fold_ids = folds,
-#                       k_folds = length(unique(folds)))
-# 
-# m.climclimvel = sdmTMB_cv(formula = vert.mean.ses ~ tmax_warm + precip_dry + tmin_cold + precip_sea + precip_wet + clim_velocity + (1|ecoregion),
-#                       data = dat,
-#                       mesh = mesh300km,
-#                       spatial = "on",
-#                       reml = F, 
-#                       fold_ids = folds,
-#                       k_folds = length(unique(folds)))
-# 
-# m.all = sdmTMB_cv(formula = vert.mean.ses ~ canopy_height + veg_den + tmax_warm + precip_dry + tmin_cold + precip_sea + precip_wet + clim_velocity + (1|ecoregion),
-#                       data = dat,
-#                       mesh = mesh300km,
-#                       spatial = "on",
-#                       reml = F, 
-#                       fold_ids = folds,
-#                       k_folds = length(unique(folds)))
-# 
-# m.veg$sum_loglik
-# m.clim$sum_loglik
-# m.climvel$sum_loglik
-# m.vegclim$sum_loglik
-# m.vegclimvel$sum_loglik
-# m.climclimvel$sum_loglik
-# m.all$sum_loglik # best by a tiny margin
-# 
-# summ.veg = summ_coefs(m.veg, "m.veg")
-# summ.clim = summ_coefs(m.clim, "m.clim")
-# summ.climvel = summ_coefs(m.climvel, "m.climvel")
-# summ.vegclim = summ_coefs(m.vegclim, "m.vegclim")
-# summ.vegclimvel = summ_coefs(m.vegclimvel, "m.vegclimvel")
-# summ.climclimvel = summ_coefs(m.climclimvel, "m.climclimvel")
-# summ.all = summ_coefs(m.all, "m.all")
-# 
-# summ.m = rbind(summ.veg, summ.clim, summ.climvel,
-#                summ.vegclim, summ.vegclimvel, summ.climclimvel, summ.all)
-# 
-# ggplot(summ.m %>% filter(term != "(Intercept)"), aes(est, xmin = est-se*1.96, xmax = est+se*1.96, y = term, color = modname)) +
-#   geom_pointrange(position = position_dodge2(width = 0.5)) +
-#   geom_vline(xintercept = 0, linetype = "dashed") +
-#   scale_color_brewer(palette = "Dark2")
-
+m.nopoly$sum_loglik 
+m.noclimvel$sum_loglik
+m.noclimvel_nopoly$sum_loglik # performs best
 
 # Refit best model using all the data ------------------------------------------
 control = sdmTMBcontrol(nlminb_loops = 2)
-m.final = sdmTMB(formula = update(f1, . ~ . -log_clim_velocity + (1|ecoregion)),
+m.final = sdmTMB(formula = update(f1, . ~ . -I(tmax_warm^2) -log_clim_velocity + (1|ecoregion)),
                  data = dat,
                   mesh = mesh300km,
                   spatial = "on",
                   reml = T,
-                 control = control)
+                 spatial_varying = ~ 0 + canopy_height,
+                 control = sdmTMBcontrol(start = list(ln_phi = -0.933), nlminb_loops = 2))
 
 m.final
 sanity(m.final)
@@ -434,13 +397,6 @@ dat %>%
   geom_point(pch = ".") +
   facet_wrap(~var, scales = "free") +
   theme_classic()
-
-dat$ecoregion = factor(dat$ecoregion)
-dat$realm = factor(dat$realm)
-dat$biome = factor(dat$biome)
-dat$biorealm = factor(paste(dat$biome, dat$realm, spe = "_"))
-dat$x = dat$x/1e5
-dat$y = dat$y/1e5
 
 mesh300km = make_mesh(data = dat, xy_cols = c("x", "y"), cutoff = 3)
 plot(mesh300km)
@@ -527,6 +483,22 @@ mod.mesh.biome.cv$sum_loglik
 mod.mesh.biorealm.cv$sum_loglik
 mod.mesh.ecoregion.cv$sum_loglik #best
 
+mod.mesh.spatialvar.cv = sdmTMB_cv(update(f1, ~ . +(1|ecoregion)), 
+                                  data = dat,
+                                  mesh = mesh300km,
+                                  spatial = "on",
+                                  family = Beta(),
+                                  reml = T, 
+                                  fold_ids = folds,
+                                  spatial_varying = ~ 0 + canopy_height,
+                                  k_folds = length(unique(folds)))
+
+mod.mesh.spatialvar.cv$converged
+lapply(mod.mesh.spatialvar.cv$models, sanity)
+
+mod.mesh.ecoregion.cv$sum_loglik
+mod.mesh.spatialvar.cv$sum_loglik
+
 summ_coefs = function(x, nm){
   mods = x$models
   test = lapply(mods, sanity)
@@ -547,6 +519,7 @@ mod.mesh.summ = summ_coefs(mod.mesh.cv, "mod.mesh")
 mod.mesh.biome.summ = summ_coefs(mod.mesh.biome.cv, "mod.mesh.biome")
 mod.mesh.biorealm.summ = summ_coefs(mod.mesh.biorealm.cv, "mod.mesh.biorealm")
 mod.mesh.ecoregion.summ = summ_coefs(mod.mesh.ecoregion.cv, "mod.mesh.ecoregion")
+mod.mesh.spatialvar.summ = summ_coefs(mod.mesh.spatialvar.cv, "mod.mesh.spatialvar")
 
 mods = rbind(mod.ecoregion.summ, mod.mesh.summ, mod.mesh.biome.summ, mod.mesh.biorealm.summ, mod.mesh.ecoregion.summ)
 ggplot(mods %>% filter(term != "(Intercept)")) +
@@ -564,6 +537,7 @@ m.full = sdmTMB_cv(formula = update(f1, ~ . +(1|ecoregion)),
                    family = Beta(),
                    reml = F, 
                    fold_ids = folds,
+                   spatial_varying = ~ 0 + canopy_height,
                    k_folds = length(unique(folds)))
 m.full$converged
 lapply(m.full$models, sanity)
@@ -577,6 +551,7 @@ m.nopoly = sdmTMB_cv(formula = update(f1, ~ . -I(tmax_warm^2) +(1|ecoregion)),
                      family = Beta(),
                      reml = F, 
                      fold_ids = folds,
+                     spatial_varying = ~ 0 + canopy_height,
                      k_folds = length(unique(folds)))
 m.nopoly$converged
 lapply(m.nopoly$models, sanity)
@@ -591,115 +566,38 @@ m.noclimvel = sdmTMB_cv(formula = update(f1, ~ . -log_clim_velocity +(1|ecoregio
                         family = Beta(),
                         reml = F, 
                         fold_ids = folds,
+                        spatial_varying = ~ 0 + canopy_height,
                         k_folds = length(unique(folds)))
 m.noclimvel$converged
 lapply(m.noclimvel$models, sanity)
 
-m.full$sum_loglik # performs best
-m.nopoly$sum_loglik
+m.noclimvel_nopoly = sdmTMB_cv(formula = update(f1, ~ . -I(tmax_warm^2) -log_clim_velocity +(1|ecoregion)),
+                        data = dat,
+                        mesh = mesh300km,
+                        spatial = "on",
+                        family = Beta(),
+                        reml = F, 
+                        fold_ids = folds,
+                        spatial_varying = ~ 0 + canopy_height,
+                        k_folds = length(unique(folds)))
+m.noclimvel_nopoly$converged
+lapply(m.noclimvel_nopoly$models, sanity)
+
+m.full$sum_loglik 
+m.nopoly$sum_loglik # performs best
 m.noclimvel$sum_loglik
-
-
-# # H1: vegetation
-# m.veg = sdmTMB_cv(formula = vert.mean ~ canopy_height + veg_den + (1|ecoregion),
-#                   data = dat,
-#                   mesh = mesh300km,
-#                   spatial = "on",
-#                   family = Beta(),
-#                   reml = F, 
-#                   fold_ids = folds,
-#                   k_folds = length(unique(folds)))
-# 
-# m.clim =  sdmTMB_cv(formula = vert.mean ~ tmax_warm + precip_dry + I(tmin_cold^2) + tmin_cold + precip_sea + precip_wet + (1|ecoregion),
-#                     data = dat,
-#                     mesh = mesh300km,
-#                     spatial = "on",
-#                     family = Beta(),
-#                     reml = F, 
-#                     fold_ids = folds,
-#                     k_folds = length(unique(folds)))
-# lapply(m.clim$models, sanity)
-# 
-# m.climvel = sdmTMB_cv(formula = vert.mean ~ clim_velocity + (1|ecoregion),
-#                       data = dat,
-#                       mesh = mesh300km,
-#                       spatial = "on",
-#                       family = Beta(),
-#                       reml = F, 
-#                       fold_ids = folds,
-#                       k_folds = length(unique(folds)))
-# lapply(m.climvel$models, sanity)
-# 
-# m.vegclim = sdmTMB_cv(formula = vert.mean ~ canopy_height + veg_den + tmax_warm + precip_dry + I(tmin_cold^2) + tmin_cold + precip_sea + precip_wet + (1|ecoregion),
-#                       data = dat,
-#                       mesh = mesh300km,
-#                       spatial = "on",
-#                       family = Beta(),
-#                       reml = F, 
-#                       fold_ids = folds,
-#                       k_folds = length(unique(folds)))
-# lapply(m.vegclim$models, sanity)
-# 
-# m.vegclimvel = sdmTMB_cv(formula = vert.mean ~ canopy_height + veg_den + clim_velocity + (1|ecoregion),
-#                          data = dat,
-#                          mesh = mesh300km,
-#                          spatial = "on",
-#                          family = Beta(),
-#                          reml = F, 
-#                          fold_ids = folds,
-#                          k_folds = length(unique(folds)))
-# 
-# m.climclimvel = sdmTMB_cv(formula = vert.mean ~ tmax_warm + precip_dry + I(tmin_cold^2) + tmin_cold + precip_sea + precip_wet + clim_velocity + (1|ecoregion),
-#                           data = dat,
-#                           mesh = mesh300km,
-#                           spatial = "on",
-#                           family = Beta(),
-#                           reml = F, 
-#                           fold_ids = folds,
-#                           k_folds = length(unique(folds)))
-# 
-# m.all = sdmTMB_cv(formula = vert.mean ~ canopy_height + veg_den + tmax_warm + precip_dry + I(tmin_cold^2) + tmin_cold + precip_sea + precip_wet + clim_velocity + (1|ecoregion),
-#                   data = dat,
-#                   mesh = mesh300km,
-#                   spatial = "on",
-#                   family = Beta(),
-#                   reml = F, 
-#                   fold_ids = folds,
-#                   k_folds = length(unique(folds)))
-# 
-# m.veg$sum_loglik
-# m.clim$sum_loglik
-# m.climvel$sum_loglik
-# m.vegclim$sum_loglik # best by a tiny margin
-# m.vegclimvel$sum_loglik
-# m.climclimvel$sum_loglik
-# m.all$sum_loglik
-# 
-# summ.veg = summ_coefs(m.veg, "m.veg")
-# summ.clim = summ_coefs(m.clim, "m.clim")
-# summ.climvel = summ_coefs(m.climvel, "m.climvel")
-# summ.vegclim = summ_coefs(m.vegclim, "m.vegclim")
-# summ.vegclimvel = summ_coefs(m.vegclimvel, "m.vegclimvel")
-# summ.climclimvel = summ_coefs(m.climclimvel, "m.climclimvel")
-# summ.all = summ_coefs(m.all, "m.all")
-# 
-# summ.m = rbind(summ.veg, summ.clim, summ.climvel,
-#                summ.vegclim, summ.vegclimvel, summ.climclimvel, summ.all)
-# 
-# ggplot(summ.m %>% filter(term != "(Intercept)"), aes(est, xmin = est-se*1.96, xmax = est+se*1.96, y = term, color = modname)) +
-#   geom_pointrange(position = position_dodge2(width = 0.5)) +
-#   geom_vline(xintercept = 0, linetype = "dashed") +
-#   scale_color_brewer(palette = "Dark2")
+m.noclimvel_nopoly$sum_loglik
 
 
 # Refit best model using all the data ------------------------------------------
 control = sdmTMBcontrol(nlminb_loops = 2)
-m.final = sdmTMB(formula = update(f1, . ~ . + (1|ecoregion)),
+m.final = sdmTMB(formula = update(f1, . ~ . -I(tmax_warm^2) + (1|ecoregion)),
                  data = dat,
                  mesh = mesh300km,
                  family = Beta(),
                  spatial = "on",
                  reml = T,
+                 spatial_varying = ~ 0 + canopy_height,
                  control = control)
 
 m.final
