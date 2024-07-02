@@ -274,7 +274,11 @@ test3$ln_phi
 test4$ln_phi
 test5$ln_phi
 
-
+test1$ln_tau_G
+test2$ln_tau_G
+test3$ln_tau_G
+test4$ln_tau_G
+test5$ln_tau_G
 
 m.nopoly = sdmTMB_cv(formula = update(f1, ~ . -I(tmax_warm^2) +(1|ecoregion)),
                      data = dat,
@@ -323,18 +327,10 @@ m.final = sdmTMB(formula = update(f1, . ~ . + (1|ecoregion)),
                       spatial = "on",
                       reml = T,
                       spatial_varying = ~ 0 + canopy_height,
-                      control = sdmTMBcontrol(start = list(ln_phi = -0.84), nlminb_loops = 2))
-m.spatialvar
-sanity(m.spatialvar)
+                      control = sdmTMBcontrol(start = list(ln_phi = -0.84, ln_tau_G = as.matrix(-0.03)), nlminb_loops = 2, eval.max = 4000, iter.max = 2000))
+m.final
+sanity(m.final)
 
-m.spatialvar.pred = predict(m.spatialvar, type = "response")
-coefs <- tidy(m.spatialvar, conf.int = TRUE)
-canopy_height_coef <- coefs$estimate[coefs$term == "canopy_height"]
-
-ggplot(m.spatialvar.pred, aes(x = x*1e5, y = y*1e5, fill = canopy_height_coef + zeta_s_canopy_height)) +
-  geom_tile() +
-  coord_sf(crs = "+proj=cea +datum = WGS84") +
-  scale_fill_continuous_divergingx("spectral", limits = c(-2,4.3))
 ##################################
 
 pred <- predict(m.final)

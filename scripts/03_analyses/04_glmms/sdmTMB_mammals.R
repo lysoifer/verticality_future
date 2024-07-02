@@ -69,6 +69,8 @@ dat = dat.t %>%
             .funs = function(x) scale(x)[,1]) %>% 
   dplyr::select(!precip_dry)
 
+save(dat, file = "scripts/03_analyses/00_testing_ideas/test_mesh_dat_mammals.RData")
+
 
 # scale future data
 dat.f = dat.f %>% 
@@ -131,6 +133,13 @@ dat$biorealm = factor(paste(dat$biome, dat$realm, sep = "_"))
 # use 300km mesh - relatively fine with reasonable fitting speed
 mesh300km = make_mesh(data = dat, xy_cols = c("x", "y"), cutoff = 3)
 plot(mesh300km)
+
+mesh400km = make_mesh(data = dat, xy_cols = c("x", "y"), cutoff = 4)
+plot(mesh400km)
+
+mesh100km = make_mesh(data = dat, xy_cols = c("x", "y"), cutoff = 1)
+plot(mesh100km)
+
 
 # set up five random folds for cross validation
 folds = sample(1:5, size = nrow(dat), replace = T)
@@ -329,6 +338,46 @@ m.final = sdmTMB(formula = update(f1, . ~ . -I(tmax_warm) - log_clim_velocity + 
 
 m.final
 sanity(m.final)
+
+
+m.final.400 = sdmTMB(formula = update(f1, . ~ . -I(tmax_warm) - log_clim_velocity + (1|ecoregion)),
+                 data = dat,
+                 mesh = mesh400km,
+                 spatial = "on",
+                 reml = T,
+                 spatial_varying = ~ 0 + canopy_height,
+                 control = sdmTMBcontrol(nlminb_loops = 2, start = list(ln_phi = 0.07)))
+
+m.final.400
+sanity(m.final.400)
+
+pred.400 = predict(m.final.400)
+ggplot(pred.400, aes(x = x*1e5, y = y*1e5, fill = zeta_s_canopy_height)) + 
+  geom_tile() +
+  scale_fill_continuous_divergingx("BrBG", na.value = "gray") +
+  coord_sf(crs = "+proj=cea + datum=WGS84") +
+  theme_classic()
+
+
+m.final.100 = sdmTMB(formula = update(f1, . ~ . -I(tmax_warm) - log_clim_velocity + (1|ecoregion)),
+                     data = dat,
+                     mesh = mesh100km,
+                     spatial = "on",
+                     reml = T,
+                     spatial_varying = ~ 0 + canopy_height,
+                     control = sdmTMBcontrol(nlminb_loops = 2, start = list(ln_phi = -1)))
+sdmTMB::run_extra_optimization(m.final.100)
+m.final.100
+sanity(m.final.100)
+
+pred.100 = predict(m.final.100)
+ggplot(pred.100, aes(x = x*1e5, y = y*1e5, fill = zeta_s_canopy_height)) + 
+  geom_tile() +
+  scale_fill_continuous_divergingx("BrBG", na.value = "gray") +
+  coord_sf(crs = "+proj=cea + datum=WGS84") +
+  theme_classic()
+
+
 
 pred <- predict(m.final)
 s_m.final = simulate(m.final, nsim = 500, seed = 12345, type = "mle-mvn")
