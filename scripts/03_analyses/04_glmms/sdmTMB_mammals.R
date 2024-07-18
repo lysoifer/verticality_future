@@ -11,9 +11,12 @@ library(terra)
 library(car)
 library(data.table)
 library(DHARMa)
+library(fmesher)
 
 # mammals forest only 50km resolution
 raw = read.csv("data/derivative_data/gridcell_data/env_forest/50_km/mammals_comdat.csv")
+v = vect("data/original/rnaturalearth_world.shp")
+v = project(v, "+proj=cea +datum=WGS84")
 
 # remove cells with fewer than five species
 raw = raw %>% 
@@ -28,7 +31,7 @@ env.f = rast(list.files(path = "data/derivative_data/resampled_env_rasters_50km/
 env.f = env.f[[2:6]]
 
 dat.f = raw %>% 
-  dplyr::select(x,y,canopy_height, veg_den, clim_velocity, ecoregion)
+  dplyr::select(x,y,canopy_height, veg_den, clim_velocity, realm)
 
 env.f = terra::extract(env.f, dat.f[,c('x', "y")], ID = F)
 
@@ -111,136 +114,355 @@ vif(lm(vert.mean.ses ~ canopy_height + veg_den + tmax_warm + tmin_cold  + precip
 vif(lm(vert.mean.ses ~ canopy_height + veg_den + tmax_warm + tmin_cold  + precip_wet + log_precip_dry + log_clim_velocity, data = dat))
 
 
-# VIF all under 4
+# VIF all under 5
 
 f1 = formula(vert.mean.ses ~ canopy_height + veg_den + I(tmax_warm^2) + tmax_warm + tmin_cold + precip_wet + log_precip_dry + log_clim_velocity)
 
-
-# Cross validation --------------------------------------------------------
-
-# compare random effects structure using cross validation
-# preliminary assessment indicated that residuals displayed strong spatial autocorrelation when
-# spatial effects were not accounted for in any way and when biome or biorealm were included as random intercepts in the model
-
-# set up spatial mesh
 dat$x = dat$x/1e5
 dat$y = dat$y/1e5
 dat$ecoregion = factor(dat$ecoregion)
 dat$biome = factor(dat$biome)
 dat$biorealm = factor(paste(dat$biome, dat$realm, sep = "_"))
+dat$realm = factor(dat$realm)
+
+dat.f$realm = factor(dat.f$realm)
+dat.f$x = dat.f$x/1e5
+dat.f$y = dat.f$y/1e5
 
 
-# use 300km mesh - relatively fine with reasonable fitting speed
-mesh300km = make_mesh(data = dat, xy_cols = c("x", "y"), cutoff = 3)
-plot(mesh300km)
+# SES VERT ----------------------------------------------------------------
 
-mesh400km = make_mesh(data = dat, xy_cols = c("x", "y"), cutoff = 4)
-plot(mesh400km)
+# * - Set up mesh for analysis ------------------------------------------------
 
-mesh100km = make_mesh(data = dat, xy_cols = c("x", "y"), cutoff = 1)
-plot(mesh100km)
+# set up spatial mesh
 
+# first estimate range of spatial autocorrelation
+samp = dat %>% sample_n(1000)
+samp.cor = ncf::correlog(x = samp$x, y = samp$y, z = samp$vert.mean.ses, increment = 50000/1e5, resamp = 99)
+ncf:::plot.correlog(samp.cor)
+ncf:::plot.correlog(samp.cor, xlim = c(0,100))
+
+# set initial range as 30 and max.edge as range/5
+# https://haakonbakkagit.github.io/btopic104.html
+# Bakka, H., J. Vanhatalo, J. Illian, D. Simpson, and H. Rue. 2016. “Accounting for Physical Barriers in Species Distribution Modeling with Non-Stationary Spatial Random Effects.” arXiv preprint arXiv:1608.03787. Norwegian University of Science; Technology, Trondheim, Norway. 
+
+fitmesh = fit_mesh(f1, dat, range = 30, v = v)
+
+mesh = fitmesh$meshes[[length(fitmesh$meshes)]]
+
+
+# * - Compare models with AIC -------------------------------------------------
+
+# Compare models using all points with AIC
+
+compMods_aic = compareMods_AIC(f1, dat, mesh, taxon = "Mammals", response_var = "SES verticality")
+sanity(compMods_aic$mods[[1]])
+sanity(compMods_aic$mods[[2]])
+sanity(compMods_aic$mods[[3]])
+sanity(compMods_aic$mods[[4]])
+
+compMods_aic[[2]]
+save(compMods_aic, file = "results/sdmTMB_models/model_selection/mammals_sesvert.RData")
+load("results/sdmTMB_models/model_selection/mammals_sesvert.RData")
+
+compMods_aic[[2]]
+
+# * - Cross validation --------------------------------------------------------
+
+# compare random effects structure using cross validation
+# random effects include random intercept, spatial random field, and spatially varying coefficient
+# spatial random field and spatially varying coefficient both depend on mesh
+# preliminary assessment indicated that residuals displayed strong spatial autocorrelation when
+# spatial effects were not accounted for in any way and when biome or biorealm were included as random intercepts in the model
 
 # set up five random folds for cross validation
+set.seed(2345)
 folds = sample(1:5, size = nrow(dat), replace = T)
 
-# 1: fit random intercept of ecoregion without spatial random field
-library(future)
-plan(multisession)
+compMods_cv = compare_cv(f1, dat, mesh, folds, parallel = F, taxon = "Mammals", response_var = "SES Verticality")
 
-mod.ecoregion.cv = sdmTMB_cv(update(f1, ~ . + (1|ecoregion)), 
-                             data = dat,
-                             mesh = mesh300km,
-                             spatial = "off",
-                             reml = T, 
-                             fold_ids = folds,
-                             k_folds = length(unique(folds)))
-mod.ecoregion.cv$converged
-lapply(mod.ecoregion.cv$models, sanity)
-# all okay
+save(compMods_aic, compMods_cv, file = "results/sdmTMB_models/model_selection/mammals_sesvert.RData")
+compMods_cv$compMods_cv
 
-mod.mesh.cv = sdmTMB_cv(f1, 
-                        data = dat,
-                        mesh = mesh300km,
-                        spatial = "on",
-                        reml = T, 
-                        fold_ids = folds,
-                        k_folds = length(unique(folds)))
+# * - residual check ----------------------------------------------------------
 
-mod.mesh.cv$converged
-lapply(mod.mesh.cv$models, sanity)
-# all okay
+load("results/sdmTMB_models/model_selection/mammals_sesvert.RData")
 
-mod.mesh.biome.cv = sdmTMB_cv(update(f1, ~ . +(1|biome)), 
-                              data = dat,
-                              mesh = mesh300km,
-                              spatial = "on",
-                              reml = T, 
-                              fold_ids = folds,
-                              k_folds = length(unique(folds)),
-                              parallel = T)
+plot_resids(mod = compMods_aic$mods$mod.realm.svc, response_var = "vert.mean.ses", fpath = "figures/residual_checks/mammals_sesvert")
 
-mod.mesh.biome.cv$converged
-lapply(mod.mesh.biome.cv$models, sanity)
-# issues with gradient in 2,3
+# * - plot model coefs for comparison models ---------------------------
 
-mod.mesh.biorealm.cv = sdmTMB_cv(update(f1, ~ . +(1|biorealm)), 
-                                 data = dat,
-                                 mesh = mesh300km,
-                                 spatial = "on",
-                                 reml = T, 
-                                 fold_ids = folds,
-                                 k_folds = length(unique(folds)),
-                                 parallel = T)
+plot_compMods_coefs(mods = compMods_aic$mods, fname = "figures/model_selection/mammals_sesvert.png")
 
-mod.mesh.biorealm.cv$converged
-lapply(mod.mesh.biorealm.cv$models, sanity)
-# all okay
+# * - predict svc + realm model to the future ---------------------------------------
 
-mod.mesh.ecoregion.cv = sdmTMB_cv(update(f1, ~ . +(1|ecoregion)), 
-                                  data = dat,
-                                  mesh = mesh300km,
-                                  spatial = "on",
-                                  reml = T, 
-                                  fold_ids = folds,
-                                  k_folds = length(unique(folds)),
-                                  control = sdmTMBcontrol(nlminb_loops = 2))
+predict_future(mod = compMods_aic$mods$mod.realm.svc, newdata = dat.f, type = "response",
+               fpath = "results/sdmTMB_models/mammals_sesvert.RData")
 
-mod.mesh.ecoregion.cv$converged
-lapply(mod.mesh.ecoregion.cv$models, sanity)
-# issues with gradient in  1,3,4
+load("results/sdmTMB_models/mammals_sesvert.RData")
+ggplot(pred.f, aes(x, y, fill = est.dif)) +
+  geom_tile() +
+  scale_fill_continuous_divergingx("spectral") +
+  coord_sf(crs = "+proj=cea +datum=WGS84") +
+  theme_classic()
 
-test1 = mod.mesh.ecoregion.cv$models[[2]]$tmb_obj$env$parList()
-test2 = mod.mesh.ecoregion.cv$models[[5]]$tmb_obj$env$parList()
-test1$ln_tau_O
-test2$ln_tau_O
-test1$ln_phi
-test2$ln_phi
+tidy(compMods_aic$mods$mod.realm.svc)
+plot_spatial_varying(mod = compMods_aic$mods$mod.realm.svc, var = "canopy_height", v, "coefficient")
+
+ggplot() +
+  geom_spatvector(data = v, fill = NA, color = "black") +
+  geom_tile(data = pred, aes(x, y, fill = zeta_s_canopy_height + 0.108)) +
+  #geom_spatvector(data = v, fill = NA, color = "black") +
+  scale_fill_continuous_divergingx("BrBg") +
+  coord_sf(crs = "+proj=cea +datum=WGS84") +
+  theme_classic()
+# OLD CODE ----------------------------------------------------------------
+# * - now in function comp_cv -------------------------------------------------
 
 
-# compare sum_logLik
-mod.ecoregion.cv$sum_loglik
-mod.mesh.cv$sum_loglik
-mod.mesh.biome.cv$sum_loglik
-mod.mesh.biorealm.cv$sum_loglik
-mod.mesh.ecoregion.cv3$sum_loglik # performed best
+# # 1: fit random intercept of ecoregion without spatial random field
+# library(future)
+# plan(multisession)
+# 
+# # model with no svc or random intercept
+# all_ok = FALSE
+# iter = 1
+# while(sum(all_ok) < 5  & iter <= 5) {
+#   if(iter == 1) {
+#     #plan(multisession)
+#     mod.cv = sdmTMB_cv(f1, 
+#                        data = dat,
+#                        mesh = mesh,
+#                        spatial = "on",
+#                        reml = T, 
+#                        fold_ids = folds,
+#                        k_folds = length(unique(folds)),
+#                        control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000),
+#                        parallel = F,
+#                        use_initial_fit = T)
+#     #plan(sequential)
+#   } else {
+#     #plan(multisession)
+#     mod.cv = sdmTMB_cv(f1, 
+#                        data = dat,
+#                        mesh = mesh,
+#                        spatial = "on",
+#                        reml = T, 
+#                        fold_ids = folds,
+#                        k_folds = length(unique(folds)),
+#                        control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000,
+#                                                start = list(ln_phi = ln_phi, 
+#                                                             ln_tau_o = ln_tau_o,
+#                                                             ln_kappa = ln_kappa)),
+#                        future_globals = c("ln_phi", "ln_tau_o", "ln_kappa"),
+#                        parallel = F,
+#                        use_initial_fit = T)
+#     #plan(sequential)
+#   }
+#   all_ok = lapply(mod.cv$models, sanity)
+#   all_ok = sapply(all_ok, "[[", "all_ok")
+#   pars = lapply(mod.cv$models, get_pars)
+#   ln_phi = mean(sapply(pars, "[[", "ln_phi"))
+#   ln_tau_o = mean(sapply(pars, "[[", "ln_tau_O"))
+#   ln_kappa = sapply(pars, "[[", "ln_kappa")
+#   ln_kappa = matrix(apply(ln_kappa, 1, mean), nrow = 2)
+#   iter = iter+1
+#   gc()
+# }
+# mod.cv_ok = all_ok
+# 
+# 
+# 
+# all_ok = FALSE
+# iter = 1
+# while(sum(all_ok) < 5  & iter <= 5) {
+#   if(iter == 1) {
+#     # run model first time
+#     #plan(multisession)
+#     mod.svc.cv = sdmTMB_cv(f1, 
+#                            data = dat,
+#                            mesh = mesh,
+#                            spatial = "on",
+#                            reml = T, 
+#                            spatial_varying = ~ 0 + canopy_height,
+#                            fold_ids = folds,
+#                            k_folds = length(unique(folds)),
+#                            control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000),
+#                            parallel = F)
+#     #plan(sequential)
+#   } else {
+#     # if model is not ok and has to run a second time
+#     # set ln_phi to the estimation of ln_phi from the previous model
+#     #plan(multisession)
+#     mod.svc.cv = sdmTMB_cv(f1, 
+#                            data = dat,
+#                            mesh = mesh,
+#                            spatial = "on",
+#                            reml = T, 
+#                            spatial_varying = ~ 0 + canopy_height,
+#                            fold_ids = folds,
+#                            k_folds = length(unique(folds)),
+#                            control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000,
+#                                                    start = list(ln_phi = ln_phi, 
+#                                                                 ln_tau_o = ln_tau_o,
+#                                                                 ln_kappa = ln_kappa)),
+#                                  future_globals = c("ln_phi", "ln_tau_o", "ln_kappa"),
+#                            parallel = F)
+#     #plan(sequential)
+#   }
+#   
+#   all_ok = lapply(mod.svc.cv$models, sanity)
+#   all_ok = sapply(all_ok, "[[", "all_ok")
+#   pars = lapply(mod.svc.cv$models, get_pars)
+#   ln_phi = mean(sapply(pars, "[[", "ln_phi"))
+#   ln_tau_o = mean(sapply(pars, "[[", "ln_tau_O"))
+#   ln_kappa = sapply(pars, "[[", "ln_kappa")
+#   ln_kappa = matrix(apply(ln_kappa, 1, mean), nrow = 2)
+#   iter = iter+1
+#   gc()
+# }
+# mod.svc.cv_ok = all_ok
+# 
+# # model with realm but no svc
+# all_ok = FALSE
+# iter = 1
+# while(sum(all_ok) < 5  & iter <= 5) {
+#   if(iter == 1) {
+#     #plan(multisession)
+#       mod.realm.cv = sdmTMB_cv(update(f1, ~ . + (1|realm)), 
+#                            data = dat,
+#                            mesh = mesh,
+#                            spatial = "on",
+#                            reml = T, 
+#                            fold_ids = folds,
+#                            k_folds = length(unique(folds)),
+#                            control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000),
+#                            parallel = F)
+#       #plan(sequential)
+#   } else {
+#     #plan(multisession)
+#     mod.realm.cv = sdmTMB_cv(update(f1, ~ . + (1|realm)), 
+#                              data = dat,
+#                              mesh = mesh,
+#                              spatial = "on",
+#                              reml = T, 
+#                              fold_ids = folds,
+#                              k_folds = length(unique(folds)),
+#                              control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000,
+#                                                      start = list(ln_phi = 0.1,
+#                                                                   ln_tau_O = ln_tau_o,
+#                                                                   ln_kappa = ln_kappa)),
+#                              parallel = F)
+#     #plan(sequential)
+#   }
+#   all_ok = lapply(mod.realm.cv$models, sanity)
+#   all_ok = sapply(all_ok, "[[", "all_ok")
+#   pars = lapply(mod.realm.cv$models, get_pars)
+#   ln_phi = mean(sapply(pars, "[[", "ln_phi"))
+#   ln_tau_o = mean(sapply(pars, "[[", "ln_tau_O"))
+#   ln_kappa = sapply(pars, "[[", "ln_kappa")
+#   ln_kappa = matrix(apply(ln_kappa, 1, mean), nrow = 2)
+#   iter = iter+1
+#   gc()
+# }
+# mod.realm.cv_ok = all_ok
+# 
+# 
+# # model with realm and svc
+# # model with realm and svc
+# all_ok = FALSE
+# iter = 1
+# while(sum(all_ok) < 5  & iter <= 2) {
+#   if(iter == 1) {
+#     # run model first time
+#     #plan(multisession)
+#     mod.realm.svc.cv = sdmTMB_cv(update(f1, ~ . + (1|realm)), 
+#                            data = dat,
+#                            mesh = mesh,
+#                            spatial = "on",
+#                            reml = T, 
+#                            spatial_varying = ~ 0 + canopy_height,
+#                            fold_ids = folds,
+#                            k_folds = length(unique(folds)),
+#                            control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000),
+#                            parallel = F)
+#     #plan(sequential)
+#   } else {
+#     # if model is not ok and has to run a second time
+#     # set ln_phi to the estimation of ln_phi from the previous model
+#     #plan(multisession)
+#     mod.realm.svc.cv = sdmTMB_cv(update(f1, ~ . + (1|realm)), 
+#                            data = dat,
+#                            mesh = mesh,
+#                            spatial = "on",
+#                            reml = T, 
+#                            spatial_varying = ~ 0 + canopy_height,
+#                            fold_ids = folds,
+#                            k_folds = length(unique(folds)),
+#                            control = sdmTMBcontrol(eval.max = 8000, iter.max = 4000,
+#                                                    start = list(ln_phi = ln_phi,
+#                                                                 ln_tau_O = ln_tau_o,
+#                                                                 ln_kappa = ln_kappa)),
+#                            parallel = F)
+#     #plan(sequential)
+#   }
+#   
+#   all_ok = lapply(mod.realm.svc.cv$models, sanity)
+#   all_ok = sapply(all_ok, "[[", "all_ok")
+#   pars = lapply(mod.realm.svc.cv$models, get_pars)
+#   ln_phi = mean(sapply(pars, "[[", "ln_phi"))
+#   ln_tau_o = mean(sapply(pars, "[[", "ln_tau_O"))
+#   ln_kappa = sapply(pars, "[[", "ln_kappa")
+#   ln_kappa = matrix(apply(ln_kappa, 1, mean), nrow = 2)
+#   iter = iter+1
+#   gc()
+# 
+# }
+# mod.realm.svc.cv_ok = all_ok
+# 
+# # since some of the folds did not converge, get average fold logLik across the models that did converge
+# mod.cv_ll = sum(mod.cv$fold_loglik[mod.cv_ok])/sum(mod.cv_ok)
+# mod.realm.cv_ll = sum(mod.realm.cv$fold_loglik[mod.realm.cv_ok])/sum(mod.realm.cv_ok)
+# mod.svc.cv_ll = sum(mod.svc.cv$fold_loglik[mod.svc.cv_ok])/sum(mod.svc.cv_ok)
+# mod.realm.svc.cv_ll = sum(mod.realm.svc.cv$fold_loglik[mod.realm.svc.cv_ok])/sum(mod.realm.svc.cv_ok)
+# 
+# comp_ll = data.frame(model = c("mod", "mod.realm", "mod.svc", "mod.realm.svc"),
+#                      avg_logLik = c(mod.cv_ll, mod.realm.cv_ll, mod.svc.cv_ll, mod.realm.svc.cv_ll)) %>% 
+#   arrange(avg_logLik)
+# 
+# 
+# 
+# 
+# 
+# # compare sum_logLik
+# compare_mods = sort(c(mesh = mod.mesh.cv$sum_loglik,
+#   svc = mod.svc.cv$sum_loglik,
+#   #ecoregion = mod.ecoregion.cv$sum_loglik,
+#   #svc.ecoregion = mod.ecoregion.svc.cv$sum_loglik),
+#   realm = mod.realm.cv$sum_loglik,
+#   svc.realm = mod.realm.svc.cv$sum_loglik))
+# 
 
-mod.mesh.spatialvar.cv = sdmTMB_cv(update(f1, ~ . +(1|ecoregion)), 
-                                  data = dat,
-                                  mesh = mesh300km,
-                                  spatial = "on",
-                                  reml = T, 
-                                  fold_ids = folds,
-                                  k_folds = length(unique(folds)),
-                                  spatial_varying = ~ 0 + canopy_height,
-                                  control = sdmTMBcontrol(nlminb_loops = 2))
 
-mod.mesh.spatialvar.cv$converged
-lapply(mod.mesh.spatialvar.cv$models, sanity)
+pred.ecoregion = predict(mod.ecoregion.cv$models[[1]])
+head(pred.ecoregion)
+ranef = ranef(mod.ecoregion.cv$models[[1]], conVar = T)
+g = levels(dat$ecoregion)
+summary(mod.ecoregion.cv$models[[1]])
+print(ranef, simplify= F)
 
-mod.mesh.ecoregion.cv$sum_loglik
-mod.mesh.spatialvar.cv$sum_loglik # best
+ranef = glmmTMB::ranef(mod.ecoregion.cv$models[[1]])
 
+test = plot_spatial_varying(mod.svc.cv$models[[1]], "canopy_heigt", v, "coef")
+test = plot_spatial_varying(mod.ecoregion.svc.cv$models[[1]], "canopy_height", v, "coef")
+
+mod.ecoregion.cv$models[[1]]
+mod.ecoregion.svc.cv$models[[1]]
+mod.svc.cv$models[[1]]
+
+pred.svc = predict(mod.ecoregion.cv$models[[1]])
+plot(pred.svc$est, pred.svc$vert.mean.ses)
+abline(a = 0, b = 1, col = "red")
 
 summ_coefs = function(x, nm){
   mods = x$models
@@ -256,6 +478,8 @@ summ_coefs = function(x, nm){
     mutate(modname = nm)
   return(mods)
 }
+
+
 
 mod.ecoregion.summ = summ_coefs(mod.ecoregion.cv, "mod.ecoregion")
 mod.mesh.summ = summ_coefs(mod.mesh.cv, "mod.mesh")
@@ -272,172 +496,122 @@ ggplot(mods %>% filter(term != "(Intercept)")) +
 
 
 
-# Compare models with different fixed effects -----------------------------
+# * - Compare models with different fixed effects (DON'T TEST FOR FIXED EFFECTS) -----------------------------
 
-m.full = sdmTMB_cv(formula = update(f1, ~ . +(1|ecoregion)),
-                   data = dat,
-                   mesh = mesh300km,
-                   spatial = "on",
-                   reml = F, 
-                   fold_ids = folds,
-                   spatial_varying = ~ 0 + canopy_height,
-                   k_folds = length(unique(folds)))
-m.full$converged
-lapply(m.full$models, sanity)
-# all okay
-
-
-m.nopoly = sdmTMB_cv(formula = update(f1, ~ . -I(tmax_warm^2) +(1|ecoregion)),
-                     data = dat,
-                     mesh = mesh300km,
-                     spatial = "on",
-                     reml = F, 
-                     fold_ids = folds,
-                     spatial_varying = ~ 0 + canopy_height,
-                     k_folds = length(unique(folds)))
-m.nopoly$converged
-lapply(m.nopoly$models, sanity)
-
-m.noclimvel = sdmTMB_cv(formula = update(f1, ~ . -log_clim_velocity +(1|ecoregion)),
-                        data = dat,
-                        mesh = mesh300km,
-                        spatial = "on",
-                        reml = F, 
-                        fold_ids = folds,
-                        spatial_varying = ~ 0 + canopy_height,
-                        k_folds = length(unique(folds)))
-m.noclimvel$converged
-lapply(m.noclimvel$models, sanity)
-
-m.noclimvel_nopoly = sdmTMB_cv(formula = update(f1, ~ . -I(tmax_warm^2) -log_clim_velocity +(1|ecoregion)),
-                        data = dat,
-                        mesh = mesh300km,
-                        spatial = "on",
-                        reml = F, 
-                        fold_ids = folds,
-                        spatial_varying = ~ 0 + canopy_height,
-                        k_folds = length(unique(folds)))
-m.noclimvel_nopoly$converged
-lapply(m.noclimvel_nopoly$models, sanity)
-
-m.full$sum_loglik 
-m.nopoly$sum_loglik
-m.noclimvel$sum_loglik 
-m.noclimvel_nopoly$sum_loglik # performs best
-
-
-# Refit best model using all the data ------------------------------------------
-control = sdmTMBcontrol(nlminb_loops = 2)
-m.final = sdmTMB(formula = update(f1, . ~ . -I(tmax_warm) - log_clim_velocity + (1|ecoregion)),
-                 data = dat,
-                 mesh = mesh300km,
-                 spatial = "on",
-                 reml = T,
-                 spatial_varying = ~ 0 + canopy_height,
-                 control = control)
-
-m.final
-sanity(m.final)
+# m.full = sdmTMB_cv(formula = update(f1, ~ . +(1|ecoregion)),
+#                    data = dat,
+#                    mesh = mesh300km,
+#                    spatial = "on",
+#                    reml = F, 
+#                    fold_ids = folds,
+#                    spatial_varying = ~ 0 + canopy_height,
+#                    k_folds = length(unique(folds)))
+# m.full$converged
+# lapply(m.full$models, sanity)
+# # all okay
+# 
+# 
+# m.nopoly = sdmTMB_cv(formula = update(f1, ~ . -I(tmax_warm^2) +(1|ecoregion)),
+#                      data = dat,
+#                      mesh = mesh300km,
+#                      spatial = "on",
+#                      reml = F, 
+#                      fold_ids = folds,
+#                      spatial_varying = ~ 0 + canopy_height,
+#                      k_folds = length(unique(folds)))
+# m.nopoly$converged
+# lapply(m.nopoly$models, sanity)
+# 
+# m.noclimvel = sdmTMB_cv(formula = update(f1, ~ . -log_clim_velocity +(1|ecoregion)),
+#                         data = dat,
+#                         mesh = mesh300km,
+#                         spatial = "on",
+#                         reml = F, 
+#                         fold_ids = folds,
+#                         spatial_varying = ~ 0 + canopy_height,
+#                         k_folds = length(unique(folds)))
+# m.noclimvel$converged
+# lapply(m.noclimvel$models, sanity)
+# 
+# m.noclimvel_nopoly = sdmTMB_cv(formula = update(f1, ~ . -I(tmax_warm^2) -log_clim_velocity +(1|ecoregion)),
+#                         data = dat,
+#                         mesh = mesh300km,
+#                         spatial = "on",
+#                         reml = F, 
+#                         fold_ids = folds,
+#                         spatial_varying = ~ 0 + canopy_height,
+#                         k_folds = length(unique(folds)))
+# m.noclimvel_nopoly$converged
+# lapply(m.noclimvel_nopoly$models, sanity)
+# 
+# m.full$sum_loglik 
+# m.nopoly$sum_loglik
+# m.noclimvel$sum_loglik 
+# m.noclimvel_nopoly$sum_loglik # performs best
 
 
-m.final.400 = sdmTMB(formula = update(f1, . ~ . -I(tmax_warm) - log_clim_velocity + (1|ecoregion)),
-                 data = dat,
-                 mesh = mesh400km,
-                 spatial = "on",
-                 reml = T,
-                 spatial_varying = ~ 0 + canopy_height,
-                 control = sdmTMBcontrol(nlminb_loops = 2, start = list(ln_phi = 0.07)))
-
-m.final.400
-sanity(m.final.400)
-
-pred.400 = predict(m.final.400)
-ggplot(pred.400, aes(x = x*1e5, y = y*1e5, fill = zeta_s_canopy_height)) + 
-  geom_tile() +
-  scale_fill_continuous_divergingx("BrBG", na.value = "gray") +
-  coord_sf(crs = "+proj=cea + datum=WGS84") +
-  theme_classic()
-
-
-m.final.100 = sdmTMB(formula = update(f1, . ~ . -I(tmax_warm) - log_clim_velocity + (1|ecoregion)),
-                     data = dat,
-                     mesh = mesh100km,
-                     spatial = "on",
-                     reml = T,
-                     spatial_varying = ~ 0 + canopy_height,
-                     control = sdmTMBcontrol(nlminb_loops = 2, start = list(ln_phi = -1)))
-sdmTMB::run_extra_optimization(m.final.100)
-m.final.100
-sanity(m.final.100)
-
-pred.100 = predict(m.final.100)
-ggplot(pred.100, aes(x = x*1e5, y = y*1e5, fill = zeta_s_canopy_height)) + 
-  geom_tile() +
-  scale_fill_continuous_divergingx("BrBG", na.value = "gray") +
-  coord_sf(crs = "+proj=cea + datum=WGS84") +
-  theme_classic()
+# * - Refit best model using all the data ------------------------------------------
+# control = sdmTMBcontrol(nlminb_loops = 2)
+# m.final = sdmTMB(formula = update(f1, . ~ . -I(tmax_warm) - log_clim_velocity + (1|ecoregion)),
+#                  data = dat,
+#                  mesh = mesh300km,
+#                  spatial = "on",
+#                  reml = T,
+#                  spatial_varying = ~ 0 + canopy_height,
+#                  control = control)
+# 
+# m.final
+# sanity(m.final)
 
 
 
-pred <- predict(m.final)
-s_m.final = simulate(m.final, nsim = 500, seed = 12345, type = "mle-mvn")
-r_m.final <- DHARMa::createDHARMa(
-  simulatedResponse = s_m.final,
-  observedResponse = dat$vert.mean.ses,
-  fittedPredictedResponse = pred$est_non_rf
-)
+# * - residual tests ----------------------------------------------------------
 
-r_m.final <- DHARMa::createDHARMa(
-  simulatedResponse = s_m.final,
-  observedResponse = dat$vert.mean.ses,
-  fittedPredictedResponse = pred$est
-)
+#pred <- predict(m.final)
+# s_m.final = simulate(m.final, nsim = 500, seed = 12345, type = "mle-mvn")
+# r_m.final <- DHARMa::createDHARMa(
+#   simulatedResponse = s_m.final,
+#   observedResponse = dat$vert.mean.ses,
+#   fittedPredictedResponse = pred$est_non_rf
+# )
+# 
+# r_m.final <- DHARMa::createDHARMa(
+#   simulatedResponse = s_m.final,
+#   observedResponse = dat$vert.mean.ses,
+#   fittedPredictedResponse = pred$est
+# )
+# 
+# plot(r_m.final)
+# testQuantiles(r_m.final)
+# testResiduals(r_m.final)
+# plotResiduals(r_m.final, rank = F, form = dat$vert.mean.ses)
+# plot(dat$vert.mean.ses, pred$est_non_rf)
+# abline(a=0, b=1, col = "red")
+# plot(dat$vert.mean.ses, pred$est)
+# abline(a=0, b=1, col = "red")
+# 
+# # need to subset predictions to calculate spatial autocorrelation - otherwise there are too many points
+# sub = sample(1:nrow(s_m.final), 10000)
+# r_m.final.sub = DHARMa::createDHARMa(
+#   simulatedResponse = s_m.final[sub,],
+#   observedResponse = dat$vert.mean.ses[sub],
+#   fittedPredictedResponse = pred$est_non_rf[sub]
+# )
+# testSpatialAutocorrelation(r_m.final.sub, x = dat$x[sub], y = dat$y[sub])
+# 
 
-plot(r_m.final)
-testQuantiles(r_m.final)
-testResiduals(r_m.final)
-plotResiduals(r_m.final, rank = F, form = dat$vert.mean.ses)
-plot(dat$vert.mean.ses, pred$est_non_rf)
-abline(a=0, b=1, col = "red")
-plot(dat$vert.mean.ses, pred$est)
-abline(a=0, b=1, col = "red")
 
-# need to subset predictions to calculate spatial autocorrelation - otherwise there are too many points
-sub = sample(1:nrow(s_m.final), 10000)
-r_m.final.sub = DHARMa::createDHARMa(
-  simulatedResponse = s_m.final[sub,],
-  observedResponse = dat$vert.mean.ses[sub],
-  fittedPredictedResponse = pred$est_non_rf[sub]
-)
-testSpatialAutocorrelation(r_m.final.sub, x = dat$x[sub], y = dat$y[sub])
-
-
-
-# predict models to future env data ---------------------------------------
-dat.f$ecoregion = factor(dat.f$ecoregion)
-dat.f$x = dat.f$x/1e5
-dat.f$y = dat.f$y/1e5
-
-pred.f = predict(m.final, newdata = dat.f, type = "response")
-head(pred.f)
-
-pred = predict(m.final, type = "response")
-
-pred.f$est.dif = pred.f$est - pred$est
-
-ggplot() +
-  geom_tile(data = pred.f, aes(x*1e5, y*1e5, fill = est.dif)) +
-  scale_fill_continuous_divergingx("spectral") +
-  coord_sf(crs = "+proj=cea +datum=WGS84")
-
-save(m.final, pred, pred.f, file = "results/sdmTMB_models/mammals_sesvert.RData")
 
 
 # MEAN VERTICALITY --------------------------------------------------------
 
-head(dat)
 ls = ls()
-rm(list = ls[-c(2,3)])
+a = which(ls == "dat" | ls == "dat.f")
+rm(list = ls[-a])
+
+v = vect("data/original/rnaturalearth_world.shp")
+v = project(v, "+proj=cea +datum=WGS84")
+f1 = formula(vert.mean ~ canopy_height + veg_den + I(tmax_warm^2) + tmax_warm + tmin_cold + precip_wet + log_precip_dry + log_clim_velocity)
 
 # plot relationship between mean verticality and env predictors
 dat %>% 
@@ -449,271 +623,349 @@ dat %>%
   theme_classic()
 
 
+# Set up mesh for analysis ------------------------------------------------
 
-mesh300km = make_mesh(data = dat, xy_cols = c("x", "y"), cutoff = 3)
-plot(mesh300km)
+# set up spatial mesh
+
+# first estimate range of spatial autocorrelation
+samp = dat %>% sample_n(1000)
+samp.cor = ncf::correlog(x = samp$x, y = samp$y, z = samp$vert.mean, increment = 50000/1e5, resamp = 99)
+ncf:::plot.correlog(samp.cor)
+ncf:::plot.correlog(samp.cor, xlim = c(0,100))
+
+# set initial range as 30 and max.edge as range/5
+# https://haakonbakkagit.github.io/btopic104.html
+# Bakka, H., J. Vanhatalo, J. Illian, D. Simpson, and H. Rue. 2016. “Accounting for Physical Barriers in Species Distribution Modeling with Non-Stationary Spatial Random Effects.” arXiv preprint arXiv:1608.03787. Norwegian University of Science; Technology, Trondheim, Norway. 
+
+# NOTE: including realm as random effect led to not ok model (sigma_G smaller than 0.01 - consider omitting this part of the model)
+f1 = formula(vert.mean ~ canopy_height + veg_den + I(tmax_warm^2) + tmax_warm + tmin_cold + precip_wet + log_precip_dry + log_clim_velocity)
+
+fitmesh = fit_mesh(f = f1, dat, range = 30, v = v, family = Beta())
+
+mesh = fitmesh$meshes[[length(fitmesh$meshes)]]
+
+
+# * - Compare models with AIC -------------------------------------------------
+
+# Compare models using all points with AIC
+
+compMods_aic = compareMods_AIC(f = f1, dat, mesh, taxon = "Mammals", response_var = "Mean Verticality", family = Beta(link = "logit"))
+sanity(compMods_aic$mods[[1]])
+sanity(compMods_aic$mods[[2]])
+sanity(compMods_aic$mods[[3]])
+sanity(compMods_aic$mods[[4]])
+
+compMods_aic[[2]]
+save(compMods_aic, file = "results/sdmTMB_models/model_selection/mammals_meanvert.RData")
+load("results/sdmTMB_models/model_selection/mammals_meanvert.RData")
+
+compMods_aic$compare
+
+
+# realm does not contribute to the model, but maybe best to keep it for consistency
+
+# * - Cross validation --------------------------------------------------------
+
+# compare random effects structure using cross validation
+# random effects include random intercept, spatial random field, and spatially varying coefficient
+# spatial random field and spatially varying coefficient both depend on mesh
+# preliminary assessment indicated that residuals displayed strong spatial autocorrelation when
+# spatial effects were not accounted for in any way and when biome or biorealm were included as random intercepts in the model
 
 # set up five random folds for cross validation
+set.seed(2345)
 folds = sample(1:5, size = nrow(dat), replace = T)
 
-f1 = formula(vert.mean ~ canopy_height + veg_den + I(tmax_warm^2) +tmax_warm + tmin_cold + precip_wet + log_precip_dry + log_clim_velocity)
+compMods_cv = compare_cv_beta(f1, dat, mesh, folds, parallel = F, taxon = "Mammals", response_var = "Mean Verticality")
+
+lapply(compMods_cv$mods$mod.realm.cv$models, sanity)
+
+save(compMods_aic, compMods_cv, fitmesh, file = "results/sdmTMB_models/model_selection/mammals_meanvert.RData")
+
+compMods_cv$compMods_cv
+
+# * - residual check ----------------------------------------------------------
+
+load("results/sdmTMB_models/model_selection/mammals_meanvert.RData")
+
+plot_resids(mod = compMods_aic$mods$mod.realm.svc, response_var = "vert.mean", fpath = "figures/residual_checks/mammals_meanvert")
+
+# * - plot model coefs for comparison models ---------------------------
+
+plot_compMods_coefs(mods = compMods_aic$mods, fname = "figures/model_selection/mammals_meanvert.png")
+
+# * - predict svc + realm model to the future ---------------------------------------
+
+predict_future(mod = compMods_aic$mods$mod.realm.svc, newdata = dat.f, type = "response",
+               fpath = "results/sdmTMB_models/mammals_meanvert.RData")
+
+load("results/sdmTMB_models/mammals_meanvert.RData")
+ggplot(pred.f, aes(x, y, fill = est.dif)) +
+  geom_tile() +
+  scale_fill_continuous_divergingx("spectral") +
+  coord_sf(crs = "+proj=cea +datum=WGS84") +
+  theme_classic()
+
+
+# OLD CODE ----------------------------------------------------------------
+
 
 # 1: fit random intercept of ecoregion without spatial random field
-library(future)
-plan(multisession)
-
-mod.ecoregion.cv = sdmTMB_cv(update(f1, ~ . + (1|ecoregion)), 
-                             data = dat,
-                             mesh = mesh300km,
-                             spatial = "off",
-                             family = Beta(),
-                             reml = T, 
-                             fold_ids = folds,
-                             k_folds = length(unique(folds)))
-mod.ecoregion.cv$converged
-lapply(mod.ecoregion.cv$models, sanity)
-# gradient issues with 1,3,4
-
-mod.mesh.cv = sdmTMB_cv(f1, 
-                        data = dat,
-                        mesh = mesh300km,
-                        spatial = "on",
-                        family = Beta(),
-                        reml = T, 
-                        fold_ids = folds,
-                        k_folds = length(unique(folds)))
-
-mod.mesh.cv$converged #true
-lapply(mod.mesh.cv$models, sanity)
-# issues with gradients in 1 and 2
-
-
-mod.mesh.biome.cv = sdmTMB_cv(update(f1, ~ . +(1|biome)), 
-                              data = dat,
-                              mesh = mesh300km,
-                              spatial = "on",
-                              family = Beta(),
-                              reml = T, 
-                              fold_ids = folds,
-                              k_folds = length(unique(folds)))
-
-mod.mesh.biome.cv$converged
-sanity(mod.mesh.biome.cv$models[[1]]) #ok
-sanity(mod.mesh.biome.cv$models[[2]]) #ok
-sanity(mod.mesh.biome.cv$models[[3]]) #ok
-sanity(mod.mesh.biome.cv$models[[4]]) #ok
-sanity(mod.mesh.biome.cv$models[[5]]) # gradient issues
-
-mod.mesh.biorealm.cv = sdmTMB_cv(update(f1, ~ . +(1|biorealm)), 
-                                 data = dat,
-                                 mesh = mesh300km,
-                                 spatial = "on",
-                                 family = Beta(),
-                                 reml = T, 
-                                 fold_ids = folds,
-                                 k_folds = length(unique(folds)))
-
-mod.mesh.biorealm.cv$converged 
-lapply(mod.mesh.biorealm.cv$models, sanity)
-# 1,2,5 have gradient issues
-
-mod.mesh.ecoregion.cv = sdmTMB_cv(update(f1, ~ . +(1|ecoregion)), 
-                                  data = dat,
-                                  mesh = mesh300km,
-                                  spatial = "on",
-                                  family = Beta(),
-                                  reml = T, 
-                                  fold_ids = folds,
-                                  k_folds = length(unique(folds)))
-
-mod.mesh.ecoregion.cv$converged
-lapply(mod.mesh.ecoregion.cv$models, sanity)
-# 3 has gradient issues
-
-# compare sum_logLik
-mod.ecoregion.cv$sum_loglik
-mod.mesh.cv$sum_loglik
-mod.mesh.biome.cv$sum_loglik
-mod.mesh.biorealm.cv$sum_loglik
-mod.mesh.ecoregion.cv$sum_loglik #best
-
-mod.mesh.spatialvar.cv = sdmTMB_cv(update(f1, ~ . +(1|ecoregion)), 
-                                  data = dat,
-                                  mesh = mesh300km,
-                                  spatial = "on",
-                                  family = Beta(),
-                                  reml = T, 
-                                  fold_ids = folds,
-                                  spatial_varying = ~0 + canopy_height,
-                                  k_folds = length(unique(folds)))
-
-mod.mesh.spatialvar.cv$converged
-lapply(mod.mesh.spatialvar.cv$models, sanity)
-
-mod.mesh.ecoregion.cv$sum_loglik
-mod.mesh.spatialvar.cv$sum_loglik
-
-summ_coefs = function(x, nm){
-  mods = x$models
-  test = lapply(mods, sanity)
-  test = sapply(test, "[[", 9) # get T/F for all_ok
-  mods = mods[which(test)] # subset mods to okay models
-  mods = lapply(mods, tidy)
-  for (i in 1:length(mods)) {mods[[i]]$mod = as.character(i)}
-  mods = rbindlist(mods)
-  mods = mods %>% 
-    group_by(term) %>% 
-    summarise(est = mean(estimate), se = mean(std.error)) %>% 
-    mutate(modname = nm)
-  return(mods)
-}
-
-mod.ecoregion.summ = summ_coefs(mod.ecoregion.cv, "mod.ecoregion")
-mod.mesh.summ = summ_coefs(mod.mesh.cv, "mod.mesh")
-mod.mesh.biome.summ = summ_coefs(mod.mesh.biome.cv, "mod.mesh.biome")
-mod.mesh.biorealm.summ = summ_coefs(mod.mesh.biorealm.cv, "mod.mesh.biorealm")
-mod.mesh.ecoregion.summ = summ_coefs(mod.mesh.ecoregion.cv, "mod.mesh.ecoregion")
-mod.mesh.spatialvar.summ = summ_coefs(mod.mesh.spatialvar.cv, "mod.mesh.spatialvar")
-
-mods = rbind(mod.ecoregion.summ, mod.mesh.summ, mod.mesh.biome.summ, mod.mesh.biorealm.summ, mod.mesh.ecoregion.summ, mod.mesh.spatialvar.summ)
-ggplot(mods %>% filter(term != "(Intercept)")) +
-  geom_pointrange(aes(x = est, xmax = est+se*1.96, xmin = est-se*1.96, y = term, color = modname),
-                  position = position_dodge2(width=0.5)) +
-  geom_vline(xintercept = 0, linetype = "dashed")
-
-
-
-# Compare models with different fixed effects -----------------------------
-
-m.full = sdmTMB_cv(formula = update(f1, ~ . +(1|ecoregion)),
-                   data = dat,
-                   mesh = mesh300km,
-                   spatial = "on",
-                   family = Beta(),
-                   reml = F, 
-                   fold_ids = folds,
-                   spatial_varying = ~0 + canopy_height,
-                   k_folds = length(unique(folds)))
-m.full$converged
-lapply(m.full$models, sanity)
-# all okay
-
-
-m.nopoly = sdmTMB_cv(formula = update(f1, ~ . -I(tmax_warm^2) +(1|ecoregion)),
-                     data = dat,
-                     mesh = mesh300km,
-                     spatial = "on",
-                     family = Beta(),
-                     reml = F, 
-                     fold_ids = folds,
-                     spatial_varying = ~ 0 + canopy_height,
-                     k_folds = length(unique(folds)))
-m.nopoly$converged
-lapply(m.nopoly$models, sanity)
-# all okay
-
-
-
-m.noclimvel = sdmTMB_cv(formula = update(f1, ~ . -log_clim_velocity +(1|ecoregion)),
-                        data = dat,
-                        mesh = mesh300km,
-                        spatial = "on",
-                        family = Beta(),
-                        reml = F, 
-                        fold_ids = folds,
-                        spatial_varying = ~ 0 + canopy_height,
-                        k_folds = length(unique(folds)))
-m.noclimvel$converged
-lapply(m.noclimvel$models, sanity)
-
-m.noclimvel_nopoly = sdmTMB_cv(formula = update(f1, ~ . -I(tmax_warm^2) -log_clim_velocity +(1|ecoregion)),
-                        data = dat,
-                        mesh = mesh300km,
-                        spatial = "on",
-                        family = Beta(),
-                        reml = F, 
-                        fold_ids = folds,
-                        spatial_varying = ~ 0 + canopy_height,
-                        k_folds = length(unique(folds)))
-m.noclimvel_nopoly$converged
-lapply(m.noclimvel_nopoly$models, sanity)
-
-m.full$sum_loglik 
-m.nopoly$sum_loglik
-m.noclimvel$sum_loglik
-m.noclimvel_nopoly$sum_loglik # performs best
-
-test1 = m.noclimvel_nopoly$models[[1]]$tmb_obj$env$parList()
-test3 = m.noclimvel_nopoly$models[[3]]$tmb_obj$env$parList()
-test4 = m.noclimvel_nopoly$models[[4]]$tmb_obj$env$parList()
-test5 = m.noclimvel_nopoly$models[[5]]$tmb_obj$env$parList()
-test1$ln_phi
-test3$ln_phi
-test4$ln_phi
-test5$ln_phi
-
-
-
-# Refit best model using all the data ------------------------------------------
-control = sdmTMBcontrol(nlminb_loops = 2)
-m.final = sdmTMB(formula = update(f1, . ~ . -I(tmax_warm^2) -log_clim_velocity + (1|ecoregion)),
-                 data = dat,
-                 mesh = mesh300km,
-                 family = Beta(),
-                 spatial = "on",
-                 spatial_varying = ~0 + canopy_height,
-                 reml = T,
-                 control = sdmTMBcontrol(start = list(ln_phi = 7.62), nlminb_loops = 2, iter.max = 2000, eval.max = 2000))
-
-m.final
-sanity(m.final)
-
-pred <- predict(m.final)
-s_m.final = simulate(m.final, nsim = 500, seed = 12345, type = "mle-mvn")
-r_m.final <- DHARMa::createDHARMa(
-  simulatedResponse = s_m.final,
-  observedResponse = dat$vert.mean,
-  fittedPredictedResponse = pred$est_non_rf
-)
-
-r_m.final <- DHARMa::createDHARMa(
-  simulatedResponse = s_m.final,
-  observedResponse = dat$vert.mean,
-  fittedPredictedResponse = pred$est
-)
-
-plot(r_m.final)
-testQuantiles(r_m.final)
-testResiduals(r_m.final)
-plotResiduals(r_m.final, rank = F, form = dat$vert.mean)
-plot(dat$vert.mean, m.final$family$linkinv(pred$est_non_rf))
-abline(a = 0, b = 1, col = "red")
-plot(dat$vert.mean, m.final$family$linkinv(pred$est))
-abline(a = 0, b = 1, col = "red")
-#testSpatialAutocorrelation(r_m.final, x = dat$x, y = dat$y)
-
-# need to subset predictions to calculate spatial autocorrelation - otherwise there are too many points
-sub = sample(1:nrow(s_m.final), 10000)
-r_m.final.sub = DHARMa::createDHARMa(
-  simulatedResponse = s_m.final[sub,],
-  observedResponse = dat$vert.mean[sub],
-  fittedPredictedResponse = pred$est_non_rf[sub]
-)
-testSpatialAutocorrelation(r_m.final.sub, x = dat$x[sub], y = dat$y[sub])
-
-
-pred.f = predict(m.final, newdata = dat.f, type = "response")
-head(pred.f)
-
-# predict in response scale
-pred = predict(m.final, type = "response")
-
-pred.f$est.dif = pred.f$est - pred$est
-
-ggplot() +
-  geom_tile(data = pred.f, aes(x*1e5, y*1e5, fill = est.dif)) +
-  scale_fill_continuous_divergingx("spectral") +
-  coord_sf(crs = "+proj=cea +datum=WGS84")
-
-save(m.final, pred, pred.f, file = "results/sdmTMB_models/mammals_meanvert.RData")
-
+# library(future)
+# plan(multisession)
+# 
+# mod.ecoregion.cv = sdmTMB_cv(update(f1, ~ . + (1|ecoregion)), 
+#                              data = dat,
+#                              mesh = mesh300km,
+#                              spatial = "off",
+#                              family = Beta(),
+#                              reml = T, 
+#                              fold_ids = folds,
+#                              k_folds = length(unique(folds)))
+# mod.ecoregion.cv$converged
+# lapply(mod.ecoregion.cv$models, sanity)
+# # gradient issues with 1,3,4
+# 
+# mod.mesh.cv = sdmTMB_cv(f1, 
+#                         data = dat,
+#                         mesh = mesh300km,
+#                         spatial = "on",
+#                         family = Beta(),
+#                         reml = T, 
+#                         fold_ids = folds,
+#                         k_folds = length(unique(folds)))
+# 
+# mod.mesh.cv$converged #true
+# lapply(mod.mesh.cv$models, sanity)
+# # issues with gradients in 1 and 2
+# 
+# 
+# mod.mesh.biome.cv = sdmTMB_cv(update(f1, ~ . +(1|biome)), 
+#                               data = dat,
+#                               mesh = mesh300km,
+#                               spatial = "on",
+#                               family = Beta(),
+#                               reml = T, 
+#                               fold_ids = folds,
+#                               k_folds = length(unique(folds)))
+# 
+# mod.mesh.biome.cv$converged
+# sanity(mod.mesh.biome.cv$models[[1]]) #ok
+# sanity(mod.mesh.biome.cv$models[[2]]) #ok
+# sanity(mod.mesh.biome.cv$models[[3]]) #ok
+# sanity(mod.mesh.biome.cv$models[[4]]) #ok
+# sanity(mod.mesh.biome.cv$models[[5]]) # gradient issues
+# 
+# mod.mesh.biorealm.cv = sdmTMB_cv(update(f1, ~ . +(1|biorealm)), 
+#                                  data = dat,
+#                                  mesh = mesh300km,
+#                                  spatial = "on",
+#                                  family = Beta(),
+#                                  reml = T, 
+#                                  fold_ids = folds,
+#                                  k_folds = length(unique(folds)))
+# 
+# mod.mesh.biorealm.cv$converged 
+# lapply(mod.mesh.biorealm.cv$models, sanity)
+# # 1,2,5 have gradient issues
+# 
+# mod.mesh.ecoregion.cv = sdmTMB_cv(update(f1, ~ . +(1|ecoregion)), 
+#                                   data = dat,
+#                                   mesh = mesh300km,
+#                                   spatial = "on",
+#                                   family = Beta(),
+#                                   reml = T, 
+#                                   fold_ids = folds,
+#                                   k_folds = length(unique(folds)))
+# 
+# mod.mesh.ecoregion.cv$converged
+# lapply(mod.mesh.ecoregion.cv$models, sanity)
+# # 3 has gradient issues
+# 
+# # compare sum_logLik
+# mod.ecoregion.cv$sum_loglik
+# mod.mesh.cv$sum_loglik
+# mod.mesh.biome.cv$sum_loglik
+# mod.mesh.biorealm.cv$sum_loglik
+# mod.mesh.ecoregion.cv$sum_loglik #best
+# 
+# mod.mesh.spatialvar.cv = sdmTMB_cv(update(f1, ~ . +(1|ecoregion)), 
+#                                   data = dat,
+#                                   mesh = mesh300km,
+#                                   spatial = "on",
+#                                   family = Beta(),
+#                                   reml = T, 
+#                                   fold_ids = folds,
+#                                   spatial_varying = ~0 + canopy_height,
+#                                   k_folds = length(unique(folds)))
+# 
+# mod.mesh.spatialvar.cv$converged
+# lapply(mod.mesh.spatialvar.cv$models, sanity)
+# 
+# mod.mesh.ecoregion.cv$sum_loglik
+# mod.mesh.spatialvar.cv$sum_loglik
+# 
+# summ_coefs = function(x, nm){
+#   mods = x$models
+#   test = lapply(mods, sanity)
+#   test = sapply(test, "[[", 9) # get T/F for all_ok
+#   mods = mods[which(test)] # subset mods to okay models
+#   mods = lapply(mods, tidy)
+#   for (i in 1:length(mods)) {mods[[i]]$mod = as.character(i)}
+#   mods = rbindlist(mods)
+#   mods = mods %>% 
+#     group_by(term) %>% 
+#     summarise(est = mean(estimate), se = mean(std.error)) %>% 
+#     mutate(modname = nm)
+#   return(mods)
+# }
+# 
+# mod.ecoregion.summ = summ_coefs(mod.ecoregion.cv, "mod.ecoregion")
+# mod.mesh.summ = summ_coefs(mod.mesh.cv, "mod.mesh")
+# mod.mesh.biome.summ = summ_coefs(mod.mesh.biome.cv, "mod.mesh.biome")
+# mod.mesh.biorealm.summ = summ_coefs(mod.mesh.biorealm.cv, "mod.mesh.biorealm")
+# mod.mesh.ecoregion.summ = summ_coefs(mod.mesh.ecoregion.cv, "mod.mesh.ecoregion")
+# mod.mesh.spatialvar.summ = summ_coefs(mod.mesh.spatialvar.cv, "mod.mesh.spatialvar")
+# 
+# mods = rbind(mod.ecoregion.summ, mod.mesh.summ, mod.mesh.biome.summ, mod.mesh.biorealm.summ, mod.mesh.ecoregion.summ, mod.mesh.spatialvar.summ)
+# ggplot(mods %>% filter(term != "(Intercept)")) +
+#   geom_pointrange(aes(x = est, xmax = est+se*1.96, xmin = est-se*1.96, y = term, color = modname),
+#                   position = position_dodge2(width=0.5)) +
+#   geom_vline(xintercept = 0, linetype = "dashed")
+# 
+# 
+# 
+# # Compare models with different fixed effects -----------------------------
+# 
+# m.full = sdmTMB_cv(formula = update(f1, ~ . +(1|ecoregion)),
+#                    data = dat,
+#                    mesh = mesh300km,
+#                    spatial = "on",
+#                    family = Beta(),
+#                    reml = F, 
+#                    fold_ids = folds,
+#                    spatial_varying = ~0 + canopy_height,
+#                    k_folds = length(unique(folds)))
+# m.full$converged
+# lapply(m.full$models, sanity)
+# # all okay
+# 
+# 
+# m.nopoly = sdmTMB_cv(formula = update(f1, ~ . -I(tmax_warm^2) +(1|ecoregion)),
+#                      data = dat,
+#                      mesh = mesh300km,
+#                      spatial = "on",
+#                      family = Beta(),
+#                      reml = F, 
+#                      fold_ids = folds,
+#                      spatial_varying = ~ 0 + canopy_height,
+#                      k_folds = length(unique(folds)))
+# m.nopoly$converged
+# lapply(m.nopoly$models, sanity)
+# # all okay
+# 
+# 
+# 
+# m.noclimvel = sdmTMB_cv(formula = update(f1, ~ . -log_clim_velocity +(1|ecoregion)),
+#                         data = dat,
+#                         mesh = mesh300km,
+#                         spatial = "on",
+#                         family = Beta(),
+#                         reml = F, 
+#                         fold_ids = folds,
+#                         spatial_varying = ~ 0 + canopy_height,
+#                         k_folds = length(unique(folds)))
+# m.noclimvel$converged
+# lapply(m.noclimvel$models, sanity)
+# 
+# m.noclimvel_nopoly = sdmTMB_cv(formula = update(f1, ~ . -I(tmax_warm^2) -log_clim_velocity +(1|ecoregion)),
+#                         data = dat,
+#                         mesh = mesh300km,
+#                         spatial = "on",
+#                         family = Beta(),
+#                         reml = F, 
+#                         fold_ids = folds,
+#                         spatial_varying = ~ 0 + canopy_height,
+#                         k_folds = length(unique(folds)))
+# m.noclimvel_nopoly$converged
+# lapply(m.noclimvel_nopoly$models, sanity)
+# 
+# m.full$sum_loglik 
+# m.nopoly$sum_loglik
+# m.noclimvel$sum_loglik
+# m.noclimvel_nopoly$sum_loglik # performs best
+# 
+# test1 = m.noclimvel_nopoly$models[[1]]$tmb_obj$env$parList()
+# test3 = m.noclimvel_nopoly$models[[3]]$tmb_obj$env$parList()
+# test4 = m.noclimvel_nopoly$models[[4]]$tmb_obj$env$parList()
+# test5 = m.noclimvel_nopoly$models[[5]]$tmb_obj$env$parList()
+# test1$ln_phi
+# test3$ln_phi
+# test4$ln_phi
+# test5$ln_phi
+# 
+# 
+# 
+# # Refit best model using all the data ------------------------------------------
+# control = sdmTMBcontrol(nlminb_loops = 2)
+# m.final = sdmTMB(formula = update(f1, . ~ . -I(tmax_warm^2) -log_clim_velocity + (1|ecoregion)),
+#                  data = dat,
+#                  mesh = mesh300km,
+#                  family = Beta(),
+#                  spatial = "on",
+#                  spatial_varying = ~0 + canopy_height,
+#                  reml = T,
+#                  control = sdmTMBcontrol(start = list(ln_phi = 7.62), nlminb_loops = 2, iter.max = 2000, eval.max = 2000))
+# 
+# m.final
+# sanity(m.final)
+# 
+# pred <- predict(m.final)
+# s_m.final = simulate(m.final, nsim = 500, seed = 12345, type = "mle-mvn")
+# r_m.final <- DHARMa::createDHARMa(
+#   simulatedResponse = s_m.final,
+#   observedResponse = dat$vert.mean,
+#   fittedPredictedResponse = pred$est_non_rf
+# )
+# 
+# r_m.final <- DHARMa::createDHARMa(
+#   simulatedResponse = s_m.final,
+#   observedResponse = dat$vert.mean,
+#   fittedPredictedResponse = pred$est
+# )
+# 
+# plot(r_m.final)
+# testQuantiles(r_m.final)
+# testResiduals(r_m.final)
+# plotResiduals(r_m.final, rank = F, form = dat$vert.mean)
+# plot(dat$vert.mean, m.final$family$linkinv(pred$est_non_rf))
+# abline(a = 0, b = 1, col = "red")
+# plot(dat$vert.mean, m.final$family$linkinv(pred$est))
+# abline(a = 0, b = 1, col = "red")
+# #testSpatialAutocorrelation(r_m.final, x = dat$x, y = dat$y)
+# 
+# # need to subset predictions to calculate spatial autocorrelation - otherwise there are too many points
+# sub = sample(1:nrow(s_m.final), 10000)
+# r_m.final.sub = DHARMa::createDHARMa(
+#   simulatedResponse = s_m.final[sub,],
+#   observedResponse = dat$vert.mean[sub],
+#   fittedPredictedResponse = pred$est_non_rf[sub]
+# )
+# testSpatialAutocorrelation(r_m.final.sub, x = dat$x[sub], y = dat$y[sub])
+# 
+# 
+# pred.f = predict(m.final, newdata = dat.f, type = "response")
+# head(pred.f)
+# 
+# # predict in response scale
+# pred = predict(m.final, type = "response")
+# 
+# pred.f$est.dif = pred.f$est - pred$est
+# 
+# ggplot() +
+#   geom_tile(data = pred.f, aes(x*1e5, y*1e5, fill = est.dif)) +
+#   scale_fill_continuous_divergingx("spectral") +
+#   coord_sf(crs = "+proj=cea +datum=WGS84")
+# 
+# save(m.final, pred, pred.f, file = "results/sdmTMB_models/mammals_meanvert.RData")
+# 
