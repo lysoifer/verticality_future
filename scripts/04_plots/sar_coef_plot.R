@@ -122,7 +122,7 @@ coefs = bind_rows(sesvert.coefs, meanvert.coefs) %>%
 library(ggh4x)
 coef.plt = coefs %>%
   ggplot(aes(x = estimate, y = term, xmin = conf.low, xmax = conf.high)) +
-  geom_pointrange() +
+  geom_pointrange(size = 0.15) +
   geom_vline(xintercept = 0, linetype = "dashed") +
   #geom_text(data = r2, aes(label = paste0("R\u00b2 = ", r2), x = Estimate), y = 2, inherit.aes = F, hjust = 1, vjust = 0) +
   #geom_text(data = r2, aes(label = paste0("R\u00b2 trend = ", r2.trend), x = Estimate), y = 0.9, inherit.aes = F, hjust = 1, vjust = 0) +
