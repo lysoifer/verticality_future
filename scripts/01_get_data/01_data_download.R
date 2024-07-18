@@ -1,3 +1,6 @@
+# This script downloads CHELSA climate data for present and future time periods, canopy height, and elevation
+# For future climate data, the five ssp585 scenarios were downloaded (I later average these to obtain a future climate layer)
+
 # download climate data
 library(terra)
 library(numform)
