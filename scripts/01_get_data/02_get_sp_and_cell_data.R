@@ -1,7 +1,7 @@
 # Make species level and gridcell level dataframes for each class
 library(tidyverse)
 library(rnaturalearth)
-source("scripts_lydia/00_functions.R")
+source("scripts/00_functions/00_functions.R")
 library(terra)
 library(data.table)
 library(tictoc)
@@ -36,7 +36,15 @@ world.df = as.data.frame(world.rast, xy = T) %>%
 
 # load env data
 env = read.csv("data/derivative_data/env_data.csv")
+ggplot() +
+  geom_raster(data =env, aes(x = x, y = y, fill = biome)) +
+  coord_sf(crs = "+proj=cea +datum=WGS84") +
+  theme_classic()
 
+ggplot() +
+  geom_raster(data =env, aes(x = x, y = y, fill = canopy_height>5)) +
+  coord_sf(crs = "+proj=cea +datum=WGS84") +
+  theme_classic()
 
 
 # Moura traits
@@ -130,31 +138,33 @@ traits_birds = traits_birds %>%
 sum(traits_birds$sciname != colnames(occr[3:ncol(occr)]))
 
 # * - species level data ------------------------------------------------------
-birds_breed_spdat = get_sp_dat(trait_dat = traits_birds, occ = occr, env = env)
-write.csv(birds_breed_spdat, "data/derivative_data/species_data/birds_breedresident_spdat_moura.csv", row.names = F)
+# Using Elton data for birds
 
-test = occr[1:10,]
-get_gridcell_dat_parallel(trait_dat = birds_breed_spdat, occ = test, env = env, rich_min = 5, ncore = 7, nsim = 3)
-
-birds_spdat = read.csv("data/derivative_data/species_data/birds_breedresident_spdat_moura.csv")
-
-# takes 19 hours
-tic()
-birds_breed_comdat = get_gridcell_dat_parallel(trait_dat = birds_breed_spdat, occ = occr, env = env, rich_min = 5, ncore = 7, nsim = 100)
-write.csv(birds_breed_comdat, "data/derivative_data/gridcell_data/birds_comdat/birds_breedresident_comdat_parallel.csv", row.names = F)
-toc()
-
-
-# minutes
-tic()
-birds_trait_volume = get_trait_volume(trait_dat = birds_spdat, occ = occr, env = env, rich_min = 5, ncore = 7, nsim = 100)
-write.csv(birds_trait_volume, "data/derivative_data/gridcell_data/birds_comdat/birds_comdat_parallel_volume.csv", row.names = F)
-toc()
-
-birds_comdat = fread("data/derivative_data/gridcell_data/birds_comdat/birds_breedresident_comdat_parallel.csv")
-birds_comdat = left_join(birds_comdat, birds_trait_volume, by = c("x", "y"))
-
-write.csv(birds_comdat, "data/derivative_data/gridcell_data/birds_comdat/birds_breedresident_comdat_parallel.csv", row.names = F)
+# birds_breed_spdat = get_sp_dat(trait_dat = traits_birds, occ = occr, env = env)
+# write.csv(birds_breed_spdat, "data/derivative_data/species_data/birds_breedresident_spdat_moura.csv", row.names = F)
+# 
+# test = occr[1:10,]
+# get_gridcell_dat_parallel(trait_dat = birds_breed_spdat, occ = test, env = env, rich_min = 5, ncore = 7, nsim = 3)
+# 
+# birds_spdat = read.csv("data/derivative_data/species_data/birds_breedresident_spdat_moura.csv")
+# 
+# # takes 19 hours
+# tic()
+# birds_breed_comdat = get_gridcell_dat_parallel(trait_dat = birds_breed_spdat, occ = occr, env = env, rich_min = 5, ncore = 7, nsim = 100)
+# write.csv(birds_breed_comdat, "data/derivative_data/gridcell_data/birds_comdat/birds_breedresident_comdat_parallel.csv", row.names = F)
+# toc()
+# 
+# 
+# # minutes
+# tic()
+# birds_trait_volume = get_trait_volume(trait_dat = birds_spdat, occ = occr, env = env, rich_min = 5, ncore = 7, nsim = 100)
+# write.csv(birds_trait_volume, "data/derivative_data/gridcell_data/birds_comdat/birds_comdat_parallel_volume.csv", row.names = F)
+# toc()
+# 
+# birds_comdat = fread("data/derivative_data/gridcell_data/birds_comdat/birds_breedresident_comdat_parallel.csv")
+# birds_comdat = left_join(birds_comdat, birds_trait_volume, by = c("x", "y"))
+# 
+# write.csv(birds_comdat, "data/derivative_data/gridcell_data/birds_comdat/birds_breedresident_comdat_parallel.csv", row.names = F)
 
 
 

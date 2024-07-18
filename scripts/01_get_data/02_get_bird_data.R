@@ -1,5 +1,5 @@
 # Lydia Soifer
-# December 23, 2023
+# May 1, 2024
 # Get arboreality and environmental data and add to the matrix from get_pres_abs_data
 
 library(terra)
@@ -18,7 +18,7 @@ mapa <- rast(xmin = -20592508, xmax = 20588492, ymin = -5743602, ymax = 6573398,
              crs = "+proj=cea +datum=WGS84")
 res(mapa) <- 111000
 
-mundi = vect("./../data/Mundi_contour/Mundi_contour.shp")
+mundi = vect("data/Mundi_contour/Mundi_contour.shp")
 mundi = project(mundi, "+proj=cea +datum=WGS84")
 mundi.rast = rasterize(mundi, mapa)
 mundi.df = as.data.frame(mundi.rast, xy = T) %>% 

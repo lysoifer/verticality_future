@@ -1,84 +1,101 @@
 library(terra)
 library(sf)
 library(fasterize)
+library(doParallel)
+library(cluster)
+library(foreach)
 
 # change tempdir so that I can easily delete temp files that take up too much space
 tempdir(tmpdir = "tempfiles/")
 
 # template raster used to get grid level pres/abs data at 111km
 mapa = rast(extent = c(-20592508, 20588492, -5743602, 6573398), crs = "+proj=cea +datum=WGS84")
-res(mapa) = 111000
+#res(mapa) = 111000
+res(mapa) = 50000
 
 ## Current climate conditions (CHELSA v2.1)
 
 ## Chelsa climate data
 ## Downloaded from https://chelsa-climate.org/downloads/
 bio = list.files(path = "data/original/env_data/chelsa/", pattern = ".tif", full.names = T)
-bio = lapply(bio, rast)
-bio = rast(bio)
-bio = crop(bio, ext(-180, 180, -64.7937, 90))
+#bio = lapply(bio, rast)
+bio = bio[c(1:5,9:12)]
 
-tempsea = rast("data/original/env_data/chelsa/CHELSA_bio4_1981-2010_V.2.1.tif")
+cl = makeCluster(7)
+registerDoParallel(cl)
+bio = foreach(i = 1:length(bio), .packages = c("terra")) %dopar% {
+  mapa = rast(extent = c(-20592508, 20588492, -5743602, 6573398), crs = "+proj=cea +datum=WGS84")
+  res(mapa) = 50000
+  r = rast(bio[[i]])
+  r = project(r, "+proj=cea +datum=WGS84")
+  r = resample(r, mapa, threads = T)
+  writeRaster(r, paste0("data/derivative_data/resampled_env_rasters_50km/", names(r), ".tif"))
+}
+stopCluster(cl)
 
-mat = project(bio$`CHELSA_bio1_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
-mat = resample(mat, mapa, threads = T)
-writeRaster(mat, "data/derivative_data/resampled_env_rasters/chelsa_bio_01.tif")
-
-tic()
-max_temp_warm = project(bio$`CHELSA_bio5_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
-max_temp_warm = resample(max_temp_warm, mapa, threads = T)
-writeRaster(max_temp_warm, "data/derivative_data/resampled_env_rasters/chelsa_bio_05.tif")
-toc()
-
-tic()
-min_temp_cold = project(bio$`CHELSA_bio6_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
-toc()
-tic()
-min_temp_cold = resample(min_temp_cold, mapa, threads = T)
-toc()
-writeRaster(min_temp_cold, "data/derivative_data/resampled_env_rasters/chelsa_bio_06.tif")
-
-
-temp_sea = project(bio$`CHELSA_bio4_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
-temp_sea = resample(temp_sea, mapa, threads = T)
-writeRaster(temp_sea, "data/derivative_data/resampled_env_rasters/chelsa_bio_04.tif")
-
-temp_diu = project(bio$`CHELSA_bio2_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
-temp_diu = resample(temp_diu, mapa, threads = T)
-writeRaster(temp_diu, "data/derivative_data/resampled_env_rasters/chelsa_bio_02.tif")
-
-precip_wet = project(bio$`CHELSA_bio13_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
-precip_wet = resample(precip_wet, mapa, threads = T)
-writeRaster(precip_wet, "data/derivative_data/resampled_env_rasters/chelsa_bio_13.tif")
-
-precip_dry = project(bio$`CHELSA_bio14_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
-precip_dry = resample(precip_dry, mapa, threads = T)
-writeRaster(precip_dry, "data/derivative_data/resampled_env_rasters/chelsa_bio_14.tif")
-
-precip_ann = project(bio$`CHELSA_bio12_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
-precip_ann = resample(precip_ann, mapa, threads = T)
-writeRaster(precip_ann, "data/derivative_data/resampled_env_rasters/chelsa_bio_12.tif")
-
-precip_sea = project(bio$`CHELSA_bio15_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
-precip_sea = resample(precip_sea, mapa, threads = T)
-writeRaster(precip_sea, "data/derivative_data/resampled_env_rasters/chelsa_bio_15.tif")
-
-hurs_mean = project(bio$`CHELSA_hurs_mean_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
-hurs_mean = resample(hurs_mean, mapa, threads = T)
-writeRaster(hurs_mean, "data/derivative_data/resampled_env_rasters/chelsa_hurs_mean.tif")
-
-hurs_range = project(bio$`CHELSA_hurs_range_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
-hurs_range = resample(hurs_range, mapa, threads = T)
-writeRaster(hurs_range, "data/derivative_data/resampled_env_rasters/chelsa_hurs_range.tif")
-
-vpd_mean = project(bio$`CHELSA_vpd_mean_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
-vpd_mean = resample(vpd_mean, mapa, threads = T)
-writeRaster(vpd_mean, "data/derivative_data/resampled_env_rasters/chelsa_vpd_mean.tif")
-
-vpd_range = project(bio$`CHELSA_vpd_range_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
-vpd_range = resample(vpd_range, mapa, threads = T)
-writeRaster(vpd_range, "data/derivative_data/resampled_env_rasters/chelsa_vpd_range.tif")
-tmpFiles(remove=T, old = T)
+# bio = crop(bio, ext(-180, 180, -64.7937, 90))
+# 
+# tempsea = rast("data/original/env_data/chelsa/CHELSA_bio4_1981-2010_V.2.1.tif")
+# 
+# mat = project(bio$`CHELSA_bio1_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
+# mat = resample(mat, mapa, threads = T)
+# writeRaster(mat, "data/derivative_data/resampled_env_rasters/chelsa_bio_01.tif")
+# 
+# tic()
+# max_temp_warm = project(bio$`CHELSA_bio5_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
+# max_temp_warm = resample(max_temp_warm, mapa, threads = T)
+# writeRaster(max_temp_warm, "data/derivative_data/resampled_env_rasters/chelsa_bio_05.tif")
+# toc()
+# 
+# tic()
+# min_temp_cold = project(bio$`CHELSA_bio6_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
+# toc()
+# tic()
+# min_temp_cold = resample(min_temp_cold, mapa, threads = T)
+# toc()
+# writeRaster(min_temp_cold, "data/derivative_data/resampled_env_rasters/chelsa_bio_06.tif")
+# 
+# 
+# temp_sea = project(bio$`CHELSA_bio4_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
+# temp_sea = resample(temp_sea, mapa, threads = T)
+# writeRaster(temp_sea, "data/derivative_data/resampled_env_rasters/chelsa_bio_04.tif")
+# 
+# temp_diu = project(bio$`CHELSA_bio2_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
+# temp_diu = resample(temp_diu, mapa, threads = T)
+# writeRaster(temp_diu, "data/derivative_data/resampled_env_rasters/chelsa_bio_02.tif")
+# 
+# precip_wet = project(bio$`CHELSA_bio13_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
+# precip_wet = resample(precip_wet, mapa, threads = T)
+# writeRaster(precip_wet, "data/derivative_data/resampled_env_rasters/chelsa_bio_13.tif")
+# 
+# precip_dry = project(bio$`CHELSA_bio14_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
+# precip_dry = resample(precip_dry, mapa, threads = T)
+# writeRaster(precip_dry, "data/derivative_data/resampled_env_rasters/chelsa_bio_14.tif")
+# 
+# precip_ann = project(bio$`CHELSA_bio12_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
+# precip_ann = resample(precip_ann, mapa, threads = T)
+# writeRaster(precip_ann, "data/derivative_data/resampled_env_rasters/chelsa_bio_12.tif")
+# 
+# precip_sea = project(bio$`CHELSA_bio15_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
+# precip_sea = resample(precip_sea, mapa, threads = T)
+# writeRaster(precip_sea, "data/derivative_data/resampled_env_rasters/chelsa_bio_15.tif")
+# 
+# hurs_mean = project(bio$`CHELSA_hurs_mean_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
+# hurs_mean = resample(hurs_mean, mapa, threads = T)
+# writeRaster(hurs_mean, "data/derivative_data/resampled_env_rasters/chelsa_hurs_mean.tif")
+# 
+# hurs_range = project(bio$`CHELSA_hurs_range_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
+# hurs_range = resample(hurs_range, mapa, threads = T)
+# writeRaster(hurs_range, "data/derivative_data/resampled_env_rasters/chelsa_hurs_range.tif")
+# 
+# vpd_mean = project(bio$`CHELSA_vpd_mean_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
+# vpd_mean = resample(vpd_mean, mapa, threads = T)
+# writeRaster(vpd_mean, "data/derivative_data/resampled_env_rasters/chelsa_vpd_mean.tif")
+# 
+# vpd_range = project(bio$`CHELSA_vpd_range_1981-2010_V.2.1`, "+proj=cea +datum=WGS84")
+# vpd_range = resample(vpd_range, mapa, threads = T)
+# writeRaster(vpd_range, "data/derivative_data/resampled_env_rasters/chelsa_vpd_range.tif")
+# tmpFiles(remove=T, old = T)
 
 
 # future climate ----------------------------------------------------------
@@ -132,54 +149,54 @@ mat.f.mean = mean(mat.f)
 mat.f.proj = project(mat.f.mean, "+proj=cea +datum=WGS84")
 mat.f.resamp = resample(mat.f.proj, mapa, threads = T)
 names(mat.f.resamp) = "mat"
-writeRaster(mat.f.resamp, "data/derivative_data/resampled_env_rasters/chelsa_future/2071_2100/ensemble/chelsa_future_bio_01.tif")
+writeRaster(mat.f.resamp, "data/derivative_data/resampled_env_rasters_50km/chelsa_future/2071_2100/ensemble/chelsa_future_bio_01.tif")
 
 maxtemp_warm.f = mean(maxtemp_warm.f)
 maxtemp_warm.f = project(maxtemp_warm.f, "+proj=cea +datum=WGS84")
 maxtemp_warm.f = resample(maxtemp_warm.f, mapa, threads = T)
 names(maxtemp_warm.f) = "max_temp_warm"
-writeRaster(maxtemp_warm.f, "data/derivative_data/resampled_env_rasters/chelsa_future/2071_2100/ensemble/chelsa_bio_05.tif")
+writeRaster(maxtemp_warm.f, "data/derivative_data/resampled_env_rasters_50km/chelsa_future/2071_2100/ensemble/chelsa_bio_05.tif")
 
 min_temp_cold.f = mean(min_temp_cold.f)
 min_temp_cold.f = project(min_temp_cold.f, "+proj=cea +datum=WGS84")
 min_temp_cold.f = resample(min_temp_cold.f, mapa, threads = T)
 names(min_temp_cold.f) = "min_temp_cold"
-writeRaster(min_temp_cold.f, "data/derivative_data/resampled_env_rasters/chelsa_future/2071_2100/ensemble/chelsa_bio_06.tif")
+writeRaster(min_temp_cold.f, "data/derivative_data/resampled_env_rasters_50km/chelsa_future/2071_2100/ensemble/chelsa_bio_06.tif")
 
-temp_sea.f = mean(temp_sea.f)
-temp_sea.f = project(temp_sea.f, "+proj=cea +datum=WGS84")
-temp_sea.f = resample(temp_sea.f, mapa, threads = T)
-names(temp_sea.f) = "temp_sea"
-writeRaster(temp_sea.f, "data/derivative_data/resampled_env_rasters/chelsa_future/2071_2100/ensemble/chelsa_bio_04.tif")
+# temp_sea.f = mean(temp_sea.f)
+# temp_sea.f = project(temp_sea.f, "+proj=cea +datum=WGS84")
+# temp_sea.f = resample(temp_sea.f, mapa, threads = T)
+# names(temp_sea.f) = "temp_sea"
+# writeRaster(temp_sea.f, "data/derivative_data/resampled_env_rasters_50km/chelsa_future/2071_2100/ensemble/chelsa_bio_04.tif")
 
 temp_diu.f = mean(temp_diu.f)
 temp_diu.f = project(temp_diu.f, "+proj=cea +datum=WGS84")
 temp_diu.f = resample(temp_diu.f, mapa, threads = T)
 names(temp_diu.f) = "temp_diu"
-writeRaster(temp_diu.f, "data/derivative_data/resampled_env_rasters/chelsa_future/2071_2100/ensemble/chelsa_bio_02.tif")
+writeRaster(temp_diu.f, "data/derivative_data/resampled_env_rasters_50km/chelsa_future/2071_2100/ensemble/chelsa_bio_02.tif")
 
 precip_wet.f = mean(precip_wet.f)
 precip_wet.f = project(precip_wet.f, "+proj=cea +datum=WGS84")
 precip_wet.f = resample(precip_wet.f, mapa, threads = T)
 names(precip_wet.f) = "precip_wet"
-writeRaster(precip_wet.f, "data/derivative_data/resampled_env_rasters/chelsa_future/2071_2100/ensemble/chelsa_bio_13.tif")
+writeRaster(precip_wet.f, "data/derivative_data/resampled_env_rasters_50km/chelsa_future/2071_2100/ensemble/chelsa_bio_13.tif")
 
 precip_dry.f = mean(precip_dry.f)
 precip_dry.f = project(precip_dry.f, "+proj=cea +datum=WGS84")
 precip_dry.f = resample(precip_dry.f, mapa, threads = T)
 names(precip_dry.f) = "precip_dry"
-writeRaster(precip_dry.f, "data/derivative_data/resampled_env_rasters/chelsa_future/2071_2100/ensemble/chelsa_bio_14.tif")
+writeRaster(precip_dry.f, "data/derivative_data/resampled_env_rasters_50km/chelsa_future/2071_2100/ensemble/chelsa_bio_14.tif")
 
-precip_ann.f = mean(precip_ann.f)
-precip_ann.f = project(precip_ann.f, "+proj=cea +datum=WGS84")
-precip_ann.f = resample(precip_ann.f, mapa, threads = T)
-writeRaster(precip_ann.f, "data/derivative_data/resampled_env_rasters/chelsa_future/2071_2100/ensemble/chelsa_bio_12.tif")
+# precip_ann.f = mean(precip_ann.f)
+# precip_ann.f = project(precip_ann.f, "+proj=cea +datum=WGS84")
+# precip_ann.f = resample(precip_ann.f, mapa, threads = T)
+# writeRaster(precip_ann.f, "data/derivative_data/resampled_env_rasters/chelsa_future/2071_2100/ensemble/chelsa_bio_12.tif")
 
 precip_sea.f = mean(precip_sea.f)
 precip_sea.f = project(precip_sea.f, "+proj=cea +datum=WGS84")
 precip_sea.f = resample(precip_sea.f, mapa, threads = T)
 names(precip_sea.f) = "precip_sea"
-writeRaster(precip_sea.f, "data/derivative_data/resampled_env_rasters/chelsa_future/2071_2100/ensemble/chelsa_bio_15.tif")
+writeRaster(precip_sea.f, "data/derivative_data/resampled_env_rasters_50km/chelsa_future/2071_2100/ensemble/chelsa_bio_15.tif")
 
 
 
@@ -191,7 +208,7 @@ canopy_height = crop(canopy_height, ext(-180, 180, -64.7937, 90))
 canopy_height = project(canopy_height, "+proj=cea +datum=WGS84")
 canopy_height = resample(canopy_height, mapa)
 names(canopy_height) = "canopy_height"
-writeRaster(canopy_height, "data/derivative_data/resampled_env_rasters/canopy_height.tif")
+writeRaster(canopy_height, "data/derivative_data/resampled_env_rasters_50km/canopy_height.tif", overwrite = T)
 
 # vegetation density
 # Crowther et al. 2015 https://doi.org/10.1038/nature14967
@@ -200,7 +217,7 @@ veg_den = crop(veg_den, ext(-180, 180, -64.7937, 90))
 veg_den = project(veg_den, "+proj=cea +datum=WGS84")
 veg_den = resample(veg_den, mapa)
 names(veg_den) = "veg_den"
-writeRaster(veg_den, "data/derivative_data/resampled_env_rasters/veg_den.tif")
+writeRaster(veg_den, "data/derivative_data/resampled_env_rasters_50km/veg_den.tif")
 
 # elevation
 # SRTM30+ Global 1-km Digital Elevation Model (DEM): Version 11: Land Surface
@@ -210,7 +227,7 @@ elev = crop(elev, ext(-180, 180, -64.7937, 90))
 elev = project(elev, "+proj=cea +datum=WGS84")
 elev = resample(elev, mapa)
 names(elev) = "elev"
-writeRaster(elev, "data/derivative_data/resampled_env_rasters/elevation.tif")
+writeRaster(elev, "data/derivative_data/resampled_env_rasters_50km/elevation.tif")
 
 ## Climate Velocity
 ## Downloaded from [Dryad](http://datadryad.org/resource/doi:10.5061/dryad.b13j1).
@@ -220,7 +237,7 @@ writeRaster(elev, "data/derivative_data/resampled_env_rasters/elevation.tif")
 clim_velocity = rast("data/original/env_data/doi_10_5061_dryad_b13j1__v20111101/Dryad Archive Files/Velocity.tif")
 clim_velocity = project(clim_velocity, mapa)
 names(clim_velocity) = "clim_velocity"
-writeRaster(clim_velocity, "data/derivative_data/resampled_env_rasters/clim_velocity.tif", overwrite = T)
+writeRaster(clim_velocity, "data/derivative_data/resampled_env_rasters_50km/clim_velocity.tif", overwrite = T)
 
 # realms
 # from Dinnerstein et al. 2017 https://doi.org/10.1093/biosci/bix014
@@ -229,22 +246,32 @@ biorealm = project(biorealm, "+proj=cea datum=WGS84")
 realm = rasterize(biorealm, mapa, field = "REALM")
 realm = subst(realm, "N/A", NA)
 names(realm) = "realm"
-#writeRaster(realm, "data/derivative_data/resampled_env_rasters/realm.tif")
+writeRaster(realm, "data/derivative_data/resampled_env_rasters_50km/realm.tif")
 
 # biomes: also from Dinnerstein
 biome = rasterize(biorealm, mapa, field = "BIOME_NAME")
 biome = subst(biome, "N/A", NA)
 names(biome) = "biome"
-#writeRaster(biome, "data/derivative_data/resampled_env_rasters/biome.tif")
+writeRaster(biome, "data/derivative_data/resampled_env_rasters_50km/biome.tif")
+
+# ecoregion: also from Dinnerstein
+ecoregion = rasterize(biorealm, mapa, field = "ECO_NAME")
+ecoregion = subst(ecoregion, "N/A", NA)
+names(ecoregion) = "ecoregion"
+writeRaster(ecoregion, "data/derivative_data/resampled_env_rasters_50km/ecoregion.tif")
+
 
 # stack rasters
-r = rast(list.files(path = "data/derivative_data/resampled_env_rasters/", pattern = ".tif", full.names = T))
-bionames = names(r)[2:14]
+r = rast(list.files(path = "data/derivative_data/resampled_env_rasters_50km/", pattern = ".tif", full.names = T))
+r$biome = biome
+r$realm = realm
+r$ecoregion = ecoregion
+bionames = names(r)[3:11]
 bionames = sapply(bionames, strsplit, split = "_")
 bionames = sapply(bionames, "[[", 2)
-bionames[10:13] = c("hurs_mean", "hurs_range", "vpd_mean", "vpd_range")
-names(r)[2:14] =  bionames
-r = c(r, realm, biome)
+#bionames[10:13] = c(hurs_mean", "hurs_range", "vpd_mean", "vpd_range")
+names(r)[3:11] =  bionames
+#r = c(r, realm, biome)
 
 env_df = as.data.frame(r, xy = T)
 
@@ -258,7 +285,13 @@ env_df = env_df %>%
          precip_ann = bio12, precip_wet = bio13, precip_dry = bio14, precip_sea = bio15) %>% 
   dplyr::mutate(veg_complexity = canopy_height * veg_den)
 
-write.csv(env_df, "data/derivative_data/env_data.csv", row.names = F)
+write.csv(env_df, "data/derivative_data/env_data_50km.csv", row.names = F)
+
+# env = read.csv("data/derivative_data/env_data.csv")
+# ecoregion = as.data.frame(ecoregion, xy = T)
+# env = left_join(env, ecoregion, by = c('x', "y"))
+# write.csv(env, "data/derivative_data/env_data.csv", row.names = F)
+
 
 # bio1 = annual mean temp
 # bio5 = mean daily maximum air temperature of the warmest month
