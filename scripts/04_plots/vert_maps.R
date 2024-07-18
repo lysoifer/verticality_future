@@ -95,7 +95,7 @@ library(colorspace)
   
  
   return(list(mp.pres, plt.final))
-}
+
 
 
 # plot ses vert mean ------------------------------------------------------
@@ -422,26 +422,30 @@ plt_vert_margin = function(v, df, plot.title, tags = list(c("A", "B", "C"))) {
   
     # create main plot
   plot_main = ggplot() +
-    geom_spatraster(data = r$vert.mean.ses, maxcell = Inf) +
     # Overlay world
-    geom_spatvector(data = wd, color = alpha("black", 0.7), fill = NA, linewidth = .1) +
-    #geom_segment(aes(x = xmax, xend = xmax, y = -60, yend = ymax)) +
+    geom_spatvector(data = wd, color = alpha("black", 0.7), fill = "gray70", linewidth = .1) +
+    geom_spatraster(data = r$vert.mean.ses, maxcell = Inf) +
+    geom_spatvector(data = wd, color = "black", fill = NA, linewidth = .1) +
     scale_fill_continuous_divergingx("spectral", na.value = NA, limits = col.lims, rev = T) +
-    guides(fill = guide_colorbar(title = "SES Mean Verticality")) +
+    guides(fill = guide_colorbar(title = "")) +
    # theme_classic() +
-    theme(legend.position = "bottom",
-          legend.margin = margin(0,0,0,0),
+    theme(legend.position = "inside",
+          legend.position.inside = c(0.6,0.45),
+          legend.justification = c(0,1),
+          legend.margin = margin(0,0,0.2,0.3),
           legend.key.height = unit(3, units = "mm"),
           legend.background = element_blank(),
-          legend.key.width = unit(10, units = "mm"),
+          legend.key.width = unit(2, units = "mm"),
           legend.box.margin = margin(0,0,0,0),
           legend.box.spacing = unit(0,"mm"),
           legend.box.background = element_blank(),
           plot.background = element_blank(),
+          plot.margin = unit(c(0,0,0,0), units = "mm"),
           panel.spacing = unit(0,"mm"),
+          #panel.background = element_rect(color = "black", fill = NA),
           panel.background = element_blank(),
           #legend.title = element_blank(),
-          legend.title.position = "top",
+          #legend.title.position = "top",
           legend.title = element_text(hjust = 0.5, size = 8),
           axis.text = element_blank(),
           axis.ticks = element_blank(),
@@ -449,28 +453,31 @@ plt_vert_margin = function(v, df, plot.title, tags = list(c("A", "B", "C"))) {
 
   
   plot_main2 = ggplot() +
-    geom_spatraster(data = r$vert.mean, maxcell = Inf) +
     # Overlay world
-    geom_spatvector(data = wd, color = alpha("black", 0.7), fill = NA, linewidth = .1) +
-    #geom_segment(aes(x = xmax, xend = xmax, y = -60, yend = ymax)) +
-    scale_fill_continuous_divergingx("spectral", na.value = NA, limits = c(0,1), mid = 0.5, rev = T) +
-    guides(fill = guide_colorbar(title = "Mean Verticality")) +
+    geom_spatvector(data = wd, fill = "gray70", color = "black", linewidth = .1) +
+    geom_spatraster(data = r$vert.mean, maxcell = Inf) +
+    scale_fill_continuous_divergingx("spectral", na.value = NA, limits = c(0,1), mid = 0.5, rev = T, breaks = c(0,0.5,1)) +
+    geom_spatvector(data = wd, fill = NA, color = "black", linewidth = .1) +
+    guides(fill = guide_colorbar(title = "")) +
     # theme_classic() +
-    theme(legend.position = "bottom",
-          legend.margin = margin(0,0,0,0),
+    theme(legend.position = "inside",
+          legend.position.inside = c(0.6,0.45),
+          legend.justification = c(0,1),
+          legend.margin = margin(0,0,0.2,0.3),
           #legend.key = element_blank(),
           legend.background = element_blank(),
           legend.key.height = unit(3, units = "mm"),
-          legend.key.width = unit(10, units = "mm"),
+          legend.key.width = unit(2, units = "mm"),
           legend.box.margin = margin(0,0,0,0),
           legend.box.spacing = unit(1,"mm"),
           legend.box.background = element_blank(),
           plot.background = element_blank(),
+          plot.margin = unit(c(0,0,0,0), units = "mm"),
           panel.spacing = unit(0,"mm"),
+          #panel.background = element_rect(color = "black", fill = NA),
           panel.background = element_blank(),
-          #legend.title = element_blank(),
-          legend.title.position = "top",
-          legend.title = element_text(hjust = 0.5, size = 8),
+          #legend.title.position = "top",
+          #legend.title = element_text(hjust = 0.5, size = 8),
           axis.text = element_blank(),
           axis.ticks = element_blank(),
           axis.title = element_blank())
@@ -489,16 +496,22 @@ plt_vert_margin = function(v, df, plot.title, tags = list(c("A", "B", "C"))) {
     ggplot() +
     geom_line(aes(x = y, y = prop.mean, color = micro), size=1) +
     geom_ribbon(aes(x = y, ymin = prop.mean - prop.sd, ymax = prop.mean + prop.sd, fill = micro), alpha = 0.2) +
-    scale_y_continuous("Proportion", breaks = seq(0,1,0.5)) +
-    scale_x_continuous("Latitude") +
+    scale_y_continuous("", breaks = seq(0,1,0.5)) +
+    scale_x_continuous("Latitude", breaks = seq(-30,60,30), limits = c(-55.61183,83.64)) +
     scale_color_discrete_divergingx("zissou1", guide = guide_legend(title = ""), rev = T) +
     scale_fill_discrete_divergingx("zissou1", guide = guide_legend(title = ""), rev = T) +
     coord_flip() +
-    theme_classic()
+    theme_classic() +
+    theme(axis.title.x = element_blank())
   
-  p = plot_main + plot_main2 + prop.plt + plot_layout(nrow = 1, width = unit(c(-1, -1, 2.5), c("null", "null", "cm"))) +
-    plot_annotation(tag_levels = tags, title = plot.title, theme = theme(plot.title = element_text(hjust = 0.5)))
   
+  row_name = wrap_elements(panel = textGrob(plot.title, rot = 90))
+
+  p = row_name + plot_main + plot_main2 + prop.plt + plot_layout(nrow = 1, width = unit(c(0.4, -1, -1, 3.5), c("cm", "null", "null", "cm"))) +
+    plot_annotation(tag_levels = tags, theme = theme(plot.title = element_text(hjust = 0.5)))
+  p[[2]] <- p[[2]] + theme(legend.title = element_blank(), legend.position.inside = c(0.1,0.5))
+  p[[3]] <- p[[3]] + theme(legend.title = element_blank(), legend.position.inside = c(0.1,0.5))
+
   return(p)
 }
 
@@ -512,7 +525,7 @@ wd = vect("data/original/rnaturalearth_world.shp") %>%
 amph = fread("data/derivative_data/gridcell_data/amphibians_comdat/amph_comdat_parallel_forestsOnly.csv") %>% 
   dplyr::select(x, y, p.arb, p.fos, p.ter, vert.mean, vert.mean.ses, biome)
 
-vert.amph.forest = plt_vert_margin(v = wd, df = amph, plot.title = "Amphibians", tags = list(c("J", "K", "L")))
+vert.amph.forest = plt_vert_margin(v = wd, df = amph, plot.title = "Amphibians", tags = list(c("", "J", "K", "L")))
 
 png("figures/vert_maps_forest/vert_present/amphibians.png", height = 800, width = 2500, res = 300)
 vert.amph.forest
@@ -547,19 +560,15 @@ png("figures/vert_maps_forest/vert_present/reptiles.png", height = 800, width = 
 vert.repts.forest
 dev.off()
 
-library(png)
-library(grid)
-library(gridExtra)
-library(cowplot)
-library(ggpubr)
+p = vert.birds.forest /
+  vert.mammals.forest / 
+  vert.repts.forest / 
+  vert.amph.forest
+p[[1]][[2]] <- p[[1]][[2]] + ggtitle("SES Verticality") + theme(plot.title = element_text(hjust = 0.5))
+p[[1]][[3]] <- p[[1]][[3]] + ggtitle("Mean Verticality") + theme(plot.title = element_text(hjust = 0.5))
+p[[4]][[4]] <- p[[4]][[4]] + scale_y_continuous("Proportion", breaks = seq(0,1,0.5)) + theme(axis.title.x = element_text())
 
-p.birds = readPNG("figures/vert_maps_forest/vert_present/birds.png")
-p.mammals = readPNG("figures/vert_maps_forest/vert_present/mammals.png")
-p.reptiles = readPNG("figures/vert_maps_forest/vert_present/reptiles.png")
-p.amph = readPNG("figures/vert_maps_forest/vert_present/amphibians.png")
 
-grid.arrange(arrangeGrob(p.birds), arrangeGrob(p.mammals), nrow = 2)
-g = arrangeGrob(vert.birds.forest, vert.mammals.forest)
-grid.draw(g)
-g = as_ggplot(g)
-grid.arrange(vert.birds.forest, vert.mammals.forest, nrow = 2)
+png("figures/main_figs/vert_maps.png", height = 300, width = 500, res = 300, units = "mm")
+p
+dev.off()
