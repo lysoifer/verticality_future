@@ -742,4 +742,7 @@ vert.avg.full %>%
   theme_classic() +
   theme(plot.title = element_text(hjust = 0.5))
 
-
+pred.r = rast(pred.df, type = "xyz", crs = "+proj=cea +datum=WGS84")
+plot(pred.r$pred.pres.trend)
+plot(pred.r$pred.future)
+plot(pred.r$pred.future - pred.r$pred.pres.trend)

@@ -365,7 +365,7 @@ sesvert.avg.full %>%
   geom_vline(xintercept = 0, linetype = "dashed") +
   scale_color_manual(values = c("black", "red3")) +
   scale_y_discrete("") +
-  ggtitle("SES Mean Verticality: Amphibians") +
+  ggtitle("SES Mean Verticality: Birds") +
   theme_classic() +
   theme(plot.title = element_text(hjust = 0.5))
 
@@ -733,3 +733,4 @@ vert.avg.full %>%
 pred.r = rast(pred.df, type = "xyz", crs = "+proj=cea +datum=WGS84")
 plot(pred.r$pred.future)
 plot(pred.r$pred.future - pred.r$pred.pres.trend)
+
