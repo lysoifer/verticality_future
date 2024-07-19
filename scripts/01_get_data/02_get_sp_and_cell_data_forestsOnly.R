@@ -1,4 +1,7 @@
 # Make species level and gridcell level dataframes for each class
+# Only included grid cells with wooded habitat
+# 50 km resolution
+
 library(tidyverse)
 library(rnaturalearth)
 source("scripts/00_functions/00_functions.R")
