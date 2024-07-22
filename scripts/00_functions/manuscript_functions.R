@@ -269,10 +269,13 @@ compareMods_AIC = function(f, dat, mesh, taxon, response_var, family) {
                    reml = T,
                    family = family,
                    control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000, 
-                                           start = list(ln_phi = ln_phi)))
+                                           start = list(ln_phi = ln_phi,
+                                                        ln_tau_O = ln_tau_o)))
     }
     all_ok = sanity(mod)$all_ok
-    ln_phi = get_pars(mod)$ln_phi
+    pars = get_pars(mod)
+    ln_phi = pars$ln_phi
+    ln_tau_o = pars$ln_tau_O
     iter = iter+1
     gc()
   }
@@ -331,10 +334,15 @@ compareMods_AIC = function(f, dat, mesh, taxon, response_var, family) {
                          reml = T,
                          family = family,
                          control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000,
-                                                 start = list(ln_phi = ln_phi)))
+                                                 start = list(ln_phi = ln_phi,
+                                                              ln_kappa = ln_kappa,
+                                                              ln_tau_O = ln_tau_o)))
     }
     all_ok = sanity(mod.realm)$all_ok
-    ln_phi = get_pars(mod.realm)$ln_phi
+    pars = get_pars(mod.realm)
+    ln_phi = pars$ln_phi
+    ln_kappa = pars$ln_kappa
+    ln_tau_o = pars$ln_tau_O
     iter = iter+1
     gc()
   }
@@ -375,6 +383,7 @@ compareMods_AIC = function(f, dat, mesh, taxon, response_var, family) {
     iter = iter+1
     gc()
   }
+
   
   # compare AIC and log-likelihood of models
   aic = AIC(mod.realm.svc, mod.realm, mod.svc, mod)
