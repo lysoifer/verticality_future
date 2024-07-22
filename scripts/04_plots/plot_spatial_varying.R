@@ -9,10 +9,10 @@ wd = vect("data/original/rnaturalearth_world.shp") %>%
   project("epsg:4326") %>% 
   crop(ext(-180,180,-60,83.64))
 
-plot_spatial_varying = function(mod, var, v, legend_title) {
+plot_spatial_varying = function(mod, pred, var, v, legend_title) {
   coefs = tidy(mod)
   coef.var = as.numeric(coefs[which(coefs$term == var), "estimate"])
-  pred = predict(mod, type = "response")
+  #pred = predict(mod, type = "response")
   dat = pred %>% 
     mutate(x = x*1e5, y = y*1e5,
            canopy_height_est_slope = zeta_s_canopy_height + coef.var) %>% 
@@ -65,52 +65,44 @@ plot_coef_height = function(pred) {
 # Amphibians
 
 load("results/sdmTMB_models/amphibians_sesvert.RData")
-mod = m.final
-amph.sesvert = plot_spatial_varying(mod = m.final, var = "canopy_height", v = wd, legend_title = "coefficient")
+amph.sesvert = plot_spatial_varying(mod = mod, pred = pred, var = "canopy_height", v = wd, legend_title = "coefficient")
 coef.a.ses = plot_coef_height(pred)
 
 load("results/sdmTMB_models/amphibians_meanvert.RData")
-mod = m.final
-amph.meanvert = plot_spatial_varying(mod = m.final, var = "canopy_height", v = wd, legend_title = "coefficient")
+amph.meanvert = plot_spatial_varying(mod = mod, pred = pred, var = "canopy_height", v = wd, legend_title = "coefficient")
 coef.a.mean = plot_coef_height(pred)
 
 
 # Reptiles
 
 load("results/sdmTMB_models/reptiles_sesvert.RData")
-mod = m.final
-rept.sesvert = plot_spatial_varying(mod = m.final, var = "canopy_height", v = wd, legend_title = "coefficient")
+rept.sesvert = plot_spatial_varying(mod = mod, pred = pred, var = "canopy_height", v = wd, legend_title = "coefficient")
 coef.r.ses = plot_coef_height(pred)
 
 load("results/sdmTMB_models/reptiles_meanvert.RData")
-mod = m.final
-rept.meanvert = plot_spatial_varying(mod = m.final, var = "canopy_height", v = wd, legend_title = "coefficient")
+rept.meanvert = plot_spatial_varying(mod = mod, pred = pred, var = "canopy_height", v = wd, legend_title = "coefficient")
 coef.r.mean = plot_coef_height(pred)
 
 
 # Mammals
 
 load("results/sdmTMB_models/mammals_sesvert.RData")
-mod = m.final
-mammals.sesvert = plot_spatial_varying(mod = m.final, var = "canopy_height", v = wd, legend_title = "coefficient")
+mammals.sesvert = plot_spatial_varying(mod = mod, pred = pred, var = "canopy_height", v = wd, legend_title = "coefficient")
 coef.m.ses = plot_coef_height(pred)
 
 load("results/sdmTMB_models/mammals_meanvert.RData")
-mod = m.final
-mammals.meanvert = plot_spatial_varying(mod = m.final, var = "canopy_height", v = wd, legend_title = "coefficient")
+mammals.meanvert = plot_spatial_varying(mod = mod, pred = pred, var = "canopy_height", v = wd, legend_title = "coefficient")
 coef.m.mean = plot_coef_height(pred)
 
 
 # Birds
 
 load("results/sdmTMB_models/birds_sesvert.RData")
-mod = m.final
-birds.sesvert = plot_spatial_varying(mod = m.final, var = "canopy_height", v = wd, legend_title = "coefficient")
+birds.sesvert = plot_spatial_varying(mod = mod, pred = pred, var = "canopy_height", v = wd, legend_title = "coefficient")
 coef.b.ses = plot_coef_height(pred)
 
 load("results/sdmTMB_models/birds_meanvert.RData")
-mod = m.final
-birds.meanvert = plot_spatial_varying(mod = m.final, var = "canopy_height", v = wd, legend_title = "coefficient")
+birds.meanvert = plot_spatial_varying(mod = mod, pred = pred, var = "canopy_height", v = wd, legend_title = "coefficient")
 coef.b.mean = plot_coef_height(pred)
 
 
