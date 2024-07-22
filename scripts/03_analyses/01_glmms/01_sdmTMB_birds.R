@@ -44,13 +44,13 @@ dat.f = dat.f[which(!is.na(dat.f$precip_dry)),]
 
 
 # plot relationship between SES verticality and env predictors
-raw %>% 
-  dplyr::select(vert.mean.ses, biome:clim_velocity, elev, veg_den, veg_complexity) %>%
-  pivot_longer(cols = 3:16, names_to = "var", values_to = "val") %>% 
-  ggplot(aes(x = val, y = vert.mean.ses, color = biome)) +
-  geom_point(pch = ".") +
-  facet_wrap(~var, scales = "free") +
-  theme_classic()
+# raw %>% 
+#   dplyr::select(vert.mean.ses, biome:clim_velocity, elev, veg_den, veg_complexity) %>%
+#   pivot_longer(cols = 3:16, names_to = "var", values_to = "val") %>% 
+#   ggplot(aes(x = val, y = vert.mean.ses, color = biome)) +
+#   geom_point(pch = ".") +
+#   facet_wrap(~var, scales = "free") +
+#   theme_classic()
 
 dat.t = raw %>% 
   mutate(log_clim_velocity = log10(clim_velocity),
@@ -58,13 +58,13 @@ dat.t = raw %>%
          log_precip_dry = log10(precip_dry),
          log_precip_wet = log10(precip_wet))
 
-dat.t %>% 
-  dplyr::select(vert.mean.ses, biome:clim_velocity, elev, veg_den, veg_complexity, log_clim_velocity, log_precip_dry, log_tmin_cold, log_precip_wet) %>%
-  pivot_longer(cols = 3:20, names_to = "var", values_to = "val") %>% 
-  ggplot(aes(x = val, y = vert.mean.ses, color = biome)) +
-  geom_point(pch = ".") +
-  facet_wrap(~var, scales = "free") +
-  theme_classic()
+# dat.t %>% 
+#   dplyr::select(vert.mean.ses, biome:clim_velocity, elev, veg_den, veg_complexity, log_clim_velocity, log_precip_dry, log_tmin_cold, log_precip_wet) %>%
+#   pivot_longer(cols = 3:20, names_to = "var", values_to = "val") %>% 
+#   ggplot(aes(x = val, y = vert.mean.ses, color = biome)) +
+#   geom_point(pch = ".") +
+#   facet_wrap(~var, scales = "free") +
+#   theme_classic()
 
 # scale the data
 dat = dat.t %>%
@@ -167,7 +167,7 @@ sanity(compMods_aic$mods[[4]])
 
 compMods_aic[[2]]
 save(compMods_aic, fitmesh, file = paste0("results/sdmTMB_models/model_selection/",fname_end,".RData"))
-#load(paste0("results/sdmTMB_models/model_selection/",fname_end,".RData"))
+load(paste0("results/sdmTMB_models/model_selection/",fname_end,".RData"))
 
 compMods_aic[[2]]
 
