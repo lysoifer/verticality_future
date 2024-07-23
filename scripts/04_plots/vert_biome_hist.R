@@ -6,19 +6,19 @@ library(foreach)
 
 env = read.csv("data/derivative_data/env_data.csv")
 
-amph = fread("data/derivative_data/gridcell_data/amphibians_comdat/amph_comdat_parallel_forestsOnly.csv") %>% 
+amph = fread("data/derivative_data/gridcell_data/env_forest/50_km/amph_comdat.csv") %>% 
   dplyr::select(vert.mean, vert.mean.ses, biome) %>% 
   mutate(class = "Amphibians")
 
-bird = fread("data/derivative_data/gridcell_data/birds_comdat/birds_comdat_parallel_elton_forestsOnly.csv") %>% 
+bird = fread("data/derivative_data/gridcell_data/env_forest/50_km/birds_comdat.csv") %>% 
   dplyr::select(vert.mean, vert.mean.ses, biome) %>% 
   mutate(class = "Birds")
 
-mammals = fread("data/derivative_data/gridcell_data/mammals_comdat/mammals_comdat_parallel_forestsOnly.csv") %>% 
+mammals = fread("data/derivative_data/gridcell_data/env_forest/50_km/mammals_comdat.csv") %>% 
   dplyr::select(vert.mean, vert.mean.ses, biome) %>% 
   mutate(class = "Mammals")
 
-rept = fread("data/derivative_data/gridcell_data/reptiles_comdat/rept_comdat_parallel_forestsOnly.csv") %>% 
+rept = fread("data/derivative_data/gridcell_data/env_forest/50_km/reptiles_comdat.csv") %>% 
   dplyr::select(vert.mean, vert.mean.ses, biome) %>% 
   mutate(class = "Reptiles")
 
@@ -77,7 +77,7 @@ biomes = c(
 
 library(RColorBrewer)
 library(cowplot)
-dummy = data.frame(vert.mean = c(0,1), vert.mean.ses = range(df$vert.mean.ses)) %>% 
+dummy = data.frame(vert.mean = c(0,1), vert.mean.ses = range(df$vert.mean.ses, na.rm = T)) %>% 
   rename("Mean Verticality" = vert.mean, "SES Mean Verticality" = vert.mean.ses) %>% 
   pivot_longer(cols = 1:2, names_to = "vert", values_to = "vals")
 
@@ -94,13 +94,19 @@ p = foreach(i = unique(biomes)) %do% {
     scale_fill_manual(values = brewer.pal(4, "Set2")) +
     scale_color_manual(values = brewer.pal(4, "Set2")) +
     scale_x_continuous("") +
-    scale_y_continuous(expand = c(0,0)) +
-    facet_wrap(~vert, nrow = 1, scales = "free_x") +
+    scale_y_continuous(expand = c(0,0), n.breaks = 3) +
+    facet_grid(rows = vars(class), cols = vars(vert), scales = "free") +
     ggtitle(i) +
     theme_classic() +
-    theme(panel.background = element_rect(color = "black", fill = NA),
+    theme(panel.background = element_rect(color = "black", fill = NA, linewidth = 1),
           panel.grid.major = element_line(color = "gray80"),
-          plot.title = element_text(hjust = 0.5))
+          plot.title = element_text(hjust = 0.5),
+          strip.text.y = element_blank(),
+          panel.spacing = unit(0, units = "mm"),
+          strip.background.x = element_rect(fill = "grey80", color = "black"),
+          legend.key.size = unit(10, units = "mm"),
+          legend.title = element_blank(),
+          legend.text = element_text(size = 12))
 }
 
 legend = get_legend(p[[1]])
@@ -113,7 +119,7 @@ p = foreach(i = 1:length(p)) %do% {
 library(patchwork)
 p = wrap_plots(p) + legend + plot_annotation(tag_levels = "A")
 
-png("figures/supp_figs/hist_biome.png", width = 550, height = 300, res = 300, unit = "mm")
+png("figures/supp_figs/hist_biome.png", width = 550, height = 400, res = 300, unit = "mm")
 p
 dev.off()
 
@@ -142,7 +148,7 @@ vert.biome = dat %>%
   ggplot() +
   geom_pointrange(aes(y = reorder(biome, biome.meanvert), x = vert, xmin = lci, xmax = uci), size = 0.25) +
   geom_blank(data = dummy, aes(x = vert)) +
-  #geom_vline(xintercept = 0, linetype = "dashed", color = "red4", linewidth = 1) + 
+  geom_vline(data = data.frame(x = c(0,0.5), vertvar = c("SES Mean Verticality", "Mean Verticality")), aes(xintercept = x), linetype = "dashed", color = "red4", linewidth = 1) + 
   scale_y_discrete("Biome") +
   scale_x_continuous("") +
   #scale_color_manual(values = c("tan4", "forestgreen")) +
@@ -158,55 +164,39 @@ dev.off()
 
 # histograms present vs future --------------------------------------------
 
-load("results/sar_mods_forestOnly_forestSES/amphibians/amphibians_sar_sesvert.RData")
-amph.sesvert = pred.df
+load("results/sdmTMB_models/amphibians_sesvert.RData")
+amph.sesvert = pred
+amph.sesvert$est.f = pred.f$est
 amph.sesvert$class = "Amphibians"
+amph.sesvert$biome = pred$biome
 
-load("results/sar_mods_forestOnly_forestSES/mammals/mammals_sar_sesvert.RData")
-mammals.sesvert = pred.df
+load("results/sdmTMB_models/mammals_sesvert.RData")
+mammals.sesvert = pred
+mammals.sesvert$est.f = pred.f$est
 mammals.sesvert$class = "Mammals"
+mammals.sesvert$biome = pred$biome
 
-load("results/sar_mods_forestOnly_forestSES/birds/birds_sar_sesvert.RData")
-birds.sesvert = pred.df
+load("results/sdmTMB_models/birds_sesvert.RData")
+birds.sesvert = pred
+birds.sesvert$est.f = pred.f$est
 birds.sesvert$class = "Birds"
+birds.sesvert$biome = pred$biome
 
-load("results/sar_mods_forestOnly_forestSES/reptiles/reptiles_sar_sesvert.RData")
-repts.sesvert = pred.df
+
+load("results/sdmTMB_models/reptiles_sesvert.RData")
+repts.sesvert = pred
+repts.sesvert$est.f = pred.f$est
 repts.sesvert$class = "Reptiles"
-
+repts.sesvert$biome = pred$biome
 
 
 sesvert.df = bind_rows(amph.sesvert, mammals.sesvert, birds.sesvert, repts.sesvert)
-sesvert.df = sesvert.df %>% 
-  left_join(env, by = c("x", "y")) %>% 
-  dplyr::select(pred.pres.trend, pred.future, biome, class) %>% 
-  rename("Predicted Present Trend" = pred.pres.trend, "Predicted Future Trend" = pred.future) %>% 
-  pivot_longer(1:2, names_to = "time", values_to = "vert") %>% 
-  mutate(vert.type = "SES Mean Verticality")
-
-sesvert.df %>% 
-  group_by(biome) %>% 
-  summarise(n = n())
-
-sesvert.df %>% 
-  mutate(time = factor(time, levels = c("Predicted Present Trend", "Predicted Future Trend"))) %>% 
-  #filter(class == "Birds") %>% 
-  ggplot(aes(x = vert, fill = class, group = class)) +
-  geom_histogram(alpha = 1, position = "stack") +
-  facet_wrap(~time, nrow = 1) +
-  scale_fill_discrete_qualitative(palette = "Set2") +
-  theme_classic()
-  
-sesvert.df %>% 
-  mutate(time = factor(time, levels = c("Predicted Present Trend", "Predicted Future Trend"))) %>% 
-  ggplot(aes(x = vert, fill = class, group = class)) +
-  geom_histogram() +
-  facet_wrap(biome~time) +
-  scale_fill_discrete_qualitative(palette = "Set2") +
-  theme_classic()
 
 sesvert.summ = sesvert.df %>% 
-  mutate(time = factor(time, levels = c("Predicted Present Trend", "Predicted Future Trend"))) %>% 
+  select(est, est.f, biome, class) %>% 
+  pivot_longer(cols = 1:2, names_to = "time", values_to = "vert") %>% 
+  mutate(time = ifelse("est", "Predicted Present", "Predicted Future")) %>% 
+  #mutate(time = factor(time, levels = c("Predicted Present", "Predicted Future"))) %>% 
   group_by(time, class, biome) %>% 
   summarise(sesvert.mean = mean(vert))
 
@@ -229,7 +219,10 @@ biomes = c(
 library(RColorBrewer)
 p = foreach(i = unique(biomes)) %do% {
   sesvert.df %>% 
-  mutate(time = factor(time, levels = c("Predicted Present Trend", "Predicted Future Trend")),
+  select(est, est.f, biome, class) %>% 
+  pivot_longer(cols = 1:2, names_to = "time", values_to = "vert") %>% 
+  mutate(time = ifelse(time == "est", "Predicted Present", "Predicted Future")) %>% 
+  mutate(time = factor(time, levels = c("Predicted Present", "Predicted Future")),
          class = factor(class, levels = c("Birds", "Mammals", "Reptiles", "Amphibians"))) %>% 
   filter(biome == i) %>% 
   ggplot(aes(x = vert, fill = class)) +
@@ -237,17 +230,20 @@ p = foreach(i = unique(biomes)) %do% {
   #geom_vline(data = sesvert.summ %>% filter(biome == i), aes(xintercept = sesvert.mean, color = class)) +
   scale_fill_manual(values = brewer.pal(4, "Set2")) +
   scale_color_manual(values = brewer.pal(4, "Set2")) +
-  scale_x_continuous("SES Mean Verticality", limits = c(-5.5, 2)) +
-  scale_y_continuous(expand = c(0,0)) +
-  facet_wrap(~time, nrow = 1) +
+  scale_x_continuous("SES Mean Verticality") +
+  scale_y_continuous(expand = c(0,0), n.breaks = 3) +
+  facet_grid(rows = vars(class), cols = vars(time), scales = "free_y") +
   ggtitle(i) +
   theme_classic() +
   theme(panel.background = element_rect(color = "black", fill = NA),
         panel.grid.major = element_line(color = "gray80"),
-        plot.title = element_text(hjust = 0.5))
+        plot.title = element_text(hjust = 0.5),
+        strip.text.y = element_blank(),
+        panel.spacing = unit(0, units = "mm"),
+        strip.background.x = element_rect(fill = "grey80", color = "black"))
 }
 
-legend = get_legend(p)
+legend = get_legend(p[[1]])
 
 p = foreach(i = 1:length(p)) %do% {
   p[[i]] +
@@ -257,29 +253,11 @@ p = foreach(i = 1:length(p)) %do% {
 library(patchwork)
 p = wrap_plots(p) + legend + plot_annotation(tag_levels = "A")
 
-png("figures/vert_difs/sesvert_difs_histograms.png", width = 500, height = 400, res = 300, unit = "mm")
+png("figures/supp_figs/vert_difs/sesvert_difs_histograms.png", width = 500, height = 400, res = 300, unit = "mm")
 p
 dev.off()
 
-load("results/amphibians_sar_vertmean2.RData")
-amph.meanvert = vert.scale.sub
-amph.meanvert$class = "Amphibians"
 
-load("results/mammals_sar_vertmean2.RData")
-mammals.meanvert = vert.scale.sub
-mammals.meanvert$class = "Mammals"
-
-load("results/birdselton_sar_vertmean.RData")
-birds.meanvert = vert.scale.sub
-birds.meanvert$class = "Birds"
-
-load("results/reptiles_sar_vertmean2.RData")
-repts.meanvert = vert.scale.sub
-repts.meanvert$class = "Reptiles"
-
-meanvert.df = bind_rows(amph.meanvert, mammals.meanvert, birds.meanvert, repts.meanvert)
-meanvert.df = meanvert.df %>% 
-  dplyr::select(vert.mean, vert.mean.future)
 
 
 
