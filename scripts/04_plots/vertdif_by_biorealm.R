@@ -64,7 +64,7 @@ biome = read.csv("data/derivative_data/env_data.csv") %>%
   mutate(biome = factor(biome)) %>% 
   drop_na()
 
-headbiomekey = biome %>% 
+biomekey = biome %>% 
   distinct(biome) %>% 
   drop_na() %>% 
   mutate(id = 1:14)
@@ -106,15 +106,15 @@ dif.biome = dat %>%
   ggplot() +
   # geom_pointrange(aes(y = reorder(biome, biome.meandif), x = dif.mean, xmin = dif.lci, xmax = dif.uci,
   #                     color = dif.mean > 0), size = 0.5, linewidth = 1) +
-  geom_boxplot(aes(x = est.dif, y = biome)) +
-  geom_vline(xintercept = 0, linetype = "dashed", color = "red", linewidth = 1) + 
+  geom_boxplot(aes(x = est.dif, y = biome), fill = "forestgreen", alpha = 0.5) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "black", linewidth = 1) + 
   scale_y_discrete("Biome") +
   scale_x_continuous("Verticality difference") +
   scale_fill_manual(values = c("tan4", "forestgreen")) +
   facet_grid2(vars(vertvar), vars(class), scales = "free_x", independent = "x") +
   scale_x_facet(ROW == 1, limits = c(-0.0255, 0.0255)) +
   scale_x_facet(ROW == 2, limits = c(-0.9, 0.9)) +
-  theme(panel.grid.major = element_line(color = "gray"),
+  theme(panel.grid.major = element_line(color = "gray80"),
         panel.grid.minor = element_blank(),
         panel.background = element_rect(color = "black", fill = NA),
         strip.background = element_rect(color = "black"),

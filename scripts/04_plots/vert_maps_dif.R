@@ -259,14 +259,14 @@ EKQ
 FLR"
 
 library(grid)
-col1 = wrap_elements(panel = textGrob("SES Mean Verticality"))
-col2 = wrap_elements(panel = textGrob("Mean Verticality"))
+col1 = wrap_elements(panel = textGrob("SES Mean Verticality", gp= gpar(fontface = "bold")))
+col2 = wrap_elements(panel = textGrob("Mean Verticality", gp = gpar(fontface = "bold")))
 
 row0 = wrap_elements(panel = textGrob("", rot = 90))
-row1 = wrap_elements(panel = textGrob("Birds", rot = 90))
-row2 = wrap_elements(panel = textGrob("Mammals", rot = 90))
-row3 = wrap_elements(panel = textGrob("Reptiles", rot = 90))
-row4 = wrap_elements(panel = textGrob("Amphibians", rot = 90))
+row1 = wrap_elements(panel = textGrob("Birds", rot = 90, gp = gpar(fontface = "bold")))
+row2 = wrap_elements(panel = textGrob("Mammals", rot = 90, gp = gpar(fontface = "bold")))
+row3 = wrap_elements(panel = textGrob("Reptiles", rot = 90, gp = gpar(fontface = "bold")))
+row4 = wrap_elements(panel = textGrob("Amphibians", rot = 90, gp = gpar(fontface = "bold")))
 row5 = wrap_elements(panel = textGrob("", rot = 90))
 
 # make combined legend
@@ -291,6 +291,6 @@ p = row0 + row1 + row2 + row3 + row4 + row5 +
   theme(plot.title = element_blank())
 
 
-png("figures/main_figs/vert_difs.png", height = 300, width = 300, res = 300, units = "mm")
+png("figures/main_figs/vert_difs.png", height = 250, width = 300, res = 300, units = "mm")
 p
 dev.off()
