@@ -36,7 +36,7 @@ plt_rast_margin = function(r, v, plot.title, margin.title, base_text_size = 12, 
     scale_fill_continuous_divergingx("spectral", na.value = NA, limits = scale_limits) +
     coord_sf(ylim = c(ymin, ymax)) +
     theme_classic() +
-    theme(legend.position = "bottom",
+    theme(legend.position = "none",
           legend.margin = margin(0,0,0,0),
           legend.key = element_blank(),
           legend.background = element_blank(),
@@ -106,7 +106,8 @@ plt_rast_margin = function(r, v, plot.title, margin.title, base_text_size = 12, 
                                   width = sizes_axis * 1.25
   )
   
-  gg_final <- ggdraw(plot_final) + draw_label(plot.title, x = 0.5, y = 1, vjust = 1.5)
+  #gg_final <- ggdraw(plot_final) + draw_label(plot.title, x = 0.5, y = 1, vjust = 1.5)
+  gg_final <- ggdraw(plot_final)
   return(gg_final)
 }
 
@@ -250,410 +251,46 @@ birds.meanvert.dif.plt
 # FULL FIGURE -------------------------------------------------------------
 
 design = "
-AF
-BG
-CH
-DI
-EJ"
+AGM
+BHN
+CIO
+DJP
+EKQ
+FLR"
 
 library(grid)
 col1 = wrap_elements(panel = textGrob("SES Mean Verticality"))
 col2 = wrap_elements(panel = textGrob("Mean Verticality"))
 
-p = col1 + birds.sesvert.dif.plt + mammals.sesvert.dif.plt + rept.sesvert.dif.plt + amph.sesvert.dif.plt +
-  col2 + birds.meanvert.dif.plt + mammals.meanvert.dif.plt + rept.meanvert.dif.plt + amph.meanvert.dif.plt + 
-  plot_layout(design = design, heights = c(0.1, -1, -1, -1, -1)) +
-  plot_annotation(tag_levels = list(c("", "A", "B", "C", "D", "", "E", "F", "G", "H")))
+row0 = wrap_elements(panel = textGrob("", rot = 90))
+row1 = wrap_elements(panel = textGrob("Birds", rot = 90))
+row2 = wrap_elements(panel = textGrob("Mammals", rot = 90))
+row3 = wrap_elements(panel = textGrob("Reptiles", rot = 90))
+row4 = wrap_elements(panel = textGrob("Amphibians", rot = 90))
+row5 = wrap_elements(panel = textGrob("", rot = 90))
 
 # make combined legend
-legend.sesvert = ggplot(data = data.frame(x = 1, y = 1, z = -5,5)) + 
-  geom_point(aes(x,y,fill = z)) + scale_fill_continuous_divergingx("spectral", limits = c(-5,5), guide = guide_colorbar(""))
+legend.sesvert = ggplot(data = data.frame(x = 1, y = 1, z = -2,2)) + 
+  geom_point(aes(x,y,fill = z)) + scale_fill_continuous_divergingx("spectral", limits = c(-2,2), guide = guide_colorbar("")) +
+  theme(legend.direction = "horizontal",
+        legend.key.width = unit(10, units = "mm"))
 legend.sesvert = get_legend(legend.sesvert)
 
-png("figures/main_figs/vert_difs.png", height = 300, width = 300, res = 300, units = "mm")
-p
-dev.off()
+legend.meanvert = ggplot(data = data.frame(x = 1, y = 1, z = -0.5,0.5)) + 
+  geom_point(aes(x,y,fill = z)) + scale_fill_continuous_divergingx("spectral", limits = c(-0.5,0.5), guide = guide_colorbar("")) +
+  theme(legend.direction = "horizontal",
+        legend.key.width = unit(10, units = "mm"))
+legend.meanvert = get_legend(legend.meanvert)
 
 
-# SESVERT DIF 111 km resolution plots from SAR models -------------------------------------------------------------
+p = row0 + row1 + row2 + row3 + row4 + row5 +
+  col1 + birds.sesvert.dif.plt + mammals.sesvert.dif.plt + rept.sesvert.dif.plt + amph.sesvert.dif.plt + legend.sesvert +
+  col2 + birds.meanvert.dif.plt + mammals.meanvert.dif.plt + rept.meanvert.dif.plt + amph.meanvert.dif.plt + legend.meanvert +
+  plot_layout(design = design, heights = c(0.1, -1, -1, -1, -1, 0.2), widths = c(0.1, -1, -1, 0.2)) +
+  plot_annotation(tag_levels = list(c("", "", "", "", "", "", "", "A", "B", "C", "D", "", "", "E", "F", "G", "H",""))) +
+  theme(plot.title = element_blank())
 
-load("results/sar_mods_forestOnly_forestSES/amphibians/amphibians_sar_sesvert.RData")
-amph = pred.df
-
-amph.pdat = amph %>% 
-  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
-  project("epsg:4326") %>% 
-  as.data.frame(xy = T) %>% 
-  mutate(sesvert.dif = pred.future-pred.pres.trend) %>% 
-  dplyr::select(x,y,sesvert.dif) %>% 
-  rast(type = "xyz", crs = "epsg:4326")
-
-amph.sesvert.dif.plt = plt_rast_margin(r = amph.pdat, v = wd, margin.title = "avg. difference by latitude",
-                                       plot.title = "Amphibians", var = "sesvert.dif", rd = 1)
-amph.sesvert.dif.plt
-
-png("figures/vert_difs/sesvert_future_dif/forestOnly_forestSES/amphibians.png", width = 200, height = 100, res = 300, units = "mm")
-amph.sesvert.dif.plt
-dev.off()
-
-
-load("results/sar_mods_forestOnly_forestSES/mammals/mammals_sar_sesvert.RData")
-mammals = pred.df
-
-mammals.pdat = mammals %>% 
-  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
-  project("epsg:4326") %>% 
-  as.data.frame(xy = T) %>% 
-  mutate(sesvert.dif = pred.future-pred.pres.trend) %>% 
-  dplyr::select(x,y,sesvert.dif) %>% 
-  rast(type = "xyz", crs = "epsg:4326")
-
-mammals.sesvert.dif.plt = plt_rast_margin(mammals.pdat, v = wd,
-                                          margin.title = "avg. difference by latitude",
-                                          plot.title = "Mammals", var = "sesvert.dif", rd = 1)
-mammals.sesvert.dif.plt
-
-png("figures/vert_difs/sesvert_future_dif/forestOnly_forestSES/mammals.png", width = 200, height = 100, res = 300, units = "mm")
-mammals.sesvert.dif.plt
-dev.off()
-
-
-load("results/sar_mods_forestOnly_forestSES/birds/birds_sar_sesvert.RData")
-birds = pred.df
-
-birds.pdat = birds %>% 
-  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
-  project("epsg:4326") %>% 
-  as.data.frame(xy = T) %>% 
-  mutate(sesvert.dif = pred.future-pred.pres.trend) %>% 
-  dplyr::select(x,y,sesvert.dif) %>% 
-  rast(type = "xyz", crs = "epsg:4326")
-
-birds.sesvert.dif.plt = plt_rast_margin(birds.pdat, v = wd,
-                                        margin.title = "avg. difference by latitude",
-                                        plot.title = "Birds",
-                                        var = "sesvert.dif", rd = 1)
-birds.sesvert.dif.plt
-
-png("figures/vert_difs/sesvert_future_dif/forestOnly_forestSES/birds.png", width = 200, height = 100, res = 300, units = "mm")
-birds.sesvert.dif.plt
-dev.off()
-
-
-load("results/sar_mods_forestOnly_forestSES/reptiles/reptiles_sar_sesvert.RData")
-repts = pred.df
-
-repts.pdat = repts %>% 
-  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
-  project("epsg:4326") %>% 
-  as.data.frame(xy = T) %>% 
-  mutate(sesvert.dif = pred.future-pred.pres.trend) %>% 
-  dplyr::select(x,y,sesvert.dif) %>% 
-  rast(type = "xyz", crs = "epsg:4326")
-
-repts.sesvert.dif.plt = plt_rast_margin(repts.pdat, v = wd, margin.title = "avg. difference by latitude",
-                                        plot.title = "Reptiles", var = "sesvert.dif", rd = 1)
-repts.sesvert.dif.plt
-
-png("figures/vert_difs/sesvert_future_dif/forestOnly_forestSES/repts.png", width = 200, height = 100, res = 300, units = "mm")
-repts.sesvert.dif.plt
-dev.off()
-
-p = birds.sesvert.dif.plt + mammals.sesvert.dif.plt + 
-  repts.sesvert.dif.plt + amph.sesvert.dif.plt + 
-  plot_layout(nrow = 2, ncol = 2) + plot_annotation(tag_levels = "A")
-
-png("figures/vert_difs/sesvert_future_dif/forestOnly_forestSES/sesvert_dif.png", width = 400, height = 200, res = 300, units = "mm")
-p
-dev.off()
-
-# MEAN VERT DIF -----------------------------------------------------------
-
-load("results/sar_mods_forestOnly_forestSES/amphibians/amphibians_sar_meanvert.RData")
-amph = pred.df
-
-amph.pdat = amph %>% 
-  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
-  project("epsg:4326") %>% 
-  as.data.frame(xy = T) %>% 
-  mutate(vert.dif = pred.future-pred.pres.trend) %>% 
-  dplyr::select(x,y,vert.dif) %>% 
-  rast(type = "xyz", crs = "epsg:4326")
-
-amph.vert.dif.plt = plt_rast_margin(r = amph.pdat, v = wd, margin.title = "avg. difference by latitude",
-                                    plot.title = "Amphibians", var = "vert.dif", rd = 3)
-amph.vert.dif.plt
-
-png("figures/vert_future_dif/forestOnly_forestSES/amph.png", width = 200, height = 100, res = 300, units = "mm")
-amph.vert.dif.plt
-dev.off()
-
-
-load("results/sar_mods_forestOnly_forestSES/mammals/mammals_sar_meanvert.RData")
-mammals = pred.df
-
-mammals.pdat = mammals %>% 
-  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
-  project("epsg:4326") %>% 
-  as.data.frame(xy = T) %>% 
-  mutate(vert.dif = pred.future-pred.pres.trend) %>% 
-  dplyr::select(x,y,vert.dif) %>% 
-  rast(type = "xyz", crs = "epsg:4326")
-
-mammals.vert.dif.plt = plt_rast_margin(mammals.pdat, v = wd, margin.title = "avg. difference by latitude", 
-                                       plot.title = "Mammals", var = "vert.dif", rd = 3)
-mammals.vert.dif.plt
-
-png("figures/vert_future_dif/forestOnly_forestSES/mammals.png", width = 200, height = 100, res = 300, units = "mm")
-mammals.vert.dif.plt
-dev.off()
-
-
-load("results/sar_mods_forestOnly_forestSES/birds/birds_sar_meanvert.RData")
-birds = pred.df
-
-birds.pdat = birds %>% 
-  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
-  project("epsg:4326") %>% 
-  as.data.frame(xy = T) %>% 
-  mutate(vert.dif = pred.future-pred.pres.trend) %>% 
-  dplyr::select(x,y,vert.dif) %>% 
-  rast(type = "xyz", crs = "epsg:4326")
-
-birds.vert.dif.plt = plt_rast_margin(birds.pdat, v = wd, margin.title = "avg. difference by latitude", plot.title = "Birds", var = "vert.dif", rd = 2)
-birds.vert.dif.plt
-
-png("figures/vert_future_dif/forestOnly_forestSES/birds.png", width = 200, height = 100, res = 300, units = "mm")
-birds.vert.dif.plt
-dev.off()
-
-
-load("results/sar_mods_forestOnly_forestSES/reptiles/reptiles_sar_meanvert.RData")
-repts = pred.df
-
-repts.pdat = repts %>% 
-  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
-  project("epsg:4326") %>% 
-  as.data.frame(xy = T) %>% 
-  mutate(vert.dif = pred.future-pred.pres.trend) %>% 
-  dplyr::select(x,y,vert.dif) %>% 
-  rast(type = "xyz", crs = "epsg:4326")
-
-repts.vert.dif.plt = plt_rast_margin(repts.pdat, v = wd, margin.title = "avg. difference by latitude", plot.title = "Reptiles", var = "vert.dif",rd = 2)
-repts.vert.dif.plt
-
-png("figures/vert_future_dif/forestOnly_forestSES/repts.png", width = 200, height = 100, res = 300, units = "mm")
-repts.vert.dif.plt
-dev.off()
-
-p = birds.vert.dif.plt + mammals.vert.dif.plt + 
-  repts.vert.dif.plt + amph.vert.dif.plt + 
-  plot_layout(nrow = 2, ncol = 2) + plot_annotation(tag_levels = "A")
-
-png("figures/vert_future_dif/forestOnly_forestSES/vert_dif.png", width = 420, height = 200, res = 300, units = "mm")
-p
-dev.off()
-
-design = "
-AF
-BG
-CH
-DI
-EJ"
-
-library(grid)
-col1 = wrap_elements(panel = textGrob("SES Mean Verticality"))
-col2 = wrap_elements(panel = textGrob("Mean Verticality"))
-
-p = col1 + birds.sesvert.dif.plt + mammals.sesvert.dif.plt + repts.sesvert.dif.plt + amph.sesvert.dif.plt +
-  col2 + birds.vert.dif.plt + mammals.vert.dif.plt + repts.vert.dif.plt + amph.vert.dif.plt + 
-  plot_layout(design = design, heights = c(0.1, -1, -1, -1, -1)) +
-  plot_annotation(tag_levels = list(c("", "A", "B", "C", "D", "", "E", "F", "G", "H")))
 
 png("figures/main_figs/vert_difs.png", height = 300, width = 300, res = 300, units = "mm")
 p
 dev.off()
-
-# png("figures/vert_difs/vert_difs.png", height = 300, width = 300, res = 300, units = "mm")
-# p
-# dev.off()
-
-# MEAN VERT DIF FOREST ONLY (prior to adjustments for forest only SES) -----------------------------------------------
-wd = vect("data/original/rnaturalearth_world.shp")
-wd = project(wd, "epsg:4326")
-
-load("results/sar_mods_forest_only/amphibians/amphibians_sar_vertmean2.RData")
-amph = vert.scale.sub
-
-amph.pdat = amph %>% 
-  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
-  project("epsg:4326") %>% 
-  as.data.frame(xy = T) %>% 
-  mutate(vert.dif = vert.mean.future-vert.mean) %>% 
-  dplyr::select(x,y,vert.dif) %>% 
-  rast(type = "xyz", crs = "epsg:4326")
-
-amph.vert.dif.plt = plt_rast_margin(r = amph.pdat, v = wd, margin.title = "avg. difference by latitude",
-                                    plot.title = "Amphibians", var = "vert.dif")
-amph.vert.dif.plt
-
-png("figures/vert_future_dif/forest_only/amph.png", width = 200, height = 100, res = 300, units = "mm")
-amph.vert.dif.plt
-dev.off()
-
-
-load("results/sar_mods_forest_only/mammals/mammals_sar_vertmean2.RData")
-mammals = vert.scale.sub
-
-mammals.pdat = mammals %>% 
-  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
-  project("epsg:4326") %>% 
-  as.data.frame(xy = T) %>% 
-  mutate(vert.dif = vert.mean.future-vert.mean) %>% 
-  dplyr::select(x,y,vert.dif) %>% 
-  rast(type = "xyz", crs = "epsg:4326")
-
-mammals.vert.dif.plt = plt_rast_margin(mammals.pdat, v = wd, margin.title = "avg. difference by latitude", 
-                                       plot.title = "Mammals", var = "vert.dif")
-mammals.vert.dif.plt
-
-png("figures/vert_future_dif/forest_only/mammals.png", width = 200, height = 100, res = 300, units = "mm")
-mammals.vert.dif.plt
-dev.off()
-
-
-load("results/sar_mods_forest_only/birds/birdselton_sar_vertmean.RData")
-birds = vert.scale.sub
-
-birds.pdat = birds %>% 
-  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
-  project("epsg:4326") %>% 
-  as.data.frame(xy = T) %>% 
-  mutate(vert.dif = vert.mean.future-vert.mean) %>% 
-  dplyr::select(x,y,vert.dif) %>% 
-  rast(type = "xyz", crs = "epsg:4326")
-
-birds.vert.dif.plt = plt_rast_margin(birds.pdat, v = wd, margin.title = "avg. difference by latitude", plot.title = "Birds", var = "vert.dif")
-birds.vert.dif.plt
-
-png("figures/vert_future_dif/forest_only/birds.png", width = 200, height = 100, res = 300, units = "mm")
-birds.vert.dif.plt
-dev.off()
-
-
-load("results/sar_mods_forest_only/reptiles/reptiles_sar_vertmean2.RData")
-repts = vert.scale.sub
-
-repts.pdat = repts %>% 
-  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
-  project("epsg:4326") %>% 
-  as.data.frame(xy = T) %>% 
-  mutate(vert.dif = vert.mean.future-vert.mean) %>% 
-  dplyr::select(x,y,vert.dif) %>% 
-  rast(type = "xyz", crs = "epsg:4326")
-
-repts.vert.dif.plt = plt_rast_margin(repts.pdat, v = wd, margin.title = "avg. difference by latitude", plot.title = "Reptiles", var = "vert.dif")
-repts.vert.dif.plt
-
-png("figures/vert_future_dif/forest_only/repts.png", width = 200, height = 100, res = 300, units = "mm")
-repts.vert.dif.plt
-dev.off()
-
-
-
-# SESVERT DIF FOREST ONLY (prior to adjustments for forest only SES) -------------------------------------------------------------
-
-load("results/sar_mods_forest_only/amphibians/amphibians_sar_sesvert2.RData")
-amph = sesvert.scale.sub
-
-amph.pdat = amph %>% 
-  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
-  project("epsg:4326") %>% 
-  as.data.frame(xy = T) %>% 
-  mutate(sesvert.dif = vert.mean.ses.future-vert.mean.ses) %>% 
-  dplyr::select(x,y,sesvert.dif) %>% 
-  rast(type = "xyz", crs = "epsg:4326")
-
-amph.sesvert.dif.plt = plt_rast_margin(amph.pdat, v = wd, margin.title = "avg. difference by latitude", 
-                                       plot.title = "Amphibians", var = "sesvert.dif")
-amph.sesvert.dif.plt
-
-png("figures/sesvert_future_dif/forest_only/amph.png", width = 200, height = 100, res = 300, units = "mm")
-amph.sesvert.dif.plt
-dev.off()
-
-
-load("results/sar_mods_forest_only/mammals/mammals_sar_sesvert2.RData")
-mammals = sesvert.scale.sub
-
-mammals.pdat = mammals %>% 
-  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
-  project("epsg:4326") %>% 
-  as.data.frame(xy = T) %>% 
-  mutate(sesvert.dif = vert.mean.ses.future-vert.mean.ses) %>% 
-  dplyr::select(x,y,sesvert.dif) %>% 
-  rast(type = "xyz", crs = "epsg:4326")
-
-mammals.sesvert.dif.plt = plt_rast_margin(mammals.pdat, v = wd, 
-                                          margin.title = "avg. difference by latitude", 
-                                          plot.title = "Mammals", var = "sesvert.dif")
-mammals.sesvert.dif.plt
-
-png("figures/sesvert_future_dif/forest_only/mammals.png", width = 200, height = 100, res = 300, units = "mm")
-mammals.sesvert.dif.plt
-dev.off()
-
-
-load("results/sar_mods_forest_only/birds/birdselton_sar_sesvert2.RData")
-birds = sesvert.scale.sub
-
-birds.pdat = birds %>% 
-  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
-  project("epsg:4326") %>% 
-  as.data.frame(xy = T) %>% 
-  mutate(sesvert.dif = vert.mean.ses.future-vert.mean.ses) %>% 
-  dplyr::select(x,y,sesvert.dif) %>% 
-  rast(type = "xyz", crs = "epsg:4326")
-
-birds.sesvert.dif.plt = plt_rast_margin(birds.pdat, v = wd,
-                                        margin.title = "avg. difference by latitude", 
-                                        plot.title = "Birds", var = "sesvert.dif")
-birds.sesvert.dif.plt
-
-png("figures/sesvert_future_dif/forest_only/birds.png", width = 200, height = 100, res = 300, units = "mm")
-birds.sesvert.dif.plt
-dev.off()
-
-
-load("results/sar_mods_forest_only/reptiles/reptiles_sar_sesvert2.RData")
-repts = sesvert.scale.sub
-
-repts.pdat = repts %>% 
-  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
-  project("epsg:4326") %>% 
-  as.data.frame(xy = T) %>% 
-  mutate(sesvert.dif = vert.mean.ses.future-vert.mean.ses) %>% 
-  dplyr::select(x,y,sesvert.dif) %>% 
-  rast(type = "xyz", crs = "epsg:4326")
-
-repts.sesvert.dif.plt = plt_rast_margin(repts.pdat, v = wd, 
-                                        margin.title = "avg. difference by latitude", 
-                                        plot.title = "Reptiles", var = "sesvert.dif")
-repts.sesvert.dif.plt
-
-png("figures/sesvert_future_dif/forest_only/repts.png", width = 200, height = 100, res = 300, units = "mm")
-repts.sesvert.dif.plt
-dev.off()
-
-
-
-
-
-
-
-
-
-
-
-
-
