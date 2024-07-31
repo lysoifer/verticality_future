@@ -22,17 +22,39 @@ plot_spatial_varying = function(mod, pred, var, v, legend_title) {
     rast(crs = "+proj=cea + datum=WGS84") %>% 
     project("epsg:4326")
     
-    
+  thm = theme(legend.position = "inside",
+              legend.position.inside = c(0.03,0.7),
+              legend.justification = c(0,1),
+              legend.margin = margin(0,0,0.2,0.3),
+              #legend.key = element_blank(),
+              legend.background = element_blank(),
+              legend.key.height = unit(3, units = "mm"),
+              legend.key.width = unit(2, units = "mm"),
+              legend.box.margin = margin(0,0,0,0),
+              legend.box.spacing = unit(1,"mm"),
+              legend.box.background = element_blank(),
+              plot.background = element_blank(),
+              plot.margin = unit(c(0,0,0,0), units = "mm"),
+              panel.spacing = unit(0,"mm"),
+              panel.background = element_rect(color = "black", fill = NA),
+              #legend.title.position = "top",
+              #legend.title = element_text(hjust = 0.5, size = 8),
+              axis.text = element_blank(),
+              axis.ticks = element_blank(),
+              axis.title = element_blank(),
+              panel.grid = element_blank())
+  
   ggplot() +
     geom_spatvector(data = v, color = "black", fill = "gray70") +
     geom_spatraster(data = dat, aes(fill = canopy_height_est_slope)) +
     geom_spatvector(data = v, color = "black", fill = NA) +
     scale_fill_continuous_divergingx("BrBG", na.value = NA, guide = guide_colorbar(legend_title)) +
-    theme(axis.text = element_blank(),
-          axis.title = element_blank(),
-          axis.ticks = element_blank(),
-          panel.background = element_rect(color = "black", fill = NA),
-          panel.grid = element_blank())
+    thm
+    # theme(axis.text = element_blank(),
+    #       axis.title = element_blank(),
+    #       axis.ticks = element_blank(),
+    #       panel.background = element_rect(color = "black", fill = NA),
+    #       panel.grid = element_blank())
 
 }
 
@@ -82,7 +104,7 @@ rept.sesvert = plot_spatial_varying(mod = mod, pred = pred, var = "canopy_height
 coef.r.ses = plot_coef_height(pred)
 
 load("results/sdmTMB_models/reptiles_meanvert.RData")
-rept.meanvert.svc = plot_spatial_varying(mod = mod, pred = pred, var = "canopy_height", v = wd, legend_title = "coefficient")
+rept.meanvert = plot_spatial_varying(mod = mod, pred = pred, var = "canopy_height", v = wd, legend_title = "coefficient")
 coef.r.mean = plot_coef_height(pred)
 
 
@@ -111,51 +133,46 @@ coef.b.mean = plot_coef_height(pred)
 # Full figure
 
 design = "
-AF
-BG
-CH
-DI
-EJ"
-
-library(grid)
-col1 = wrap_elements(panel = textGrob("SES Mean Verticality"))
-col2 = wrap_elements(panel = textGrob("Mean Verticality"))
-
-p = col1 + birds.sesvert+ mammals.sesvert + rept.sesvert + amph.sesvert +
-  col2 + birds.meanvert + mammals.meanvert + rept.meanvert + amph.meanvert + 
-  plot_layout(design = design, heights = c(0.01, -1, -1, -1, -1)) +
-  plot_annotation(tag_levels = list(c("", "A", "B", "C", "D", "", "E", "F", "G", "H")))
-
-png("figures/supp_figs/canopy_height_coefs.png", height = 300, width = 300, res = 300, units = "mm")
-p
-dev.off()
-
-row1 = wrap_elements(panel = textGrob("Birds", rot = 90))
-row2 = wrap_elements(panel = textGrob("Mammals", rot = 90))
-row3 = wrap_elements(panel = textGrob("Reptiles", rot = 90))
-row4 = wrap_elements(panel = textGrob("Amphibians", rot = 90))
-
-design = "
 AFK
 BGL
 CHM
 DIN
 EJO"
 
+library(grid)
+col1 = wrap_elements(panel = textGrob("SES Mean Verticality"))
+col2 = wrap_elements(panel = textGrob("Mean Verticality"))
+
+row1 = wrap_elements(panel = textGrob("Birds", rot = 90))
+row2 = wrap_elements(panel = textGrob("Mammals", rot = 90))
+row3 = wrap_elements(panel = textGrob("Reptiles", rot = 90))
+row4 = wrap_elements(panel = textGrob("Amphibians", rot = 90))
+
+
+p = plot_spacer() + row1 + row2 + row3 + row4 +
+  col1 + birds.sesvert+ mammals.sesvert + rept.sesvert + amph.sesvert +
+  col2 + birds.meanvert + mammals.meanvert + rept.meanvert + amph.meanvert + 
+  plot_layout(design = design,  heights = c(0.2,1,1,1,1), widths = c(0.2,1,1)) +
+  plot_annotation(tag_levels = list(c("","","","","", "A", "B", "C", "D", "", "E", "F", "G", "H"))) &
+  theme(plot.tag.position = c(0.025, 0.9), legend.title = element_blank(), legend.position.inside = c(0.03, 0.5))
+
+png("figures/supp_figs/canopy_height_coefs.png", height = 180, width = 200, res = 300, units = "mm")
+p
+dev.off()
+
+
 p = 
   plot_spacer() + row1 + row2 + row3 + row4 +
   col1 + coef.b.ses + coef.m.ses + coef.r.ses + coef.a.ses +
   col2 + coef.b.mean + coef.m.mean + coef.r.mean + coef.a.mean + 
-  plot_layout(design = design, heights = c(0.2,1,1,1,1), widths = c(0.2,1,1)) +
-  plot_annotation(tag_levels = list(c("","","","","", "A", "B", "C", "D", "", "E", "F", "G", "H")))
+  plot_layout(design = design, heights = c(0.2,1,1,1,1), widths = c(0.2,1,1),
+              axis_titles = "collect") +
+  plot_annotation(tag_levels = list(c("","","","","", "A", "B", "C", "D", "", "E", "F", "G", "H"))) &
+  theme(plot.tag.position = c(0.115, 0.95))
 
-p[[12]] <- p[[12]] + theme(axis.title = element_blank())
-p[[13]] <- p[[13]] + theme(axis.title = element_blank())
-p[[14]] <- p[[14]] + theme(axis.title = element_blank())
-p[[15]] <- p[[15]] + theme(axis.title.y = element_blank())
-p[[7]] <- p[[7]] + theme(axis.title.x = element_blank())
-p[[8]] <- p[[8]] + theme(axis.title.x = element_blank())
-p[[9]] <- p[[9]] + theme(axis.title.x = element_blank())
+for(i in c(6:10)) {
+  p[[i]] = p[[i]] + theme(plot.tag.position = c(0.165, 0.95))
+}
 
 png("figures/supp_figs/canopyHeightCoefs-canopyHeightSD.png", height = 200, width = 200, res = 300, units = "mm")
 p
