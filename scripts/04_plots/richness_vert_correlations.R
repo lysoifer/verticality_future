@@ -3,6 +3,9 @@
 library(ggplot2)
 library(tidyverse)
 library(patchwork)
+library(terra)
+library(sdmTMB)
+library(colorspace)
 
 amph = read.csv("data/derivative_data/gridcell_data/env_forest/50_km/amph_comdat.csv")
 birds = read.csv("data/derivative_data/gridcell_data/env_forest/50_km/birds_comdat.csv")
@@ -33,58 +36,63 @@ dat %>%
   theme_classic()
 
 
-plot_cor = function(mod, pred, taxa) {
+plot_cor = function(mod, pred, svc, taxa, var, xlab, ylab) {
+  # mod = sdmTMB model outpum
+  # pred = prediction to current climate conditions
+  # svc = spatraster of svc uncertainty from plot_spatial_varying.R
+  # taxa = character to label plot
+  # var = either "vert.mean" or "vert.mean.ses"
+  # xlab = x-axis label
   
   coefs = tidy(mod)
-  coef.var = as.numeric(coefs[which(coefs$term == "canopy_height"), "estimate"])
   
-  pred.canopy.pos = pred %>% 
-    filter(zeta_s_canopy_height + coef.var > 1)
+  pred.r = pred %>% 
+    dplyr::select(x,y,var, rich) %>% 
+    mutate(x = x*1e5, y = y*1e5) %>% 
+    rast(crs = "+proj=cea +datum=WGS84") %>% 
+    project("epsg:4326")
   
-  pred.canopy.n = pred %>% 
-    filter(zeta_s_canopy_height + coef.var <= 1)
-  
-  cor.p = cor.test(pred.canopy.pos$vert.mean.ses, pred.canopy.pos$rich)
-  cor.n = cor.test(pred.canopy.n$vert.mean.ses, pred.canopy.n$rich)
+  # combine vert, richness, and svc significance in a dataframe
+  df = c(pred.r, svc$svc_sig, svc$svc_median_effect_link) %>% 
+    as.data.frame()
 
-  sesvert = pred %>% 
-    ggplot(aes(x = vert.mean.ses, y = rich, color = (zeta_s_canopy_height + coef.var) > 1, 
-               fill = (zeta_s_canopy_height + coef.var) > 1,
-               alpha = (zeta_s_canopy_height + coef.var) > 1)) +
-    geom_point(size = 0.05) +
-    geom_smooth(method = "lm", alpha = 0.3) +
-    scale_fill_manual(values = c("gray80", "blue")) +
-    scale_color_manual(values = c("gray80", "blue")) +
-    scale_alpha_manual(values = c(0.2, 1)) +
-    annotate(geom = "text", label = paste0("R\u00b2 = ", format(round(cor.n$estimate^2, 2), nsmall = 2)),  
-             x = -Inf, y = Inf, hjust = -0.5, vjust = 3, color = "gray50") +
-    annotate(geom = "text", label = paste0("R\u00b2 = ", format(round(cor.p$estimate^2, 2), nsmall = 2)),  
-             x = -Inf, y = Inf, hjust = -0.5, vjust = 5, color = "blue") +
-    scale_x_continuous("SES Mean Verticality") +
-    scale_y_continuous(paste0(taxa, " Richness")) +
-    theme_classic()
+  df.sig = df %>% 
+    filter(svc_sig == 1)
   
-  cor.p = cor.test(pred.canopy.pos$vert.mean, pred.canopy.pos$rich)
-  cor.n = cor.test(pred.canopy.n$vert.mean, pred.canopy.n$rich)
+  df.sigpos = df %>% 
+    filter(svc_sig == 1 & svc_median_effect_link > 0)
   
-  meanvert = pred %>% 
-    ggplot(aes(x = vert.mean.ses, y = rich, color = (zeta_s_canopy_height + coef.var) > 1, 
-               fill = (zeta_s_canopy_height + coef.var) > 1,
-               alpha = (zeta_s_canopy_height + coef.var) > 1)) +
-    geom_point(size = 0.05) +
-    geom_smooth(method = "lm", alpha = 0.3) +
-    scale_fill_manual(values = c("gray80", "blue")) +
-    scale_color_manual(values = c("gray80", "blue")) +
-    scale_alpha_manual(values = c(0.2, 1)) +
-    annotate(geom = "text", label = paste0("R\u00b2 = ", format(round(cor.n$estimate^2, 2), nsmall = 2)),  
-             x = -Inf, y = Inf, hjust = -0.5, vjust = 3, color = "gray50") +
-    annotate(geom = "text", label = paste0("R\u00b2 = ", format(round(cor.p$estimate^2, 2), nsmall = 2)),  
-             x = -Inf, y = Inf, hjust = -0.5, vjust = 5, color = "blue") +
-    scale_x_continuous("SES Mean Verticality") +
-    scale_y_continuous(paste0(taxa, " Richness")) +
-    theme_classic()
+  cor.all = cor.test(df[,var], df$rich) # correlation between vert and richness with all points
+  cor.sig = cor.test(df.sig[,var], df.sig$rich) # correlation between ver and richness with all points that have a significant canopy height coefficient
+  cor.sigpos = cor.test(df.sigpos[,var], df.sigpos$rich)
+  
+  df$part = "all points"
+  df.sig$part = "CH coef significant"
+  df.sigpos$part = "CH coef significant\n& positive"
+  
+  df = rbind(df, df.sig, df.sigpos)
+  
+  df.cor = data.frame(cor = c(round(cor.all$estimate, 2), round(cor.sig$estimate, 2), round(cor.sigpos$estimate, 2)),
+                      part = c("all", "sig", "sigpos"))
+  
+  plot = ggplot(df, aes(x = .data[[var]], y = rich, color = part, fill = part)) +
+    geom_point(pch = ".") +
+    geom_smooth(method = "lm") +
+    scale_color_manual(values = sequential_hcl(5, "Mint")[c(4,2,1)]) +
+    scale_fill_manual(values = sequential_hcl(5, "Mint")[c(4,2,1)]) +
+    scale_x_continuous(xlab) +
+    scale_y_continuous(ylab, limits = c(5,max(df$rich))) +
+    annotate(geom = "text", label = paste0("R\u00b2 = ", format(round(cor.all$estimate^2, 2), nsmall = 2)),  
+             x = -Inf, y = Inf, hjust = -0.25, vjust = 1, color = sequential_hcl(5, "Mint")[4], size = 2.5, fontface = "bold") +
+    annotate(geom = "text", label = paste0("R\u00b2 = ", format(round(cor.sig$estimate^2, 2), nsmall = 2)),  
+             x = -Inf, y = Inf, hjust = -0.25, vjust = 3, color = sequential_hcl(5, "Mint")[2], size = 2.5, fontface = "bold") +
+    annotate(geom = "text", label = paste0("R\u00b2 = ", format(round(cor.sigpos$estimate^2, 2), nsmall = 2)),  
+             x = -Inf, y = Inf, hjust = -0.25, vjust = 5, color = sequential_hcl(5, "Mint")[1], size = 2.5, fontface = "bold") +
+    theme_classic() +
+    theme(legend.position = "bottom",
+          legend.title = element_blank())
 
-  return(list(sesvert, meanvert))
+  return(plot)
 }
 
 plot_cor_biome = function(mod, pred, taxa) {
@@ -140,42 +148,68 @@ plot_cor_biome = function(mod, pred, taxa) {
 }
 
 load("results/sdmTMB_models/amphibians_sesvert.RData")
-amph = plot_cor(m.final, pred, "Amphibians")
-amph_biome = plot_cor_biome(m.final, pred, "Amphibians")
+amph.sesvert.svc = rast("results/sdmTMB_models/svc_uncertainty/amph_sesvert.tif")
+amph.sesvert = plot_cor(mod, pred, svc = amph.sesvert.svc, taxa = "Amphibians", var = "vert.mean.ses", xlab = "SES Verticality", ylab = "Amphibain\nrichness")
+#amph_biome = plot_cor_biome(mod, pred, "Amphibians")
+
+load("results/sdmTMB_models/amphibians_meanvert.RData")
+amph.meanvert.svc = rast("results/sdmTMB_models/svc_uncertainty/amph_meanvert.tif")
+amph.meanvert = plot_cor(mod, pred, svc = amph.meanvert.svc, taxa = "Amphibians", var = "vert.mean", xlab = "Mean Verticality", ylab = "Amphibain\nrichness")
+#amph_biome = plot_cor_biome(mod, pred, "Amphibians")
 
 load("results/sdmTMB_models/reptiles_sesvert.RData")
-rept = plot_cor(m.final, pred, "Reptiles")
-rept_biome = plot_cor_biome(m.final, pred, "Reptiles")
+rept.sesvert.svc = rast("results/sdmTMB_models/svc_uncertainty/rept_sesvert.tif")
+rept.sesvert = plot_cor(mod, pred, svc = rept.sesvert.svc, taxa = "Reptiles", var = "vert.mean.ses", xlab = "SES Verticality", ylab = "Reptile\nrichness")
 
-load("results/sdmTMB_models/birds_sesvert.RData")
-birds = plot_cor(m.final, pred, "Birds")
-birds_biome = plot_cor_biome(m.final, pred, "Birds")
-
+load("results/sdmTMB_models/reptiles_meanvert.RData")
+rept.meanvert.svc = rast("results/sdmTMB_models/svc_uncertainty/rept_meanvert.tif")
+rept.meanvert = plot_cor(mod, pred, svc = rept.meanvert.svc, taxa = "Reptiles", var = "vert.mean", xlab = "Mean Verticality", ylab = "Reptile\nrichness")
 
 load("results/sdmTMB_models/mammals_sesvert.RData")
-mammals = plot_cor(m.final, pred, "Mammals")
-mammals_biome = plot_cor_biome(m.final, pred, "Mammals")
+mammals.sesvert.svc = rast("results/sdmTMB_models/svc_uncertainty/mammals_sesvert.tif")
+mammals.sesvert = plot_cor(mod, pred, svc = mammals.sesvert.svc, taxa = "Mammals", var = "vert.mean.ses", xlab = "SES Verticality", ylab = "Mammal\nrichness")
+
+load("results/sdmTMB_models/mammals_meanvert.RData")
+mammals.meanvert.svc = rast("results/sdmTMB_models/svc_uncertainty/mammals_meanvert.tif")
+mammals.meanvert = plot_cor(mod, pred, svc = mammals.meanvert.svc, taxa = "Mammals", var = "vert.mean", xlab = "Mean Verticality", ylab = "Mammal\nrichness")
+
+load("results/sdmTMB_models/birds_sesvert.RData")
+birds.sesvert.svc = rast("results/sdmTMB_models/svc_uncertainty/birds_sesvert.tif")
+birds.sesvert = plot_cor(mod, pred, svc = birds.sesvert.svc, taxa = "Birds", var = "vert.mean.ses", xlab = "SES Verticality", ylab = "Bird\nrichness")
+
+load("results/sdmTMB_models/birds_meanvert.RData")
+birds.meanvert.svc = rast("results/sdmTMB_models/svc_uncertainty/birds_meanvert.tif")
+birds.meanvert = plot_cor(mod, pred, svc = birds.meanvert.svc, taxa = "Birds", var = "vert.mean", xlab = "Mean Verticality", ylab = "Bird\nrichness")
+
+
+library(grid)
+library(patchwork)
+col1 = wrap_elements(panel = textGrob("SES Mean Verticality"))
+col2 = wrap_elements(panel = textGrob("Mean Verticality"))
+
+row1 = wrap_elements(panel = textGrob("Birds", rot = 90))
+row2 = wrap_elements(panel = textGrob("Mammals", rot = 90))
+row3 = wrap_elements(panel = textGrob("Reptiles", rot = 90))
+row4 = wrap_elements(panel = textGrob("Amphibians", rot = 90))
 
 design = "
-AB
-CD
-EF
-GH"
+AE
+BF
+CG
+DH"
 
-birds[[1]] + birds[[2]] +
-  mammals[[1]] + mammals[[2]] +
-  rept[[1]] + rept[[2]] +
-  amph[[1]] + amph[[2]] + 
-  plot_layout(design = design) &
-  theme(legend.position = "none")
+# plot areas where canopy height coef is significant (non-significant areas are dark gray) - link space
+p = 
+  birds.sesvert + mammals.sesvert + rept.sesvert + amph.sesvert +
+  birds.meanvert + mammals.meanvert + rept.meanvert + amph.meanvert + 
+  plot_layout(design = design, heights = c(1,1,1,1), widths = c(1,1), guides = "collect", axis_titles = "collect") +
+  plot_annotation(tag_levels = "A") &
+  theme(plot.tag.position = c(0.95, 0.95)) &
+  theme(legend.position = "bottom")
 
-birds_biome[[1]] + birds_biome[[2]] +
-  mammals_biome[[1]] + mammals_biome[[2]] +
-  rept_biome[[1]] + rept_biome[[2]] +
-  amph_biome[[1]] + amph_biome[[2]] + 
-  plot_layout(design = design) &
-  theme(legend.position = "none")
-
+png("figures/main_figs/vert_rich_cor.png", width = 150, height = 200, res = 300, units = "mm")
+p
+dev.off()
 
 
 
