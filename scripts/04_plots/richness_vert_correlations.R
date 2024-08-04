@@ -24,15 +24,15 @@ dat %>%
   ggplot(aes(x = rich, y = vert.mean.ses, color = biome)) +
     geom_point(pch = ".") +
     geom_smooth(method = "lm") +
-    facet_grid(rows = vars(biome), cols = vars(taxa), scales = "free_x") +
+    facet_grid(cols = vars(biome),rows = vars(taxa), scales = "free") +
     theme_classic()
 
 dat %>% 
   filter(rich >= 5) %>% 
-  ggplot(aes(x = rich, y = vert.mean, color = biome)) +
+  ggplot(aes(x = vert.mean.ses, y = rich, color = biome)) +
   geom_point(pch = ".") +
   geom_smooth(method = "lm") +
-  facet_wrap(~taxa, scales = "free_x") +
+  facet_wrap(~taxa, scales = "free") +
   theme_classic()
 
 
