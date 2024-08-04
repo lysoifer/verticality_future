@@ -19,6 +19,7 @@ library(officedown)
 library(officer)
 library(tidyverse)
 library(spatialreg)
+library(data.table)
 
 fp <- fp_par(
   text.align = "center", 
@@ -27,6 +28,44 @@ fp <- fp_par(
 
 ft <- fp_text(shading.color='#EFEFEF', bold = TRUE)
 ```
+
+
+```{r}
+word_comment <- function(
+  comment, 
+  highlight = "", 
+  author = "Lydia", 
+  time = Sys.time(),
+  id = "0"
+) 
+{
+  if (isTRUE(knitr:::pandoc_to() == "docx")) {
+    return(
+      sprintf(
+        '[%s]{.comment-start id="%s" author="%s" date="%s"} %s []{.comment-end id="%s"}',
+        comment,
+        id,
+        author,
+        time,
+        highlight,
+        id
+      )
+    )
+  } else {
+    return(
+      sprintf(
+        "*%s* **[Comment id %s by %s at time %s: %s]**", 
+        highlight,
+        id,
+        author, 
+        time, 
+        comment
+      )
+    )
+  }
+}
+```
+
 
 \newpage
 
@@ -41,7 +80,7 @@ Similarly, spatial variation may occur in the relationship between species richn
 As the climate changes, constraints on arboreal life strategies may shift with potential impacts on assemblage verticality and its association with species richness. In tropical lowlands, increasing temperatures and declining dry season precipitation (*cite*) may pose physiological challenges for arboreal animals and cause them to disperse toward higher elevations, lower vertical positions, or become locally extirpated [@scheffersIncreasingArborealityAltitude2013; @oliveiraVerticalStratificationInfluences2019]. These scenarios would reduce assemblage verticality in the lowlands, reflecting climate-induced shifts in assemblage thermal tolerance [@feeleyClimatedrivenChangesComposition2020; @lajeunesseTemporalAnalysisGBIF2023; @chustCrossbasinCrosstaxaPatterns2024; @borderieuxExtinctionDrivesRecent2024]. At high latitudes, increasing minimum temperatures could reduce climatic constraints on arboreal species and facilitate range shifts that increase verticality. While changes in assemblage verticality have been observed across spatial environmental gradients and in response to seasonal climatic fluctuations [@scheffersIncreasingArborealityAltitude2013; @bashamVerticalStratificationCollapses2020], potential impacts of climate change on verticality have not been examined at a global scale.
 
 ```{r}
-birds = read.csv("./../data/derivative_data/species_data/birds_breedresident_spdat_eltonvert_forestsOnly.csv")
+birds = read.csv("./../data/derivative_data/species_data/birds_spdat_elton_forestsOnly.csv")
 mammals = read.csv("./../data/derivative_data/species_data/mammals_spdat_moura_forestsOnly.csv")
 amph = read.csv("./../data/derivative_data/species_data/amph_spdat_moura_forestsOnly.csv")
 repts = read.csv("./../data/derivative_data/species_data/rept_spdat_moura_forestsOnly.csv")
@@ -60,13 +99,24 @@ Despite widespread agreement that verticality influences biodiversity patterns, 
 *infographic for methods*
 
 ```{r}
-mammals = fread("data/derivative_data/gridcell_data/mammals_comdat/mammals_comdat_parallel_forestsOnly.csv") %>% 
+mammals = fread("./../data/derivative_data/gridcell_data/env_forest/50_km/mammals_comdat.csv") %>% 
   dplyr::select(vert.mean, vert.mean.ses, p.arb, p.ter, p.fos, biome, ecoregion, realm)
 
-amphibians = fread("data/derivative_data/gridcell_data/amphibians_comdat/amph_comdat_parallel_forestsOnly.csv") %>% 
+birds = fread("./../data/derivative_data/gridcell_data/env_forest/50_km/birds_comdat.csv") %>% 
   dplyr::select(vert.mean, vert.mean.ses, p.arb, p.ter, p.fos, biome, ecoregion, realm)
 
-mammals.arb.tropicalmoist = round(mean(mammals$p.arb[mammals$biome == "Tropical & Subtropical Moist Broadleaf Forests"]) * 100, 2)
+amphibians = fread("./../data/derivative_data/gridcell_data/env_forest/50_km/amph_comdat.csv") %>% 
+  dplyr::select(vert.mean, vert.mean.ses, p.arb, p.ter, p.fos, biome, ecoregion, realm)
+
+rept = fread("./../data/derivative_data/gridcell_data/env_forest/50_km/reptiles_comdat.csv") %>% 
+  dplyr::select(vert.mean, vert.mean.ses, p.arb, p.ter, p.fos, biome, ecoregion, realm)
+
+
+mammals.arb.tropicalmoist = round(mean(mammals$p.arb[mammals$biome == "Tropical & Subtropical Moist Broadleaf Forests"], na.rm = T) * 100, 2)
+birds.arb.tropicalmoist = round(mean(birds$p.arb[birds$biome == "Tropical & Subtropical Moist Broadleaf Forests"], na.rm = T) * 100, 2)
+rept.arb.tropicalmoist = round(mean(rept$p.arb[rept$biome == "Tropical & Subtropical Moist Broadleaf Forests"], na.rm = T) * 100, 2)
+amphibians.arb.tropicalmoist = round(mean(amphibians$p.arb[amphibians$biome == "Tropical & Subtropical Moist Broadleaf Forests"], na.rm = T) * 100, 2)
+
 ```
 
 ## Species data
@@ -104,81 +154,97 @@ The Gaussian random field is approximated using a spatial mesh. We constructed s
 
 ### Model comparisons
 
+For each taxonomic group and type of verticality (i.e., SES or mean verticality), we used restricted maximum likelihood (REML) to fit models with four different random effects structures [@zuurMixedEffectsModels2009]. The base model only included a spatial random field. Subsequent models additionally included biogeographic realm [sensu @dinersteinEcoregionBasedApproachProtecting2017] as a random intercept, a spatially varying coefficient for canopy height, and the combination of both. Including realm as a random intercept accounts for evolutionary differences among biogeographic realms that could lead to differences in verticality. The spatially varying coefficient allows the impact of canopy height on verticality to vary globally and allows us to test the hypothesis that canopy height has a positive effect on verticality only where climatic conditions support arboreality. We compared models using AIC and cross-validation. AIC is frequently used to identify the most parsimonious model [e.g., @barnettImprovingEstimatesSpecies2021]; however, the metric is not completely appropriate for hierarchical models (see Commander et al. 2022 `r word_comment(comment = "check citation", highlight = "Commander et al. 2022")`). Therefore, we additionally used cross-validation to evaluate out-of-sample predictive ability (*again check citation Commander et al. 2022*). We randomly assigned each data point to one of five folds, and then iteratively fit the model using four of the five folds while one fold was withheld for testing. The sum of the log-likelihoods for each left-out fold provides a measure of predictive ability that is compared across models. Cross validation was conducted using the ‘sdmTMB_cv’ function from the sdmTMB package. Models that included both a spatially varying coefficient for canopy height and geographic realm as a random intercept consistently had the lowest AIC value across all models, while model performance varied based on cross validation (Table S1 `r word_comment(comment = "add supp table", highlight = "Table S1")`). Given consistent performance based on AIC and our interest in the SVC, all predictions were made based on the model that included both realm and the SVC. 
 
+### Model validation
 
-We used spatial generalized linear mixed-effects models (GLMMs) to evaluate the impact of vegetative and climatic paramaters on mean and SES verticality. Spatial models were fit using R package sdmTMB [@andersonSdmTMBPackageFast2024], which fits models using maximum marginal likelihood estimation through template model builder (TMB) and approximates spatial Gaussian random fields using stochastic partial differential equation (SPDE)-based approach [@lindgrenExplicitLinkGaussian2011] as implemented in R-INLA [@lindgrenBayesianSpatialModelling2015]. To implement the SPDE approach, we constructed a mesh using fmesher with a 300 km minimum allowable distance between vertices. We fit five alternative models for each taxonomic group, using the same fixed environmental predictors and varying the form of the random-effects structure. The general model is described as
+We validated models first using the ‘sanity’ function from the sdmTMB package. We additionally calculated quantile residuals using the DHARMa R package [@hartigDHARMaResidualDiagnostics2022] to visually assess that residuals were normally distributed and lacked patterning across space, rank transformed model predictions, raw model predictions.
 
-$$
-y_s ∼ 𝜇_{s}, \\
-𝜇_s = 𝑓^{-1}(𝜲^{main}_s𝛽 + ⍺_g + ⍵_s), \\
-⍵_s ∼ MVNormal(0,𝚺_⍵)
-$$
+To estimate uncertainty of SVCs for canopy height, we added draws of the SVC random field to draws of the fixed parameter for canopy height from 300 simulations. We then calculated the median and 0.025 and 0.975 quantiles to obtain a 95% confidence interval for each SVC estimate. Confidence intervals that did not overlap zero were considered significant [@andersonSdmTMBPackageFast2024].
 
-where $y_s$ is the mean or SES verticality at location $s$ defined by x and y coordinates, $𝜇_s$ is the expected mean or SES verticality at all locations, and $𝑓^{-1}$ represpents an inverse link function. $𝜲^{main}_s$ is a vector of main effect covariates, 𝛽 represents a vector of estimated corresponding main effect coefficients. We used a Gaussian distribution for SES verticality, while we used a Beta distribution with a logit link function for mean verticality because values are constratined between 0 and 1. Environmental covariates included canopy height, vegetation density, minimum temperature of the coldest month, maximum temperature of the warmest month, precipitation of the driest month, precipitation of the wettest month, precipitation seasonality, and climate change velocity since the LGM. Fitting models, we log10 transformed climate velocity and precipitation of the driest quarter to increase the linearity of the relationship between predictor and response and scaled all predictor variable to have a mean of zero and a standard deviation of 1. $⍺_g$ represents an optional IID random intercept defined by group $g$ ($⍺_g ∼ Normal(0,𝜎^2_⍺))$. The five alternative models each used a different variable to define the random intercept: biome, realm, biorealm, ecoregion, and no random intercept. $⍵_s$ represents a spatial random field at location $s$, which represents additional spatial variation in the data not explained by the environmental covariates or random intercept. The estimated covariance matrix ($𝚺_⍵$) was constrained by the Matérn covariance function, which defines the decay rate of correlation with distance.
+## Relationship between verticality and richness
 
-We compared alternative models using five-fold cross validation. Grid cells were randomly assigned to one of five folds. Each model was the run five times, training the model using four of the folds (80% of the data) and testing the model on the withheld fold (20% of the data). After fitting the model using the training data, performance of each training set was calculated as the sum of log-likelihood values for the test data. Alternative models were then compared using the total log-likelihood summed across the five folds for each model structure. Across taxonomic groups, the best performing model contained a random intercept defined by ecoregion along with a spatial random field.
+To examine whether the relationship between verticality and canopy height mediates the relationship between verticality and richness, we calculated Pearson correlations between mean or SES verticality and richness for each taxon considering all points, only points where canopy height significantly impacted verticality, and only points where canopy height had a positive significant effect on verticality.
 
+## Future predictions
 
-## Add spatially varying coefficient for canopy height
-We then compared the best performing model to a model that additionally included a spatially varying coefficient for canopy height because we expect that canopy height may have a weaker impact on verticality in regions where verticality is homogeneously low than in regions were verticality is high.
-
-Using the best performing random-effects structure, we compared three alternative models that differed in their fixed effects structure: the the full model with all fixed effects, the full model without the polynomial term for maximum temperature of the warmest month, and the full model without climate velocity. The base model included vegetative and current climatic predictors (canopy height, vegetation density, minimum temperature of the coldest month, maximum temperature of the warmest month, precipitation of the driest month, and precipitation of the wettest month. All these variables are assumed to directly impact the prevalence of different vertical strategies. The second alternative model included a polynomial term for maximum temperature of the warmest month because verticality increases in the tropics, where it is warmer, but extremely high maximum temperatures may limit arboreal strategies. The third alternative model a
-
-To validate the best performing model, we refit it using all the data and calculated quantile residuals using the DHARMa R package.
-
-To validate the model, we examined quantile residuals to ensure normality and lack of spatial pattern.
-
-
-\*we examined VIFs for predictor variables, sequentially removed variables until all VIFs were equal to or less than 4. We chose variables based on a combination of which ones had the highest VIF factors and which ones we thought had the most direct impact on physiological limits to arboreality. While, this is slightly higher than the standard VIF cutoff, we thought that it was important to keep both maximum temperature of the warmest month and minimum temperature of the coldest month, as the relative influence of these variables is likely to change across latitudes, with maximum temperatures having a larger impact on verticality in the tropics and minimum temperatures having a larger impact on verticality in temperate and boreal regions. We excluded precipitation seasonality because it was strongly correlated with dry season precipitation, has a less direct impact on physiological limits to verticality than dry season precipitation, and varies between current and future climate conditions than dry season precipitation.\*
-
-To examine potential impacts of climate change on assemblage verticality, we predicted models to future climatic data while holding vegetation variables constant at present-day values due to lack of global predictions of future canopy height and vegetation density. From the future predictions, we subtracted predictions to the data used to train the model and mapped the resulting differences.
-
-We define a mesh, specifying a cutoff of 300 km as the minimum allowed distance between mesh verticies to maintain computation efficiencty while allowing suffcient complexity in the spatial field.
-
-Vegetative and climatic parameters included canopy height, vegetation density, maximum temperature of the warmest month, minimum temperature of the coldest month, precipitation of the driest quarter, precipitation of the wettest quarter, precipitation seasonality, and climate change velocity. All predictors had variance inflation factors below 4. We first identified the optimal random effects structure for the model using five-fold cross validation and the sum of the log-likelihood values across folds. Five random effects structures were compared, with each containing a spatial random field calculated from a 300 km mesh. Four of the five structures contained one additional random intercept: biome, realm, biorealm, or ecoregion. Models fit with a spatial random field and ecoregion as a random intercept consistently performed the best.
-
-Using the optimal random effects structure, we then compared fixed effects using five-fold cross validation and the sum of the log-likelihood values for each fold. Our base model consisted of vegetation parameters (canopy height and vegetation density) and present-day climatic conditions (maximum temperature of the warmest month, minimum temperature of the coldest month, precipitation of the driest quarter, precipitation of the wettest quarter, and precipitation seasonality). We compared this model to one that additionally included climate change velocity, which has previously been shown to correlate with assemblage verticality (cite).
-
-Using the optimal fixed effects structure, we refit the model with all points and validated the model by examining the normality and spatial distribution of quantile residuals. We then projected the models for mean and SES verticality for each taxonomic group to future climatic conditions and mapped the difference between predictions of future and present verticality.
-
-Full models were checked using sanity() function.
-
-We used simultaneous autoregressive (SAR) models with a spatial error term to model the impact of environmental factors on the SES of mean verticality. Environmental variables included mean elevation, vegetative complexity, climate velocity, mean annual temperature, maximum temperature of the warmest quarter, minimum temperature of the coldest quarter, diurnal temperature range, temperature seasonality, annual precipitation, precipitation of the wettest quarter, precipitation of the driest quarter, and precipitation seasonality. To reduce multicollinearity among predictors, we initially applied an automatic selection procedure that eliminated the variable with the highest variance inflation factor (VIF) until all VIFs were below three. This resulted in the loss of both maximum temperature of the warmest month and minimum temperature of the coldest month, while temperature seasonality and diurnal temperature range were retained. Since maximum and minimum temperatures exhibit greater change from present to future climate scenarios and are more likely to directly impact verticality, we substituted these two variables for temperature seasonality and diurnal temperature range. Although this adjustment increased VIF, all VIF remained below five. All selected variables for use in the models included mean elevation, vegetative complexity, climate velocity, maximum temperature of the warmest quarter, minimum temperature of the coldest quarter, precipitation of the wettest quarter, precipitation of the driest quarter, and precipitation seasonality.
-
-Prior to modeling, independent variables were checked for linear relationships with the response variable and log10 transformed if the relationship exhibited a strong right skew. Due to zero values in precipitation of the driest quarter, values were transformed using log10(precipitation + 1). If relationships appeared quadratic, a quadratic term was added to the model. Independent variables were then scaled to a mean of zero and standard deviation of one. To determine the optimal neighborhood weights matrix, we visually examined the distance to which spatial autocorrelation occurred in teh response based on correlograms. We then identified different neighborhood scenarios based on distance from the focal cell. The smallest distance included the eight neighbors immediates surrounding the focal cell and subsequently increased to include successive rings of cells up to the maximum distance at which spatial autocorrelation was present in the response variable. For each distance scenario, we produced three row-standardized neighborhood weights matrices based on distance, inverse distance, and inverse squared distance [@verhoefSpatialAutoregressiveModels2018].
-
-We produced simultaneous autoregressive (SAR) models with a spatial error term using the additive effects of all scaled environmental variables for each neighborhood weight matrix and calculated Moran’s I for each model to determine if spatial autocorrelation remained in the residuals. Models in which spatial autocorrelation remained were discarded. Based on the remaining models, we selected the neighborhood weights matrix as the one used in the model with the lowest AICc. Initial model exploration indicated that spatial autocorrelation was present using larger spatial neighborhoods. To reduce computational demands, we therefore based subsequent model selection on spatial neighborhoods from a radius of one grid cell to seven grid cells around the focal cell. Using the optimal neighborhood weights matrix defined by the lowest AICc, we compared all possible combinations of independent variables using the ‘dredge’ function from the MuMIN R package. Optimal weight matrices used inverse distance squared weighting. We then used a model averaging procedure to estimate coefficients and standard errors for all models within 2 \u0394AICc of the best model [@symondsBriefGuideModel2011ods]. For each model within \u0394AICc of the best model, we calculated the AICc weight (wAICc), which represents the probability that the given model is the best (*cite Burnham and Anderson*). Because wAICc values were similar across candidate models, we used full-model averaging, where coefficients for parameters that do not appear in a model are set to zero. A weighted average of coefficients across all models is then calculated to estimate the impact of the parameter on the response variable. We additionally calculated relative variable importance by summing wAICc in the set of models where the variable occurs (*cite Burnham and Anderson*). To estimate model fit, we calculated pseudo-R^2^ as the squared Pearson correlation between predicted and observed values [@kisslingSpatialAutocorrelationSelection2008].
-
-To estimate changes in mean and SES verticality under future climate scenarios, we predicted the averaged model to future environmental conditions, while climate velocity, elevation, and vegetative complexity remained at the values used in the models of present verticality. Predictions were made using a linear model equation with the coefficients from the averaged SAR model (i.e. the predicted trends without the spatial signal) because it is not possible to estimate the the spatial signal without knowing the values of the response variable. To estimate changes in verticality, we therefore used the same method to predict verticality under present environmental conditions and subtracted these values from predicted future verticality. Negative values indicate declines in verticality and positive values indicate increases in verticality.
+To examine potential impacts of climate change on assemblage verticality, we predicted mean and SES verticality under a future climate scenario using the models. However, we held vegetation variables constant at present-day values due to lack of global predictions of future canopy height and vegetation density. From the future predictions, we subtracted predictions to the data used to train the model (present predictions) and mapped the resulting differences. To standardize measures of change across taxa and between mean and SES verticality, we additionally calculated the percent relative change between future and present predictions for mean and SES verticality as $(verticality_{future,t,i} - verticality_{present,t,i})/(verticality_{max,t} - verticality_{min, t})*100$, where t indicates a given taxon and i indicates a given grid cell. Thus, negative values indicate predicted declines in verticality and positive values indicate predicted increases in verticality. *map relative change as well*
 
 # Results
 
 ## Global patterns of verticality
+
+Verticality exhibited a latitudinal gradient across taxa characterized by high verticality in the tropics and lower verticality toward higher latitudes (\@ref(fig:vert-map-global)). This pattern was largely driven by declines in the proportion of arboreal species toward the poles. Patterns of SES verticality mirrored those of mean verticality and highlight declines in arboreal strategies outside tropical moist broadleaf forests (\@ref(fig:vert-biome)).
+
+Despite widespread coherence of global verticality patterns among taxa and within biomes, regional variation occurred. Within tropical and subtropical biomes, verticality was highest in moist broadleaf forests and lowest in dry broadleaf forests (\@ref(fig:vert-biome)). In moist broadleaf forests, verticality of bird and mammal assemblages was consistently high, with an average of `r birds.arb.tropicalmoist`% of birds and `r mammals.arb.tropicalmoist`% of mammals exhibiting arboreal strategies, while the proportion of terrestrial species declined. In contrast, amphibian and reptile verticality exhibited clear hotspots, with reptile verticality peaking in Madagascar and Malaysian and Indonesian forests and amphibian verticality peaking in the Brazilian Atlantic forest and eastern Madagascar. Additionally, the proportion of reptiles and amphibians that exhibit terrestrial strategies did not decline to the same extent as birds and mammals. *include proportion maps in supplement*
+
+In temperate biomes, verticality was similar across forest types but declined in less dense wooded habitats (e.g., savannas and shrublands) (\@ref(fig:vert-biome)). Variation in the proportion of species exhibiting fossorial strategies drove differences in patterns of assemblage verticality among vertebrate classes. Amphibians exhibited the highest proportion of fossorial strategies in temperate biomes (\@ref(fig:vert-map-global)L, though temperate rainforests (e.g., the Pacific-Northwest of North America) were a notable exception. Mammals exhibited a similar pattern, though the proportion of fossorial species increased to a lesser extent (\@ref(fig:vert-map-global)F). In contrast, the proportion of fossorial reptiles declined in temperate regions. Low reptile verticality was therefore driven by declines in the proportion of arboreal species and increases in the proportion of terrestrial species. Though no birds exhibit fossorial strategies, a reduction in the proportion of arboreal species still produced a steep latitudinal gradient in SES verticality.
+
+## Environmental drivers of verticality
+
+### Climate
+
+The spatial GLMMs indicated that verticality was limited by low precipitation across taxa, while impacts of high maximum temperatures, low minimum temperatures, and canopy height varied (\@ref(fig:mod-coefs), *supp table for model results*). Across taxa, precipitation of the driest and wettest months positively influenced mean and SES verticality, though the impact of dry season precipitation on SES verticality was stronger (\@ref(fig:mod-coefs)). Minimum temperature of the coldest month positively impacted mammal and reptile verticality and had negligible effects on bird and amphibian verticality. Maximum temperatures of the warmest month exhibited a quadratic relationship with bird and reptile mean and SES verticality, as well as SES verticality of mammals. This relationship was generally characterized by an initial increase in verticality with increasing maximum temperatures followed by a decline in verticality as temperatures increased further (*conditional effects plot*). Mean verticality of mammals exhibited a positive linear relationship with maximum temperature and amphibian verticality exhibited no relationship. Climate velocity negatively impacted bird and amphibian verticality and positively impacted mammal and reptile verticality. However, environmental factors were unable to explain extremely high and extremely low verticality as indicated by larger residuals at the ends of the verticality spectrum when spatial random effects were not included in estimates of assemblage verticality (*supp figure*).
+
+### Vegetation
+
+We hypothesized that canopy height and vegetation density would positively impact verticality, but that the impact of canopy height would vary across space. Specifically, we expected canopy height to have a strong positive effect on verticality in warmer and wetter regions that support arboreal assemblages and a negligible effect in regions with climate conditions that support fewer arboreal species. Results of the GLMMs did not entirely support our predictions. Globally, canopy height positively impacted SES verticality of reptiles and amphibians and mean verticality of amphibians, while vegetation density had no significant impact on mean or SES verticality of any taxa (\@ref(fig:mod-coefs)). In contrast to expectations, canopy height did not have a positive impact on verticality across much of the tropics where climate conditions support arboreality (\ref(fig:svc)). Significant positive impacts of canopy height generally occurred in regions with greater topographic relief, including the Andes, southern India, east-central Africa including the Eastern Arc Mountain Range, and Madagascar (\@ref(fig:svc-sig)).
+
+## Verticality-species richness relationships
+
+When considering all points, Pearson correlations indicated strong positive relationships between SES or mean verticality and species richness for birds and mammals, a weak positive relationship for amphibians, and nearly no relationship for reptiles (*add R2 and p-values*) (\@ref(fig:corplot)). When we restricted the correlation to only include points where canopy height had a significant positive effect on verticality, the strength of the relationship between SES verticality and richness increased for amphibians and SES verticality of birds, but declined for mammals, reptiles, and mean verticality of birds.
+
+## Climate change impacts
+
+*Calculate relative change as (future-present)/(presentmax-presentmin)*
+
+```{r}
+# calculate percent change in verticality
+source("./../scripts/04_plots/vertdif_by_biorealm.R")
+
+sessumm = dat %>% 
+  filter(vertvar == "SES Mean Verticality") %>% 
+  group_by(class, biome) %>% 
+  summarize(mean.reldif = mean(est.reldif)) %>% 
+  arrange(mean.reldif) %>% 
+  as.data.frame()
+
+meansumm = dat %>% 
+  filter(vertvar == "Mean Verticality") %>% 
+  group_by(class, biome) %>% 
+  summarize(mean.reldif = mean(est.reldif)) %>% 
+  arrange(mean.reldif) %>% 
+  as.data.frame()
+
+```
+
+
+Changes in verticality in response to climate change were small relative to the total variation in mean and SES verticality (\@ref(fig:vert-dif-map)). On average verticality was predicted to decline the most in tropical and subtropical moist broadleaf forests and increase the most at high latitudes in boreal forests. Within these biomes, the models predicted the greatest relative decline for amphibians (SES verticality: `r round(sessumm[1, "mean.reldif"], 2)`%, mean verticality: `r round(meansumm[1, "mean.reldif"], 2)`%) and the greatest relative increase for birds (SES verticality: `r round(sessumm[which(sessumm$class == "Birds" & sessumm$biome == "Boreal Forests/Taiga"), "mean.reldif"], 2)`%, mean verticality: `r round(meansumm[which(meansumm$class == "Birds" & meansumm$biome == "Boreal Forests/Taiga"), "mean.reldif"], 2)`%) (\@ref(fig:vert-dif-biome)).
 
 #Figures to include
 # verticality map
 # verticality by ecoregion - could be ciruclar bar plot for each realm or biome and taxonomic group
 # coefficient plot
 ```{r}
-load("./../results/sdmTMB_models/amphibians_meanvert.RData")
-m.amph.meanvert = m.final
-load("./../results/sdmTMB_models/amphibians_sesvert.RData")
-m.amph.sesvert = m.final
-
-load("./../results/sdmTMB_models/reptiles_meanvert.RData")
-m.rept.meanvert = m.final
-load("./../results/sdmTMB_models/reptiles_sesvert.RData")
-m.rept.sesvert = m.final
-
-load("./../results/sdmTMB_models/mammals_meanvert.RData")
-m.mammals.meanvert = m.final
-load("./../results/sdmTMB_models/mammals_sesvert.RData")
-m.mammals.sesvert = m.final
-
-load("./../results/sdmTMB_models/birds_meanvert.RData")
-m.birds.meanvert = m.final
-load("./../results/sdmTMB_models/birds_sesvert.RData")
-m.birds.sesvert = m.final
+# load("./../results/sdmTMB_models/amphibians_meanvert.RData")
+# m.amph.meanvert = m.final
+# load("./../results/sdmTMB_models/amphibians_sesvert.RData")
+# m.amph.sesvert = m.final
+# 
+# load("./../results/sdmTMB_models/reptiles_meanvert.RData")
+# m.rept.meanvert = m.final
+# load("./../results/sdmTMB_models/reptiles_sesvert.RData")
+# m.rept.sesvert = m.final
+# 
+# load("./../results/sdmTMB_models/mammals_meanvert.RData")
+# m.mammals.meanvert = m.final
+# load("./../results/sdmTMB_models/mammals_sesvert.RData")
+# m.mammals.sesvert = m.final
+# 
+# load("./../results/sdmTMB_models/birds_meanvert.RData")
+# m.birds.meanvert = m.final
+# load("./../results/sdmTMB_models/birds_sesvert.RData")
+# m.birds.sesvert = m.final
 
 
 ```
@@ -188,88 +254,10 @@ m.birds.sesvert = m.final
 # Supplementary figures/tables
 # estimated coefficients and confidence intervals from the best model for each taxa - include all model parameters: fixed effects, spatial paramters (matern range, marginal spatial standard, deviation), distribution parameters
 
-Verticality exhibited a latitudinal gradient across taxa characterized by high verticality in the tropics and lower verticality toward higher latitudes (\@ref(fig:vert-map-global)). This pattern was largely driven by declines in the proportion of arboreal species toward the poles. Patterns of SES verticality mirrored those of mean verticality and highlight declines in arboreal strategies outside tropical broadleaf forests (\@ref(fig:vert-biome)).
-
-Despite widespread coherence of global verticality patterns among taxa and within biomes, regional variation occurred. Within the tropics, verticality was highest in moist broadleaf forests and lowest in dry broadleaf forests (\@ref(fig:vert-biome)). Mammals exhibited the highest mean verticality in moist forests, particularly in the Amazon, the Congo Basin, Madagascar, and tropical and subtropical Asian forests where an average of `r mammals.arb.tropicalmoist`% of species per assemblage exhibited arboreal strategies while the proportion of terrestrial species declined. Verticality of birds closely mirrored this pattern except in Madagascar where SES of mean verticality declined. While reptiles and amphibians displayed similar verticality patterns, there were notable differences. Verticality of reptile assemblages peaked in the rainforests of Indonesia and Madagascar and declined in the neotropics where the proportion of fossorial species increased *map proportion arboreality and fossoriality*. Amphibian verticality additionally increased in the Brazilian Atlantic Forest while declining in SE Asia relative to other vertebrate assemblages.
-
-In temperate biomes, verticality was similar across forests and declined in less dense wooded habitats (e.g., savannas) (\@ref(fig:vert-biome)). Variation in the proportion of species exhibiting fossorial strategies drove differences in patterns of assemblage verticality among vertebrate classes. Amphibians exhibited the highest proportion of fossorial strategies in temperate biomes, peaking in savannas and savanna-woodland transition zones (\@ref(fig:vert-map-global)L, \@ref(fig:vert-biome)). However, temperate rainforests (e.g., the Pacific-Northwest of North America) were notable exceptions, exhibiting higher verticality than than expected by chance. Mammals exhibited a similar pattern, though the proportion of fossorial species increased to a lesser extent (\@ref(fig:vert-map-global)F). In contrast, the proportion of fossorial reptiles declined in temperate regions. Low reptile verticality was therefore driven by declines in the proportion of arboreal species and increases in the proportion of terrestrial species. Though no birds exhibit fossorial strategies, a reduction in the proportion of arboreal species still produced a steep latitudinal gradient in the SES of verticality.
-
-## Environmental drivers of verticality
-
-We expected verticality to increase with increasing canopy height, vegetation density, precipitation, and minimum cold temperatures. While the models were generally consistent with these hypotheses, there were some notable differences.
-
-### need a section on model fit ###
-Models predicted verticality well. However, much of the predictive ability was due to the spatial random field. When the spatial random field was excluded from model predictions, models generally underestimated verticality in regions with high verticality and overestimated verticality in regions with low verticality.
-
-### Climate
-
-The models generally indicated that verticality was limited by low precipitation, high maximum temperatures, and low minimum temperatures, though some variation occurred between taxa. Additionally, climatic impacts relative to the impact of canopy height was stronger for SES verticality than mean verticality.
-
-Across taxa, precipitation of the driest and wettest months positively influences mean and SES verticality, though the impact of dry season precipitation on SES verticality was noticeable stronger (\@ref(fig:mod-coefs)). Minimum temperature of the coldest month positively impacted mammal and reptile verticality and had negligible effects on bird and amphibian verticality. Maximum temperatures of the warmest month exhibited a quadratic relationship with bird and reptile verticality, as well as SES verticality of mammals. This relationship was generally characterized by an initial increase in verticality with increasing maximum temperatures followed by a decline in verticality as temperatures increased further. Mean verticality of mammals exhibited a positive linear relationship with maximum temperature and amphibian verticality exhibited no relationship. Climate velocity was not included in the best models for mammals verticality or for SES verticality of amphibians. For the remaining models, climate velocity (i.e., climate instability) negatively impacted bird verticality and mean verticality of amphibians and positively impacted reptile verticality.
-
-### Vegetation
-
-We hypothesized that canopy height and vegetation density would positively impact verticality, but that the impact of canopy height would vary across space. Specifically, we expected canopy height to have a strong positive effect on verticality in warmer and wetter regions that support arboreal assemblages and a negligible effect in regions with climate conditions that support fewer arboreal species.
-
-Globally, canopy height positively impacted verticality for mammals and birds and had little impact on verticality of reptiles and amphibians, while vegetation density had a negligible impact on verticality of all taxa (\@ref(fig:coef-plt). The best models for all taxa included a spatially varying coefficient for canopy height, which caused the wide confidence interval in the global estimate its coefficient. 
-
-Spatial variation in the effect of canopy height was greater for models of SES verticality than for mean verticality, though both exhibited similar patterns (\@ref(fig:svc-map)). For birds, canopy height exhibited the strongest positive effect on SES verticality in the Andes, central America, Indomalayan moist deciduous forests, the forest-savanna woodlands and thickets of eastern Africa, and northern taiga forests (\@ref(fig:svc-map)A,E). Spatial variability of the coefficient of canopy height for models of SES verticality exhibited similar pattern in mammals. However, strong positive effects additionally occurred in the south-eastern US, subpolar forests of South America, Guinean forest-savanna, and Australian temperate savanna and woodlands (\@ref(fig:svc-map)B,F). For reptiles, similar regions showed weaker positive relationships between canopy height and SES verticality. However, Madagascar exhibited a strong positive coefficient (\@ref(fig:svc-map)C,G). The coefficient of canopy height was also strongly positive for Amphibians in Madagascar as well as Sri Lanka relative to other regions (\@ref(fig:svc-map)D,H). Notably, the coefficient of canopy height was near zero in tropical broadleaf forests across the globe and was not negligible in cooler regions, contrary to our predictions.
-
-## Climate change impacts
 
 
-```{r}
-# calculate percent change in verticality
-calc_change = function(pred.f, taxa, response) {
-  pred.f = pred.f %>% 
-    dplyr::select(x,y,est.dif) %>% 
-    mutate(taxa = taxa,
-         response = response)
-return(pred.f)
-}
-
-load("./../results/sdmTMB_models/amphibians_meanvert.RData")
-amph.meanvert = calc_change(pred.f, taxa = "Amphibians", response = "Mean Verticality")
-
-load("./../results/sdmTMB_models/amphibians_sesvert.RData")
-amph.sesvert = calc_change(pred.f, taxa = "Amphibians", response = "SES Verticality")
-
-load("./../results/sdmTMB_models/reptiles_meanvert.RData")
-rept.meanvert = calc_change(pred.f, taxa = "Reptiles", response = "Mean Verticality")
-
-load("./../results/sdmTMB_models/reptiles_sesvert.RData")
-rept.sesvert = calc_change(pred.f, taxa = "Reptiles", response = "SES Verticality")
-
-load("./../results/sdmTMB_models/mammals_meanvert.RData")
-mammals.meanvert = calc_change(pred.f, taxa = "Mammals", response = "Mean Verticality")
-
-load("./../results/sdmTMB_models/mammals_sesvert.RData")
-mammals.sesvert = calc_change(pred.f, taxa = "Mammals", response = "SES Verticality")
-
-load("./../results/sdmTMB_models/birds_meanvert.RData")
-birds.meanvert = calc_change(pred.f, taxa = "Birds", response = "Mean Verticality")
-
-load("./../results/sdmTMB_models/birds_sesvert.RData")
-birds.sesvert = calc_change(pred.f, taxa = "Birds", response = "SES Verticality")
 
 
-dat = rbind(amph.meanvert, amph.sesvert, rept.meanvert, rept.sesvert, mammals.meanvert, mammals.sesvert, birds.meanvert, birds.sesvert)
-
-dat.change = dat %>% 
-  group_by(taxa, response) %>% 
-  summarise(max = max(est.dif), min = min(est.dif))
-
-dat.change.ses = dat.change %>% filter(response == "SES Verticality")
-dat.change.mean = dat.change %>% filter(response == "Mean Verticality")
-
-ses.poschange = dat.change.ses[which(dat.change.ses$max == max(dat.change.ses$max)),]
-ses.negchange = dat.change.ses[which(dat.change.ses$min == min(dat.change.ses$min)),]
-
-mean.poschange = dat.change.mean[which(dat.change.mean$max == max(dat.change.mean$max)),]
-mean.negchange = dat.change.mean[which(dat.change.mean$min == min(dat.change.mean$min)),]
-
-
-```
 
 Changes in verticality in response to climate change were small relative to the total variation in mean and SES verticality. The largest changes in SES verticality were observed for birds, which exhibited a maximum decline of `r round(as.numeric(ses.negchange[1, "min"]),2)` and a maximum increase of `r round(as.numeric(ses.poschange[1, "max"]),2)`. The larges changes in mean verticality were observed for amphibians, which exhibited a maximum decline of `r round(as.numeric(mean.negchange[1, "min"]), 2)` and a maximum increase of `r round(as.numeric(mean.poschange[1, "max"]), 2)`. For birds and mammals, mean and SES verticality generally declined in tropical moist broadleaf forests globally in addition to the temperate forests, savannas, and woodlands of southern Australia and the Brazilian Atlantic forests. In contrast, verticality primarily increased in the boreal forests of Canada and northern Eurasia, tropical and subtropical savannas and woodlands in Africa, and tropical savannas in northern Australia (\@ref(fig:vert-dif-biome)). Changes in verticality of Reptiles and Amphibians were characterized by declines in most regions. However, amphibian verticality was expected to experience minor increases in African tropical and subtropical savannas and woodlands (\@ref(fig:vert-dif-biome)).
 
@@ -291,48 +279,63 @@ Changes in verticality in response to climate change were small relative to the 
 
 # Figures
 
-```{r fig.id="vert-map-global"}
-
+```{r fig.id="vert-map-global", fig.width=160, fig.height=96}
+include_graphics("./../figures/main_figs/vert_maps.png", error = F)
 ```
 
-```{r fig.id="model-coefs"}
-
+```{r fig.id="mod-coefs", fig.width=160, fig.height=87.3}
+include_graphics("./../figures/main_figs/sdmTMB_coefs.png", error = F)
 ```
 
-```{r fig.id="vert-difs-global"}
-
+```{r fig.id="svc", fig.width=160, fig.height=143.95}
+include_graphics("./../figures/main_figs/canopy_height_coefs.png", error = F)
 ```
 
-```{r fig.id="vert-homogenization"}
-
+```{r fig.id="corplot"}
+include_graphics("./../figures/main_figs/vert_rich_cor.png", error = F)
 ```
+
+```{r fig.id="vert-dif-map", fig.width=160, fig.height=133.3}
+include_graphics("./../figures/main_figs/vert_difs.png", error = F)
+```
+
 
 # Extended Data Tables
 
-```{r tab.id = "mean-vert-mods", tab.lp="ed", tab.cap="Simultaneous autoregressive model results for models of mean verticality of vertebrate assemblages as a function of climatic, topographic, and vegetative factors."}
+#```{r tab.id = "mean-vert-mods", tab.lp="ed", tab.cap="Simultaneous autoregressive model results for models of mean verticality of vertebrate assemblages as a #function of climatic, topographic, and vegetative factors."}
 
-```
+#```
 
-```{r tab.id = "sesvert-mods", tab.lp="ed", tab.cap="Simultaneous autoregressive model results for models of the standard effect size of mean verticality of vertebrate assemblages as a function of climatic, topographic, and vegetative factors."}
+#```{r tab.id = "sesvert-mods", tab.lp="ed", tab.cap="Simultaneous autoregressive model results for models of the standard effect size of mean verticality of #vertebrate assemblages as a function of climatic, topographic, and vegetative factors."}
 
-```
+#```
 
 # Extended Data Figures
 
-```{r fig.id="vertses-hist-biome", fig.lp="ed", fig.cap="Histograms of verticality by biome for each vertebrate class. Red dotted line indicates the mean verticality for each biome/class."}
-# plot SES vert by biome
-("figures/supp_figs/vert_biome_forestOnly_forestSES.R")
-plt_vertses_biome
-
+```{r fig.id="vert-biome", fig.lp="ed", fig.cap="", fig.height=80, fig.width=160}
+include_graphics("./../figures/supp_figs/vert_biome_forestOnly_forestSES.png", error = F)
 ```
 
-```{r fig.id="vert-forest", fig.lp="ed", fig.cap="Mean verticality, standard effect size (SES) of mean verticality, and the average proportion of species exhibiting arboreal, terrestrial, and fossorial strategies across latitudinal bands. In maps of mean veticality, assemblages composed of only fossorial species are zero (red) and those composed of only arboreal species are quantified as one (purple). In maps of the SES of mean verticality, negative numbers (red) indicate assemblages have lower verticality than expected by random chance and positive numbers (purple) indicate assemblages have higher verticality than expected by random chance. Line graphs show the average proportion of species exhibiting arboreal (blue), terrestrial (yellow), and fossorial (red) strategies. Proportions for each assemblage can exceed one because species can exhibit multiple vertical strategies.}
 
+```{r fig.id="vert-dif-biome", fig.lp="ed", fig.cap="", fig.height=80, fig.width=160}
+include_graphics("./../figures/supp_figs/vert_biome_forestOnly_forestSES.png", error = F)
 ```
 
-```{r fig.id="forest-model-coefs"}
 
-```
+#```{r fig.id="vertses-hist-biome", fig.lp="ed", fig.cap="Histograms of verticality by biome for each vertebrate class. Red dotted line indicates the mean #verticality for each biome/class."}
+## plot SES vert by biome
+#("figures/supp_figs/vert_biome_forestOnly_forestSES.R")
+#plt_vertses_biome
+
+#```
+
+#```{r fig.id="vert-forest", fig.lp="ed", fig.cap="Mean verticality, standard effect size (SES) of mean verticality, and the average proportion of species #exhibiting arboreal, terrestrial, and fossorial strategies across latitudinal bands. In maps of mean veticality, assemblages composed of only fossorial species #are zero (red) and those composed of only arboreal species are quantified as one (purple). In maps of the SES of mean verticality, negative numbers (red) #indicate assemblages have lower verticality than expected by random chance and positive numbers (purple) indicate assemblages have higher verticality than #expected by random chance. Line graphs show the average proportion of species exhibiting arboreal (blue), terrestrial (yellow), and fossorial (red) strategies. #Proportions for each assemblage can exceed one because species can exhibit multiple vertical strategies.}
+
+#```
+
+#```{r fig.id="forest-model-coefs"}
+
+#```
 
 ## Reference
 
