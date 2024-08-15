@@ -45,10 +45,10 @@ comps = foreach(i = 1:length(files), .combine = "rbind") %do% {
   comp.aic = compMods_aic[[2]]
   comp.cv = compMods_cv[[3]]
   comp = inner_join(comp.aic, comp.cv, by = c("model", "taxon", "response_var"))
+  gc()
 }
 
-
-write.csv(comps, "figs_and_tabs/supplement/model_selection_compare.csv", row.names = F)
+write.csv(comps, "tables/supplement/model_selection_compare.csv", row.names = F)
 
 
 
