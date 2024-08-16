@@ -4,6 +4,7 @@ library(tidyverse)
 library(lemon)
 library(ggh4x)
 library(spatialreg)
+library(sdmTMB)
 
 # VERTMEAN ----------------------------------------------------------------
 
@@ -37,7 +38,8 @@ birds.coefs$class = "Birds"
 
 meanvert.coefs = bind_rows(amph.coefs, mammals.coefs, reptiles.coefs, birds.coefs)%>% 
   mutate(class = factor(class, levels = c("Birds", "Mammals", "Reptiles", "Amphibians")),
-         type = "Mean Verticality")
+         type = "Mean Verticality",
+         sig = ifelse(conf.low*conf.high > 0, "sig", "notsig"))
 
 
 # * - plot --------------------------------------------------------------------
@@ -91,7 +93,8 @@ birds.coefs$class = "Birds"
 
 sesvert.coefs = bind_rows(amph.coefs, mammals.coefs, reptiles.coefs, birds.coefs)%>% 
   mutate(class = factor(class, levels = c("Birds", "Mammals", "Reptiles", "Amphibians")),
-         type = "SES Mean Verticality")
+         type = "SES Mean Verticality",
+         sig = ifelse(conf.low*conf.high > 0, "sig", "notsig"))
 
 
 
@@ -123,7 +126,7 @@ coefs = bind_rows(sesvert.coefs, meanvert.coefs) %>%
 
 library(ggh4x)
 coef.plt = coefs %>%
-  ggplot(aes(x = estimate, y = term, xmin = conf.low, xmax = conf.high)) +
+  ggplot(aes(x = estimate, y = term, xmin = conf.low, xmax = conf.high, color = sig)) +
   geom_pointrange(size = 0.15) +
   geom_vline(xintercept = 0, linetype = "dashed") +
   #geom_text(data = r2, aes(label = paste0("R\u00b2 = ", r2), x = Estimate), y = 2, inherit.aes = F, hjust = 1, vjust = 0) +
@@ -132,6 +135,7 @@ coef.plt = coefs %>%
   #scale_size_continuous(range = c(0.02,0.5)) +
   scale_y_discrete("") +
   scale_x_continuous("Estimate") +
+  scale_color_manual(values = c("black", "red3")) +
   facet_grid2(rows = vars(type), cols = vars(class), scales = "free_x", independent = "x") +
   scale_x_facet(ROW == 1, limits = c(-0.08, 0.25)) +
   scale_x_facet(ROW == 2, limits = c(-0.2, 0.8)) +
@@ -142,7 +146,7 @@ coef.plt = coefs %>%
         panel.grid.major = element_line(color = "gray90"),
         panel.grid.minor = element_blank(),
         strip.background = element_rect(color = "black"),
-        legend.position = "bottom",
+        legend.position = "none",
         legend.box.margin = margin(0,0,0,0),
         legend.box.spacing = unit(0.1, "mm"),
         legend.title.position = "top",
