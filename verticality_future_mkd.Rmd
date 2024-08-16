@@ -155,9 +155,7 @@ $$
 
 where $y_s$ is mean or SES verticality at location $s$ defined by x and y coordinates, $𝜇_s$ is the expected mean or SES verticality, and $𝑓^{-1}$ represents an inverse link function. We modeled SES verticality as a normal distribution and mean verticality as a beta distribution with a logit link function because values are constrained between 0 and 1. $𝜲^{main}_s$ is a vector of main effect covariates and 𝛽 represents a corresponding vector of estimated main effect coefficients. $α_g$ represents an optional random intercept by group g. $⍵_s$ represents a spatial random field at location $s$, and describes additional spatial variation in the data not explained by the environmental covariates or random intercept. $𝜲^{svc}_sζ_s$ represents an optional spatially varying coefficient, where $ 𝜲^{svc}$ represents the vector of spatially varying parameter values and $ζ_s$ represents the spatially varying coefficients, which are described using a random field such that the coefficients follow a multivariate normal distribution with mean zero and covariance ($𝚺_ζ$). The spatial range for the covariance function is shared with the range for the spatial random field. Both the spatial random field and the spatially varying coefficients are modeled as Gaussian random fields with the terms following a multivariate normal distribution with a covariance matrix modeled by the Matérn covariance function, which defines the decay rate of correlation with distance. The model is specified such that both spatial terms share the same range parameter.
 
-### Mesh development
 
-The Gaussian random field is approximated using a spatial mesh. We constructed separate meshes for all taxa and for mean and SES verticality using the ‘fmesher’ R package. The mesh used to approximate the spatial Gaussian random field (GRF) impacts model results as well as computational time. To assess sensitivity of the model to the mesh and select the optimal mesh, we used an iterative procedure to update minimum and maximum edge lengths of triangles in the mesh based on the spatial range of the data (i.e., the distance at which points exhibit a correlation of approximately 0.1) [@thorsonSpatioTemporalModelsEcologists2024]. We first estimated the spatial range by visually inspecting spatial correlations based on a subset of 1000 points. To avoid over-smoothing the GRF while or over-fitting the model and unnecessarily increasing computational demands, the maximum edge length of triangles within the modeling domain should be several times smaller than the estimated spatial range [@andersonSdmTMBPackageFast2024]. To construct the initial mesh, we specified the maximum edge length of the inner domain as 1/5 the spatial range. Additionally, we specified, an inner extension equal to the length of the spatial range, an outer extension equal to twice the length of the spatial range, and the maximum edge length in the outer extension equal to the spatial range (*cite*). To avoid small triangles, we also we specified the minimum edge length as 1/5 the maximum edge length of the inner domain [@krainskiAdvancedSpatialModeling2019]. We then fit a model using the resulting mesh. If the estimated range in the model was less than five times the maximum edge length of the spatial domain used to construct the mesh, we constructed a new mesh, updating the edge lengths and buffers based on the spatial range estimated by the model. We repeated this procedure until the spatial range estimated by the model was greater than 5 times the maximum edge length of spatial domain used to construct the mesh. We selected the mesh used in the final model for all following analysis.
 
 ### Model comparisons
 
@@ -181,25 +179,19 @@ To examine potential impacts of climate change on assemblage verticality, we pre
 
 ## Global patterns of verticality
 
-Verticality exhibited a latitudinal gradient across taxa characterized by high verticality in the tropics and lower verticality toward higher latitudes (\@ref(fig:vert-map-global)). This pattern was largely driven by declines in the proportion of arboreal species toward the poles. Patterns of SES verticality mirrored those of mean verticality and highlight declines in arboreal strategies outside tropical moist broadleaf forests (\@ref(fig:vert-biome)).
+Verticality exhibited a latitudinal gradient across taxa characterized by high verticality in the tropics and lower verticality toward higher latitudes (Fig. \@ref(fig:vert-map-global)). This pattern was largely driven by declines in the proportion of arboreal species toward the poles. Patterns of SES verticality mirrored those of mean verticality and highlight declines in arboreal strategies outside tropical moist forests (Fig. S\@ref(fig:vert-biome)). Within tropical and subtropical biomes, verticality was highest in moist forests and lowest in dry forests (Fig. \@ref(fig:vert-biome)). In moist forests, verticality of bird and mammal assemblages was consistently high, with an average of `r birds.arb.tropicalmoist`% of birds and `r mammals.arb.tropicalmoist`% of mammals exhibiting arboreal strategies. In contrast, amphibian and reptile verticality exhibited clear hotspots, with reptile verticality peaking in Madagascar and Malaysian and Indonesian forests and amphibian verticality peaking in the Brazilian Atlantic forest and eastern Madagascar.
 
-Despite widespread coherence of global verticality patterns among taxa and within biomes, regional variation occurred. Within tropical and subtropical biomes, verticality was highest in moist broadleaf forests and lowest in dry broadleaf forests (\@ref(fig:vert-biome)). In moist broadleaf forests, verticality of bird and mammal assemblages was consistently high, with an average of `r birds.arb.tropicalmoist`% of birds and `r mammals.arb.tropicalmoist`% of mammals exhibiting arboreal strategies, while the proportion of terrestrial species declined. In contrast, amphibian and reptile verticality exhibited clear hotspots, with reptile verticality peaking in Madagascar and Malaysian and Indonesian forests and amphibian verticality peaking in the Brazilian Atlantic forest and eastern Madagascar. Additionally, the proportion of reptiles and amphibians that exhibit terrestrial strategies did not decline to the same extent as birds and mammals. *include proportion maps in supplement*
-
-In temperate biomes, verticality was similar across forest types but declined in less dense wooded habitats (e.g., savannas and shrublands) (\@ref(fig:vert-biome)). Variation in the proportion of species exhibiting fossorial strategies drove differences in patterns of assemblage verticality among vertebrate classes. Amphibians exhibited the highest proportion of fossorial strategies in temperate biomes (\@ref(fig:vert-map-global)L, though temperate rainforests (e.g., the Pacific-Northwest of North America) were a notable exception. Mammals exhibited a similar pattern, though the proportion of fossorial species increased to a lesser extent (\@ref(fig:vert-map-global)F). In contrast, the proportion of fossorial reptiles declined in temperate regions. Low reptile verticality was therefore driven by declines in the proportion of arboreal species and increases in the proportion of terrestrial species. Though no birds exhibit fossorial strategies, a reduction in the proportion of arboreal species still produced a steep latitudinal gradient in SES verticality.
+In temperate biomes, verticality was similar across forest types but declined in less dense wooded habitats (e.g., savannas and shrublands) (Fig. S \@ref(fig:vert-biome)). Variation in the proportion of species exhibiting fossorial strategies drove differences in patterns of assemblage verticality among vertebrate classes. Amphibians exhibited the highest proportion of fossorial strategies in temperate biomes (Fig. \@ref(fig:vert-map-global)L), though temperate rainforests (e.g., the Pacific-Northwest of North America) were a notable exception. Mammals exhibited a similar pattern, though the proportion of fossorial species increased to a lesser extent (Fig. \@ref(fig:vert-map-global)F). In contrast, the proportion of fossorial reptiles declined in temperate regions. Low reptile verticality was therefore driven by declines in the proportion of arboreal species and increases in the proportion of terrestrial species. Though no birds exhibit fossorial strategies, a reduction in the proportion of arboreal species still produced a steep latitudinal verticality gradient.
 
 ## Environmental drivers of verticality
 
 ### Climate
 
-The spatial GLMMs indicated that verticality was limited by low precipitation across taxa, while impacts of high maximum temperatures, low minimum temperatures, and canopy height varied (\@ref(fig:mod-coefs), *supp table for model results*). Across taxa, precipitation of the driest and wettest months positively influenced mean and SES verticality (\@ref(fig:mod-coefs)). Minimum temperature of the coldest month positively impacted mammal and reptile verticality and had negligible effects on bird and amphibian verticality. Maximum temperatures of the warmest month exhibited a quadratic relationship with bird and reptile mean and SES verticality, as well as SES verticality of mammals. Mean verticality of mammals exhibited a positive linear relationship with maximum temperature and amphibian verticality exhibited no relationship. These patterns resulted in declines in verticality at both extremely high and low maximum temperatures in regions without high dry season precipitation for reptiles and amphibians, while verticality increased with temperature across a range of dry season precipitation for birds and mammals (*see conditional effect plots*). Climate velocity negatively impacted bird and amphibian verticality and positively impacted mammal and reptile verticality. However, environmental factors were unable to explain extremely high and extremely low verticality as indicated by larger residuals at the ends of the verticality spectrum when spatial random effects were not included in estimates of assemblage verticality (*supp figure*).
-
-### Vegetation
-
-We hypothesized that canopy height and vegetation density would positively impact verticality, but that the impact of canopy height would vary across space. Specifically, we expected canopy height to have a strong positive effect on verticality in warmer and wetter regions that support arboreal assemblages and a negligible effect in regions with climate conditions that support fewer arboreal species. Results of the GLMMs did not entirely support our predictions. Globally, canopy height positively impacted SES verticality of reptiles and amphibians and mean verticality of amphibians, while vegetation density had no significant impact on mean or SES verticality of any taxa (\@ref(fig:mod-coefs)). In contrast to expectations, canopy height did not have a positive impact on verticality across much of the tropics where climate conditions support arboreality (\ref(fig:svc)). Significant positive impacts of canopy height generally occurred in regions with greater topographic relief, including the Andes, southern India, east-central Africa including the Eastern Arc Mountain Range, and Madagascar (\@ref(fig:svc-sig)).
+Spatial GLMMs indicated that verticality was limited by low precipitation across taxa, while impacts of high maximum temperatures, low minimum temperatures, and canopy height varied (Fig. \@ref(fig:mod-coefs)). Across taxa, precipitation of the driest and wettest months positively influenced mean and SES verticality (Fig. \@ref(fig:mod-coefs)). Minimum temperature of the coldest month positively impacted mammal and reptile verticality and did not significantly impact bird and amphibian verticality. Maximum temperatures of the warmest month exhibited a quadratic relationship with bird, reptile, and amphibian verticality and a positive linear relationship with mammals verticality. These patterns resulted in lower verticality at both high and low maximum temperatures in regions without high dry season precipitation for reptiles and amphibians, while verticality increased with temperature across a range of dry season precipitation for birds and mammals (Fig. S\@ref(fig:condeff-mean),\@ref(fig:condeff-ses)). Canopy height had globally positive impacts on SES verticality of reptiles and amphibians and mean verticality of amphibians, and vegetation density had no significant impact on mean or SES verticality of any taxon Fig. (\@ref(fig:mod-coefs)). However, impacts of canopy height varied spatially, exhibiting neutral impacts on verticality across much of the tropics and positive impacts in regions in regions with greater topographic relief, including the Andes, southern India, east-central Africa including the Eastern Arc Mountain Range, and Madagascar (Fig. \@ref(fig:svc), Fig. S\@ref(fig:svc-sig) ). Furthermore, environmental factors were unable to explain extremely high and low verticality as indicated by larger residuals when spatial random effects were excluded from model predictions (*supp figure*).
 
 ## Verticality-species richness relationships
 
-When considering all points, Pearson correlations indicated strong positive relationships between SES or mean verticality and species richness for birds and mammals, a weak positive relationship for amphibians, and nearly no relationship for reptiles (*add R2 and p-values*) (\@ref(fig:corplot)). When we restricted the correlation to only include points where canopy height had a significant positive effect on verticality, the strength of the relationship between SES verticality and richness increased for amphibians and SES verticality of birds, but declined for mammals, reptiles, and mean verticality of birds.
+When considering all points, Pearson correlations indicated strong positive relationships between SES or mean verticality and species richness for birds and mammals, a weak positive relationship for amphibians, and nearly no relationship for reptiles (Fig. \@ref(fig:corplot)). When we restricted the correlation to only include points where canopy height had a significant positive effect on verticality, the strength of the relationship between SES verticality and richness increased for amphibians and SES verticality of birds, but declined for mammals, reptiles, and mean verticality of birds.
 
 ## Climate change impacts
 
@@ -242,7 +234,7 @@ amphmean.maxreldif = round(max(amph.meanvert$est.reldif),2)
 ```
 
 
-Changes in verticality in response to climate change were small relative to the total variation in mean and SES verticality and varied across taxa (\@ref(fig:vert-dif-map)). Amphibians exhibited the highest predicted relative percent change, with predicted declines reaching up to `r amphses.minreldif*-1`% for SES verticality and `r amphmean.minreldif*-1`% for mean verticality in parts of the tropics and predicted increases reaching up to `r amphses.maxreldif`% for SES verticality and `r amphmean.maxreldif`% for mean verticality in the African forest-savanna matrix. Across biomes, the models predicted the highest relative declines in verticality in tropical and subtropical moist broadleaf forests and the highest relative increases at high latitudes in boreal forests. Within these biomes, the models predicted the greatest average relative decline for amphibians (SES verticality: `r round(sessumm[1, "mean.reldif"], 2)`%, mean verticality: `r round(meansumm[1, "mean.reldif"], 2)`%) and the greatest average relative increase for birds (SES verticality: `r round(sessumm[which(sessumm$class == "Birds" & sessumm$biome == "Boreal Forests/Taiga"), "mean.reldif"], 2)`%, mean verticality: `r round(meansumm[which(meansumm$class == "Birds" & meansumm$biome == "Boreal Forests/Taiga"), "mean.reldif"], 2)`%) (\@ref(fig:vert-dif-biome)).
+Changes in verticality in response to climate change were small relative to the total variation in mean and SES verticality and varied across taxa (Fig. \@ref(fig:vert-dif-map)). Amphibians exhibited the highest predicted relative percent change, with predicted declines reaching up to `r amphses.minreldif*-1`% for SES verticality and `r amphmean.minreldif*-1`% for mean verticality in parts of the tropics and predicted increases reaching up to `r amphses.maxreldif`% for SES verticality and `r amphmean.maxreldif`% for mean verticality in the African forest-savanna matrix. Across biomes, the models predicted the highest relative declines in verticality in tropical and subtropical moist forests and the highest relative increases at high latitudes in boreal forests. Within these biomes, the models predicted the greatest average relative decline for amphibians (SES verticality: `r round(sessumm[1, "mean.reldif"], 2)`%, mean verticality: `r round(meansumm[1, "mean.reldif"], 2)`%) and the greatest average relative increase for birds (SES verticality: `r round(sessumm[which(sessumm$class == "Birds" & sessumm$biome == "Boreal Forests/Taiga"), "mean.reldif"], 2)`%, mean verticality: `r round(meansumm[which(meansumm$class == "Birds" & meansumm$biome == "Boreal Forests/Taiga"), "mean.reldif"], 2)`%) (Fig. S\@ref(fig:vert-dif-biome)).
 
 
 # Discussion
@@ -312,28 +304,30 @@ The TetrapodTraits dataset uses phylogenetic imputation to identify traits if tr
 
 ## Mesh development
 
+The Gaussian random field is approximated using a spatial mesh. We constructed separate meshes for all taxa and for mean and SES verticality using the ‘fmesher’ R package. The mesh used to approximate the spatial Gaussian random field (GRF) impacts model results as well as computational time. To assess sensitivity of the model to the mesh and select the optimal mesh, we used an iterative procedure to update minimum and maximum edge lengths of triangles in the mesh based on the spatial range of the data (i.e., the distance at which points exhibit a correlation of approximately 0.1) [@thorsonSpatioTemporalModelsEcologists2024]. We first estimated the spatial range by visually inspecting spatial correlations based on a subset of 1000 points. To avoid over-smoothing the GRF while or over-fitting the model and unnecessarily increasing computational demands, the maximum edge length of triangles within the modeling domain should be several times smaller than the estimated spatial range [@andersonSdmTMBPackageFast2024]. To construct the initial mesh, we specified the maximum edge length of the inner domain as 1/5 the spatial range. Additionally, we specified, an inner extension equal to the length of the spatial range, an outer extension equal to twice the length of the spatial range, and the maximum edge length in the outer extension equal to the spatial range (*cite*). To avoid small triangles, we also we specified the minimum edge length as 1/5 the maximum edge length of the inner domain [@krainskiAdvancedSpatialModeling2019]. We then fit a model using the resulting mesh. If the estimated range in the model was less than five times the maximum edge length of the spatial domain used to construct the mesh, we constructed a new mesh, updating the edge lengths and buffers based on the spatial range estimated by the model. We repeated this procedure until the spatial range estimated by the model was greater than 5 times the maximum edge length of spatial domain used to construct the mesh. We selected the mesh used in the final model for all following analysis.
+
 # Supplementary tables
 *Remove NA values because gradient issue is okay Re: question posted to sdmTMB forum*
 
-```{r tab.id="mod-selection", tab.lp="stab", tab.cap="Model selection criteria for models of mean and SES verticality for all four vertebrate taxa. The log-likelihood, AIC, and delta AIC are for models trained with all points. The average log-likelihood is the average sum of log-likelihood values for left out test data across five folds. NA values are caused by not meeting all model assumptions across all five cross-validation folds."}
-tab = read.csv("tables/supplement/model_selection_compare.csv")
-
-tab = tab %>% 
- # filter(response_var == "Mean verticality") %>% 
-  relocate(taxon) %>% 
-  relocate(response_var, .after = taxon) %>% 
-  arrange(taxon, response_var, deltaAIC) %>% 
-  mutate(taxon = factor(taxon, levels = c("Birds", "Mammals", "Reptiles", "Amphibians"))) %>% 
-  mutate_at(.vars = c("logLik", "AIC", "deltaAIC", "avg_logLik"), .funs = function(x)round(x, 2))
-
-flextable(tab) %>% 
-  merge_v(j=~ taxon + response_var) %>%
-  hline(i=seq(4,32,4), part = "body",
-        border = fp_border(color = "black", width = 3)) %>% 
-  vline(j = c(1, 2), part = "body",
-        border = fp_border(color="black", width = 3)) %>% 
-  colformat_double(i = ~response_var, j = "taxon") %>% 
-  fix_border_issues()
+```{r tab.id="mod-tab", tab.lp="stab", tab.cap="Model selection criteria for models of mean and SES verticality for all four vertebrate taxa. The log-likelihood, AIC, and delta AIC are for models trained with all points. The average log-likelihood is the average sum of log-likelihood values for left out test data across five folds. NA values are caused by not meeting all model assumptions across all five cross-validation folds."}
+# tab = read.csv("tables/supplement/model_selection_compare.csv")
+# 
+# tab = tab %>% 
+#  # filter(response_var == "Mean verticality") %>% 
+#   relocate(taxon) %>% 
+#   relocate(response_var, .after = taxon) %>% 
+#   arrange(taxon, response_var, deltaAIC) %>% 
+#   mutate(taxon = factor(taxon, levels = c("Birds", "Mammals", "Reptiles", "Amphibians"))) %>% 
+#   mutate_at(.vars = c("logLik", "AIC", "deltaAIC", "avg_logLik"), .funs = function(x)round(x, 2))
+# 
+# flextable(tab) %>% 
+#   merge_v(j=~ taxon + response_var) %>%
+#   hline(i=seq(4,32,4), part = "body",
+#         border = fp_border(color = "black", width = 3)) %>% 
+#   vline(j = c(1, 2), part = "body",
+#         border = fp_border(color="black", width = 3)) %>% 
+#   colformat_double(i = ~response_var, j = "taxon") %>% 
+#   fix_border_issues()
 ```
 
 
@@ -347,10 +341,12 @@ flextable(tab) %>%
 include_graphics("figures/supp_figs/vert_biome_forestOnly_forestSES.png", error = F)
 ```
 
+```{r fig.id="condeff-mean", fig.lp="suppfig", fig.cap="Conditional effect plots for mean verticality in response to precipitation of the driest month and maximum temperature of the warmest month.", fig.cap.pre="Fig. S"}
+include_graphics("figures/supp_figs/cond_effects_meanvert.png", error = F)
+```
 
-```{r fig.id="vert-dif-biome", fig.lp="suppfig", fig.cap.pre="Fig. S", fig.cap="Percent relative difference between SES and mean verticality predicted under present and future climate conditions for global biomes. Negative values indicate predicted declines in verticality and positive values indicate predicted increases in verticality. Biomes along the y-axis are ordered from those that were predicted to exhibit the greatest average in verticality across taxa at the top to those that were predicted to exhibit the greatest average decrease in verticality at the bottom.", fig.height=80, fig.width=160}
-
-include_graphics("figures/supp_figs/vert_biome_forestOnly_forestSES.png", error = F)
+```{r fig.id="condeff-ses", fig.lp="suppfig", fig.cap="Conditional effect plots for SES verticality in response to precipitation of the driest month and maximum temperature of the warmest month.", fig.cap.pre="Fig. S"}
+include_graphics("figures/supp_figs/cond_effects_sesvert.png", error = F)
 ```
 
 
@@ -358,6 +354,12 @@ include_graphics("figures/supp_figs/vert_biome_forestOnly_forestSES.png", error 
 
 include_graphics("figures/supp_figs/svc_canopyHeight_sig_link.png", error = F)
 ```
+
+```{r fig.id="vert-dif-biome", fig.lp="suppfig", fig.cap.pre="Fig. S", fig.cap="Average percent relative difference between SES and mean verticality predicted under present and future climate conditions for global biomes. Negative values indicate predicted declines in verticality and positive values indicate predicted increases in verticality. Biomes along the y-axis are ordered from those that were predicted to exhibit the greatest average in verticality across taxa at the top to those that were predicted to exhibit the greatest average decrease in verticality at the bottom.", fig.height=80, fig.width=160}
+
+include_graphics("figures/supp_figs/dif_biome_forestOnly_forestSES.png", error = F)
+```
+
 
 
 #```{r fig.id="vertses-hist-biome", fig.lp="ed", fig.cap="Histograms of verticality by biome for each vertebrate class. Red dotted line indicates the mean #verticality for each biome/class."}
