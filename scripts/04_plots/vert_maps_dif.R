@@ -121,15 +121,19 @@ wd = vect("data/original/rnaturalearth_world.shp") %>%
 # * amphibians SESVERT DIF -------------------------------------------------------------
 
 load("results/sdmTMB_models/amphibians_sesvert.RData")
-amph = pred.f
+amph.sesvert = pred.f
+amph.sesvert$vertvar = "SES Mean Verticality"
+amph.sesvert$est.reldif = pred.f$est.dif/(max(pred$vert.mean.ses) - min(pred$vert.mean.ses))*100
+amph.sesvert$biome = pred$biome
 
-amph.pdat = amph %>% 
+amph.pdat = amph.sesvert %>% 
   mutate(x = x*1e5, y = y*1e5) %>% 
   rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
   project("epsg:4326")
 
-amph.sesvert.dif.plt = plt_rast_margin(r = amph.pdat, v = wd, margin.title = "avg. difference by latitude",
-                                       plot.title = "Amphibians", var = "est.dif", rd = 1, scale_limits = c(-2,2))
+amph.sesvert.dif.plt = plt_rast_margin(r = amph.pdat, v = wd, margin.title = "avg. relative\ndifference by latitude",
+                                       plot.title = "Amphibians", var = "est.reldif", rd = 1, 
+                                       scale_limits = c(-5.2,5.2))
 amph.sesvert.dif.plt
 
 
@@ -137,62 +141,115 @@ amph.sesvert.dif.plt
 # * amphibians Meanvert DIF -------------------------------------------------------------
 
 load("results/sdmTMB_models/amphibians_meanvert.RData")
-amph = pred.f
+amph.meanvert = pred.f
+amph.meanvert = pred.f
+amph.meanvert$vertvar = "Mean Verticality"
+amph.meanvert$est.reldif = pred.f$est.dif/(max(pred$vert.mean) - min(pred$vert.mean))*100
 
-amph.pdat = amph %>% 
+
+amph.pdat = amph.meanvert %>% 
   mutate(x = x*1e5, y = y*1e5) %>% 
   rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
   project("epsg:4326")
 
-amph.meanvert.dif.plt = plt_rast_margin(r = amph.pdat, v = wd, margin.title = "avg. difference by latitude",
-                                       plot.title = "Amphibians", var = "est.dif", rd = 2, scale_limits = c(-0.5,0.5))
+amph.meanvert.dif.plt = plt_rast_margin(r = amph.pdat, v = wd, margin.title = "avg. relative\ndifference by latitude",
+                                       plot.title = "Amphibians", var = "est.reldif", rd = 2, 
+                                       scale_limits = c(-5.2,5.2))
 amph.meanvert.dif.plt
 
+# * amphibians Parb DIF -------------------------------------------------------------
+
+load("results/sdmTMB_models/amphibians_parb.RData")
+amph.parb = pred.f
+amph.parb = pred.f
+amph.parb$vertvar = "Proportion arboreal"
+amph.parb$est.reldif = pred.f$est.dif/(max(pred$p.arb) - min(pred$p.arb))*100
+
+
+amph.pdat = amph.parb %>% 
+  mutate(x = x*1e5, y = y*1e5) %>% 
+  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
+  project("epsg:4326")
+
+amph.parb.dif.plt = plt_rast_margin(r = amph.pdat, v = wd, margin.title = "avg. relative\ndifference by latitude",
+                                        plot.title = "Amphibians", var = "est.reldif", rd = 2, 
+                                        scale_limits = c(-7.5,7.5))
+amph.parb.dif.plt
 
 
 # * reptiles SESVERT DIF -------------------------------------------------------------
 
 load("results/sdmTMB_models/reptiles_sesvert.RData")
-rept= pred.f
+reptiles.sesvert = pred.f
+reptiles.sesvert$vertvar = "SES Mean Verticality"
+reptiles.sesvert$est.reldif = pred.f$est.dif/(max(pred$vert.mean.ses) - min(pred$vert.mean.ses))*100
 
-rept.pdat = rept %>% 
+rept.pdat = reptiles.sesvert %>% 
   mutate(x = x*1e5, y = y*1e5) %>% 
   rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
   project("epsg:4326")
 
-rept.sesvert.dif.plt = plt_rast_margin(r = rept.pdat, v = wd, margin.title = "avg. difference by latitude",
-                                       plot.title = "Reptiles", var = "est.dif", rd = 1, scale_limits = c(-2,2))
+rept.sesvert.dif.plt = plt_rast_margin(r = rept.pdat, v = wd, margin.title = "avg. relative\ndifference by latitude",
+                                       plot.title = "Reptiles", var = "est.reldif", rd = 1, 
+                                       scale_limits = c(-5.2,5.2))
 rept.sesvert.dif.plt
 
 
 # * Reptiles MEANVERT DIF -------------------------------------------------------------
 
 load("results/sdmTMB_models/reptiles_meanvert.RData")
-rept = pred.f
+reptiles.meanvert = pred.f
+reptiles.meanvert$vertvar = "Mean Verticality"
+reptiles.meanvert$est.reldif = pred.f$est.dif/(max(pred$vert.mean) - min(pred$vert.mean))*100
 
-rept.pdat = rept %>% 
+rept.pdat = reptiles.meanvert %>% 
   mutate(x = x*1e5, y = y*1e5) %>% 
   rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
   project("epsg:4326")
 
-rept.meanvert.dif.plt = plt_rast_margin(r = rept.pdat, v = wd, margin.title = "avg. difference by latitude",
-                                        plot.title = "Reptiles", var = "est.dif", rd = 3, scale_limits = c(-0.5,0.5))
+rept.meanvert.dif.plt = plt_rast_margin(r = rept.pdat, v = wd, margin.title = "avg. relative\ndifference by latitude",
+                                        plot.title = "Reptiles", var = "est.reldif", rd = 3, 
+                                        scale_limits = c(-5.2,5.2))
 rept.meanvert.dif.plt
+
+
+# * reptiles Parb DIF -------------------------------------------------------------
+
+load("results/sdmTMB_models/reptiles_parb.RData")
+reptiles.parb = pred.f
+reptiles.parb = pred.f
+reptiles.parb$vertvar = "Proportion arboreal"
+reptiles.parb$est.reldif = pred.f$est.dif/(max(pred$p.arb) - min(pred$p.arb))*100
+
+
+reptiles.pdat = reptiles.parb %>% 
+  mutate(x = x*1e5, y = y*1e5) %>% 
+  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
+  project("epsg:4326")
+
+reptiles.parb.dif.plt = plt_rast_margin(r = reptiles.pdat, v = wd, margin.title = "avg. relative\ndifference by latitude",
+                                       plot.title = "Reptiles", var = "est.reldif", rd = 2, 
+                                       scale_limits = c(-7.5,7.5))
+reptiles.parb.dif.plt
 
 
 
 # * mammals SESVERT DIF -------------------------------------------------------------
 
 load("results/sdmTMB_models/mammals_sesvert.RData")
-mammals = pred.f
+mammals.sesvert = pred.f
+mammals.sesvert$vertvar = "SES Mean Verticality"
+mammals.sesvert$est.reldif = pred.f$est.dif/(max(pred$vert.mean.ses) - min(pred$vert.mean.ses))*100
 
-mammals.pdat = mammals %>% 
+
+mammals.pdat = mammals.sesvert %>% 
   mutate(x = x*1e5, y = y*1e5) %>% 
   rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
   project("epsg:4326")
 
-mammals.sesvert.dif.plt = plt_rast_margin(r = mammals.pdat, v = wd, margin.title = "avg. difference by latitude",
-                                       plot.title = "Mammals", var = "est.dif", rd = 1, scale_limits = c(-2,2))
+mammals.sesvert.dif.plt = plt_rast_margin(r = mammals.pdat, v = wd, margin.title = "avg. relative\ndifference by latitude",
+                                       plot.title = "Mammals", var = "est.reldif", rd = 1, 
+                                       scale_limits = c(-5.2,5.2))
 mammals.sesvert.dif.plt
 
 
@@ -200,31 +257,57 @@ mammals.sesvert.dif.plt
 # * mammals MEANVERT DIF -------------------------------------------------------------
 
 load("results/sdmTMB_models/mammals_meanvert.RData")
-mammals = pred.f
+mammals.meanvert = pred.f
+mammals.meanvert$vertvar = "Mean Verticality"
+mammals.meanvert$est.reldif = pred.f$est.dif/(max(pred$vert.mean) - min(pred$vert.mean))*100
 
-mammals.pdat = mammals %>% 
+
+mammals.pdat = mammals.meanvert %>% 
   mutate(x = x*1e5, y = y*1e5) %>% 
   rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
   project("epsg:4326")
 
-mammals.meanvert.dif.plt = plt_rast_margin(r = mammals.pdat, v = wd, margin.title = "avg. difference by latitude",
-                                        plot.title = "Mammals", var = "est.dif", rd = 3, scale_limits = c(-0.5,0.5))
+mammals.meanvert.dif.plt = plt_rast_margin(r = mammals.pdat, v = wd, margin.title = "avg. relative\ndifference by latitude",
+                                        plot.title = "Mammals", var = "est.reldif", rd = 3,
+                                        scale_limits = c(-5.2,5.2))
 mammals.meanvert.dif.plt
 
+# * mammals Parb DIF -------------------------------------------------------------
+
+load("results/sdmTMB_models/mammals_parb.RData")
+mammals.parb = pred.f
+mammals.parb = pred.f
+mammals.parb$vertvar = "Proportion arboreal"
+mammals.parb$est.reldif = pred.f$est.dif/(max(pred$p.arb) - min(pred$p.arb))*100
+
+
+mammals.pdat = mammals.parb %>% 
+  mutate(x = x*1e5, y = y*1e5) %>% 
+  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
+  project("epsg:4326")
+
+mammals.parb.dif.plt = plt_rast_margin(r = mammals.pdat, v = wd, margin.title = "avg. relative\ndifference by latitude",
+                                     plot.title = "Mammals", var = "est.reldif", rd = 2, 
+                                     scale_limits = c(-7.5,7.5))
+mammals.parb.dif.plt
 
 
 # * birds (breeding + resident) SESVERT DIF -------------------------------------------------------------
 
 load("results/sdmTMB_models/birds_sesvert.RData")
-birds = pred.f
+birds.sesvert = pred.f
+birds.sesvert$vertvar = "SES Mean Verticality"
+birds.sesvert$est.reldif = pred.f$est.dif/(max(pred$vert.mean.ses) - min(pred$vert.mean.ses))*100
 
-birds.pdat = birds %>% 
+
+birds.pdat = birds.sesvert %>% 
   mutate(x = x*1e5, y = y*1e5) %>% 
   rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
   project("epsg:4326")
 
-birds.sesvert.dif.plt = plt_rast_margin(r = birds.pdat, v = wd, margin.title = "avg. difference by latitude",
-                                       plot.title = "Birds", var = "est.dif", rd = 1, scale_limits = c(-2,2))
+birds.sesvert.dif.plt = plt_rast_margin(r = birds.pdat, v = wd, margin.title = "avg. relative\ndifference by latitude",
+                                       plot.title = "Birds", var = "est.reldif", rd = 1,
+                                       scale_limits = c(-5.2,5.2))
 birds.sesvert.dif.plt
 
 
@@ -234,17 +317,40 @@ birds.sesvert.dif.plt
 
 
 load("results/sdmTMB_models/birds_meanvert.RData")
-birds = pred.f
+birds.meanvert = pred.f
+birds.meanvert$vertvar = "Mean Verticality"
+birds.meanvert$est.reldif = pred.f$est.dif/(max(pred$vert.mean) - min(pred$vert.mean))*100
 
-birds.pdat = birds %>% 
+
+birds.pdat = birds.meanvert %>% 
   mutate(x = x*1e5, y = y*1e5) %>% 
   rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
   project("epsg:4326")
 
-birds.meanvert.dif.plt = plt_rast_margin(r = birds.pdat, v = wd, margin.title = "avg. difference by latitude",
-                                        plot.title = "Birds", var = "est.dif", rd = 3, scale_limits = c(-0.5, 0.5))
+birds.meanvert.dif.plt = plt_rast_margin(r = birds.pdat, v = wd, margin.title = "avg. relative\ndifference by latitude",
+                                        plot.title = "Birds", var = "est.reldif", rd = 3, 
+                                        scale_limits = c(-5.2,5.2))
 birds.meanvert.dif.plt
 
+
+# * birds Parb DIF -------------------------------------------------------------
+
+load("results/sdmTMB_models/birds_parb.RData")
+birds.parb = pred.f
+birds.parb = pred.f
+birds.parb$vertvar = "Proportion arboreal"
+birds.parb$est.reldif = pred.f$est.dif/(max(pred$p.arb) - min(pred$p.arb))*100
+
+
+birds.pdat = birds.parb %>% 
+  mutate(x = x*1e5, y = y*1e5) %>% 
+  rast(type = "xyz", crs = "+proj=cea +datum=WGS84") %>% 
+  project("epsg:4326")
+
+birds.parb.dif.plt = plt_rast_margin(r = birds.pdat, v = wd, margin.title = "avg. relative\ndifference by latitude",
+                                    plot.title = "Birds", var = "est.reldif", rd = 2, 
+                                    scale_limits = c(-7.5,7.5))
+birds.parb.dif.plt
 
 
 
@@ -270,14 +376,14 @@ row4 = wrap_elements(panel = textGrob("Amphibians", rot = 90, gp = gpar(fontface
 row5 = wrap_elements(panel = textGrob("", rot = 90))
 
 # make combined legend
-legend.sesvert = ggplot(data = data.frame(x = 1, y = 1, z = -2,2)) + 
-  geom_point(aes(x,y,fill = z)) + scale_fill_continuous_divergingx("spectral", limits = c(-2,2), guide = guide_colorbar("")) +
+legend.sesvert = ggplot(data = data.frame(x = 1, y = 1, z = c(-5.2,5.2))) + 
+  geom_point(aes(x,y,fill = z)) + scale_fill_continuous_divergingx("spectral", limits = c(-5.2,5.2), guide = guide_colorbar("")) +
   theme(legend.direction = "horizontal",
         legend.key.width = unit(10, units = "mm"))
 legend.sesvert = get_legend(legend.sesvert)
 
-legend.meanvert = ggplot(data = data.frame(x = 1, y = 1, z = -0.5,0.5)) + 
-  geom_point(aes(x,y,fill = z)) + scale_fill_continuous_divergingx("spectral", limits = c(-0.5,0.5), guide = guide_colorbar("")) +
+legend.meanvert = ggplot(data = data.frame(x = 1, y = 1, z = c(-5.2,5.2))) + 
+  geom_point(aes(x,y,fill = z)) + scale_fill_continuous_divergingx("spectral", limits = c(-5.2,5.2), guide = guide_colorbar("")) +
   theme(legend.direction = "horizontal",
         legend.key.width = unit(10, units = "mm"))
 legend.meanvert = get_legend(legend.meanvert)
@@ -291,6 +397,47 @@ p = row0 + row1 + row2 + row3 + row4 + row5 +
   theme(plot.title = element_blank())
 
 
-png("figures/main_figs/vert_difs.png", height = 250, width = 300, res = 300, units = "mm")
+png("figures/main_figs/vert_reldifs.png", height = 250, width = 300, res = 300, units = "mm")
+p
+dev.off()
+
+
+# PROPORTION ARBOREAL FIGURE -------------------------------------------------------------
+
+design = "
+AG
+BH
+CI
+DJ
+EK
+FL"
+
+library(grid)
+col1 = wrap_elements(panel = textGrob("Proportion Arboreal", gp= gpar(fontface = "bold")))
+
+row0 = wrap_elements(panel = textGrob("", rot = 90))
+row1 = wrap_elements(panel = textGrob("Birds", rot = 90, gp = gpar(fontface = "bold")))
+row2 = wrap_elements(panel = textGrob("Mammals", rot = 90, gp = gpar(fontface = "bold")))
+row3 = wrap_elements(panel = textGrob("Reptiles", rot = 90, gp = gpar(fontface = "bold")))
+row4 = wrap_elements(panel = textGrob("Amphibians", rot = 90, gp = gpar(fontface = "bold")))
+row5 = wrap_elements(panel = textGrob("", rot = 90))
+
+# make combined legend
+legend.parb = ggplot(data = data.frame(x = 1, y = 1, z = c(-7.5,7.5))) + 
+  geom_point(aes(x,y,fill = z)) + scale_fill_continuous_divergingx("spectral", limits = c(-7.5,7.5), guide = guide_colorbar("")) +
+  theme(legend.direction = "horizontal",
+        legend.key.width = unit(10, units = "mm"))
+legend.parb = get_legend(legend.parb)
+
+
+
+p = row0 + row1 + row2 + row3 + row4 + row5 +
+  col1 + birds.parb.dif.plt + mammals.parb.dif.plt + reptiles.parb.dif.plt + amph.parb.dif.plt + legend.parb +
+  plot_layout(design = design, heights = c(0.1, -1, -1, -1, -1, 0.2), widths = c(0.1, -1, 0.2)) +
+  plot_annotation(tag_levels = list(c("", "", "", "", "", "", "", "A", "B", "C", "D", ""))) +
+  theme(plot.title = element_blank())
+
+
+png("figures/main_figs/vert_parb_reldifs.png", height = 250, width = 150, res = 300, units = "mm")
 p
 dev.off()
