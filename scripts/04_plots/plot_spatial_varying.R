@@ -9,7 +9,8 @@ library(sdmTMB)
 
 wd = vect("data/original/rnaturalearth_world.shp") %>% 
   project("epsg:4326") %>% 
-  crop(ext(-180,180,-60,83.64))
+  crop(ext(-180,180,-60,83.64)) %>% 
+  project("+proj=cea +datum=WGS84")
 
 plot_spatial_varying = function(mod, pred, var, v, legend_title) {
   coefs = tidy(mod)
@@ -96,6 +97,9 @@ load("results/sdmTMB_models/amphibians_meanvert.RData")
 amph.meanvert = plot_spatial_varying(mod = mod, pred = pred, var = "canopy_height", v = wd, legend_title = "coefficient")
 coef.a.mean = plot_coef_height(pred)
 
+load("results/sdmTMB_models/amphibians_parb.RData")
+amph.parb = plot_spatial_varying(mod = mod, pred = pred, var = "canopy_height", v = wd, legend_title = "coefficient")
+
 
 # Reptiles
 
@@ -107,6 +111,8 @@ load("results/sdmTMB_models/reptiles_meanvert.RData")
 rept.meanvert = plot_spatial_varying(mod = mod, pred = pred, var = "canopy_height", v = wd, legend_title = "coefficient")
 coef.r.mean = plot_coef_height(pred)
 
+load("results/sdmTMB_models/reptiles_parb.RData")
+rept.parb = plot_spatial_varying(mod = mod, pred = pred, var = "canopy_height", v = wd, legend_title = "coefficient")
 
 # Mammals
 
@@ -117,6 +123,10 @@ coef.m.ses = plot_coef_height(pred)
 load("results/sdmTMB_models/mammals_meanvert.RData")
 mammals.meanvert = plot_spatial_varying(mod = mod, pred = pred, var = "canopy_height", v = wd, legend_title = "coefficient")
 coef.m.mean = plot_coef_height(pred)
+
+load("results/sdmTMB_models/mammals_parb.RData")
+mammals.parb = plot_spatial_varying(mod = mod, pred = pred, var = "canopy_height", v = wd, legend_title = "coefficient")
+
 
 
 # Birds
@@ -129,6 +139,8 @@ load("results/sdmTMB_models/birds_meanvert.RData")
 birds.meanvert = plot_spatial_varying(mod = mod, pred = pred, var = "canopy_height", v = wd, legend_title = "coefficient")
 coef.b.mean = plot_coef_height(pred)
 
+load("results/sdmTMB_models/birds_parb.RData")
+birds.parb = plot_spatial_varying(mod = mod, pred = pred, var = "canopy_height", v = wd, legend_title = "coefficient")
 
 # Full figure
 
@@ -159,6 +171,35 @@ p = plot_spacer() + row1 + row2 + row3 + row4 +
 png("figures/supp_figs/canopy_height_coefs.png", height = 180, width = 200, res = 300, units = "mm")
 p
 dev.off()
+
+# Full figure - proportion arboreal
+
+design = "
+AF
+BG
+CH
+DI
+EJ"
+
+library(grid)
+col1 = wrap_elements(panel = textGrob("Proportion Arboreal"))
+
+row1 = wrap_elements(panel = textGrob("Birds", rot = 90))
+row2 = wrap_elements(panel = textGrob("Mammals", rot = 90))
+row3 = wrap_elements(panel = textGrob("Reptiles", rot = 90))
+row4 = wrap_elements(panel = textGrob("Amphibians", rot = 90))
+
+
+p = plot_spacer() + row1 + row2 + row3 + row4 +
+  col1 + birds.parb + mammals.parb + rept.parb + amph.parb + 
+  plot_layout(design = design,  heights = c(0.2,1,1,1,1), widths = c(0.2,1)) +
+  plot_annotation(tag_levels = list(c("","","","","", "A", "B", "C", "D"))) &
+  theme(plot.tag.position = c(0.025, 0.9), legend.title = element_blank(), legend.position.inside = c(0.03, 0.5))
+
+png("figures/supp_figs/canopy_height_coefs_parb.png", height = 180, width = 120, res = 300, units = "mm")
+p
+dev.off()
+
 
 
 p = 
@@ -229,61 +270,73 @@ svc_uncertainty = function(mod, pred,legend_title) {
     mutate(x = x*1e5, y = y*1e5) %>% 
     relocate(x, y, .before = rich) %>% 
     dplyr::select(x, y, svc_median_effect_link, svc_lwr_link, svc_upr_link, svc_median_effect_invlink, svc_lwr_invlink, svc_upr_invlink, svc_sig) %>% 
-    rast(crs = "+proj=cea + datum=WGS84") %>% 
-    project("epsg:4326")
-  
+    rast(crs = "+proj=cea +datum=WGS84") 
+
   return(dat)
   
 }
 
 load("results/sdmTMB_models/amphibians_sesvert.RData")
 amph.sesvert = svc_uncertainty(mod = mod, pred = pred, legend_title = "coefficient")
-writeRaster(amph.sesvert, file = "results/sdmTMB_models/svc_uncertainty/amph_sesvert.tif")
+writeRaster(amph.sesvert, file = "results/sdmTMB_models/svc_uncertainty/amph_sesvert.tif", overwrite = T)
 
 
 load("results/sdmTMB_models/amphibians_meanvert.RData")
 amph.meanvert = svc_uncertainty(mod = mod, pred = pred, legend_title = "coefficient")
-writeRaster(amph.meanvert, file = "results/sdmTMB_models/svc_uncertainty/amph_meanvert.tif")
+writeRaster(amph.meanvert, file = "results/sdmTMB_models/svc_uncertainty/amph_meanvert.tif", overwrite = T)
+
+# load("results/sdmTMB_models/amphibians_parb.RData")
+# amph.parb = svc_uncertainty(mod = mod, pred = pred, legend_title = "coefficient")
+# writeRaster(amph.parb, file = "results/sdmTMB_models/svc_uncertainty/amph_parb.tif")
+
 
 # Reptiles
 
 load("results/sdmTMB_models/reptiles_sesvert.RData")
 rept.sesvert = svc_uncertainty(mod = mod, pred = pred, legend_title = "coefficient")
-writeRaster(rept.sesvert, file = "results/sdmTMB_models/svc_uncertainty/rept_sesvert.tif")
+writeRaster(rept.sesvert, file = "results/sdmTMB_models/svc_uncertainty/rept_sesvert.tif", overwrite = T)
 
 
 load("results/sdmTMB_models/reptiles_meanvert.RData")
 rept.meanvert = svc_uncertainty(mod = mod, pred = pred, legend_title = "coefficient")
-writeRaster(rept.meanvert, file = "results/sdmTMB_models/svc_uncertainty/rept_meanvert.tif")
+writeRaster(rept.meanvert, file = "results/sdmTMB_models/svc_uncertainty/rept_meanvert.tif", overwrite = T)
 
 
 # Mammals
 
 load("results/sdmTMB_models/mammals_sesvert.RData")
 mammals.sesvert = svc_uncertainty(mod = mod, pred = pred, legend_title = "coefficient")
-writeRaster(mammals.sesvert, file = "results/sdmTMB_models/svc_uncertainty/mammals_sesvert.tif")
+writeRaster(mammals.sesvert, file = "results/sdmTMB_models/svc_uncertainty/mammals_sesvert.tif", overwrite = T)
 
 
 load("results/sdmTMB_models/mammals_meanvert.RData")
 mammals.meanvert = svc_uncertainty(mod = mod, pred = pred, legend_title = "coefficient")
-writeRaster(mammals.meanvert, file = "results/sdmTMB_models/svc_uncertainty/mammals_meanvert.tif")
+writeRaster(mammals.meanvert, file = "results/sdmTMB_models/svc_uncertainty/mammals_meanvert.tif", overwrite = T)
 
 
 # Birds
 
 load("results/sdmTMB_models/birds_sesvert.RData")
 birds.sesvert = svc_uncertainty(mod = mod, pred = pred, legend_title = "coefficient")
-writeRaster(birds.sesvert, file = "results/sdmTMB_models/svc_uncertainty/birds_sesvert.tif")
+writeRaster(birds.sesvert, file = "results/sdmTMB_models/svc_uncertainty/birds_sesvert.tif", overwrite = T)
 
 
 load("results/sdmTMB_models/birds_meanvert.RData")
 birds.meanvert = svc_uncertainty(mod = mod, pred = pred, legend_title = "coefficient")
-writeRaster(birds.meanvert, file = "results/sdmTMB_models/svc_uncertainty/birds_meanvert.tif")
+writeRaster(birds.meanvert, file = "results/sdmTMB_models/svc_uncertainty/birds_meanvert.tif", overwrite = T)
 
 plot_svc_uncertainty = function(dat, v) {
   
+  dat1 = dat %>% select(!svc_sig) %>% 
+    project("epsg:4326")
+  dat2 = dat %>% select(svc_sig) %>% 
+    project("epsg:4326", method = "near")
+  
+  dat = c(dat1, dat2)
+  
   pred = as.data.frame(dat)
   
+  # get min and max values of the svc
   min_link = min(pred$svc_median_effect_link, pred$svc_lwr_link, pred$svc_upr_link)
   max_link = max(pred$svc_median_effect_link, pred$svc_lwr_link, pred$svc_upr_link)
   
@@ -348,7 +401,7 @@ plot_svc_uncertainty = function(dat, v) {
   
   sig_link = ggplot() +
     geom_spatvector(data = v, color = "black", fill = "gray80") +
-    geom_tile(data = dat, aes(x = x, y = y, fill = svc_median_effect_link)) +
+    geom_spatraster(data = dat, aes(fill = svc_median_effect_link)) +
     scale_fill_continuous_divergingx("BrBG", na.value = NA, guide = guide_colorbar(""), limits = c(min_link, max_link)) +
     ggnewscale::new_scale_fill() +
     #geom_tile(data = dat, aes(x = x, y = y, fill = svc_sig)) +
@@ -388,7 +441,7 @@ plot_svc_uncertainty = function(dat, v) {
   
   sig_invlink = ggplot() +
     geom_spatvector(data = v, color = "black", fill = "gray80") +
-    geom_tile(data = dat, aes(x = x, y = y, fill = svc_median_effect_invlink)) +
+    geom_spatraster(data = dat, aes(fill = svc_median_effect_invlink)) +
     scale_fill_continuous_divergingx("BrBG", na.value = NA, guide = guide_colorbar(""), 
                                      limits = c(min_invlink, max_invlink), mid = mid,
                                      position = "bottom") +
@@ -399,6 +452,7 @@ plot_svc_uncertainty = function(dat, v) {
     scale_fill_manual(values = c("gray50", NA), na.value = NA, guide = guide_colorbar(show = F)) +
     coord_sf(crs = 4326) +
     thm
+  
   
   # link is in linkspace
   # invlink is transformed out of link space
