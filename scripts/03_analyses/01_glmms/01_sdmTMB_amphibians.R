@@ -11,6 +11,7 @@ library(terra)
 library(car)
 library(data.table)
 library(DHARMa)
+source("scripts/00_functions/manuscript_functions.R")
 
 # amphibian forest only 50km resolution
 raw = read.csv("data/derivative_data/gridcell_data/env_forest/50_km/amph_comdat.csv")
@@ -187,7 +188,7 @@ compMods_cv$compMods_cv
 
 # * - residual check ----------------------------------------------------------
 
-#load(paste0("results/sdmTMB_models/model_selection/",fname_end,".RData"))
+load(paste0("results/sdmTMB_models/model_selection/",fname_end,".RData"))
 
 plot_resids(mod = compMods_aic$mods$mod.realm.svc, response_var = "vert.mean.ses", 
             fpath = paste0("figures/residual_checks/",fname_end))
@@ -357,10 +358,10 @@ ncf:::plot.correlog(samp.cor, xlim = c(0,100), ylim = c(-1,1))
 
 dat$narb = dat$rich*dat$p.arb
 dat$notarb = dat$rich*(1-dat$p.arb)
-f1 = formula(cbind(narb,notarb) ~ canopy_height + veg_den + I(tmax_warm^2) + tmax_warm + tmin_cold + precip_wet + log_precip_dry + log_clim_velocity, weights = rich)
+f1 = formula(p.arb ~ canopy_height + veg_den + I(tmax_warm^2) + tmax_warm + tmin_cold + precip_wet + log_precip_dry + log_clim_velocity)
 
 
-fitmesh = fit_mesh(f = f1, dat, range = samp.cor$x.intercept, v = v, family = binomial())
+fitmesh = fit_mesh(f = f1, dat, range = samp.cor$x.intercept, v = v, family = binomial(), wts = wts) # wts = weights for binomial distribution (i.e., total richness - the denominator of the proportion)
 
 mesh = fitmesh$meshes[[length(fitmesh$meshes)]]
 
@@ -372,7 +373,8 @@ load(paste0("results/sdmTMB_models/model_selection/", fname_end, ".RData"))
 
 # Compare models using all points with AIC
 
-compMods_aic = compareMods_AIC(f = f1, dat, mesh, taxon = taxon, response_var = response_var, family = binomial())
+compMods_aic = compareMods_AIC(f = f1, dat, mesh, taxon = taxon, response_var = response_var, family = binomial(), wts = wts)
+
 sanity(compMods_aic$mods[[1]])
 sanity(compMods_aic$mods[[2]])
 sanity(compMods_aic$mods[[3]])
@@ -399,7 +401,9 @@ compMods_aic$compare
 set.seed(2345)
 folds = sample(1:5, size = nrow(dat), replace = T)
 
-compMods_cv = compare_cv_binom(f1, dat, mesh, folds, parallel = F, taxon = taxon, response_var = response_var)
+# matrix notation for binomial distribution - gives same results as supply p.arb with weights argument (but sdmTMB_cv does not accept weights)
+fmat = formula(cbind(narb,notarb) ~ canopy_height + veg_den + I(tmax_warm^2) + tmax_warm + tmin_cold + precip_wet + log_precip_dry + log_clim_velocity)
+compMods_cv = compare_cv_binom(fmat, dat, mesh, folds, parallel = F, taxon = taxon, response_var = response_var)
 
 lapply(compMods_cv$mods$mod.realm.cv$models, sanity)
 
@@ -411,7 +415,7 @@ compMods_cv$compMods_cv
  # issues with this for parb
 load(paste0("results/sdmTMB_models/model_selection/", fname_end, ".RData"))
 
-plot_resids(mod = compMods_aic$mods$mod.realm.svc, response_var = "p.arb", 
+plot_resids(mod = compMods_aic$mods$mod, response_var = "p.arb", 
             fpath = paste0("figures/residual_checks/", fname_end))
 
 # * - plot model coefs for comparison models ---------------------------

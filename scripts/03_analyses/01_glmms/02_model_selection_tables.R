@@ -9,6 +9,7 @@ library(foreach)
 # sanity check models -----------------------------------------------------
 
 load("results/sdmTMB_models/amphibians_meanvert.RData")
+load("results/sdmTMB_models/model_selection/amphibians_sesvert.RData")
 sanity(mod) # ok
 
 load("results/sdmTMB_models/amphibians_sesvert.RData")
@@ -30,6 +31,7 @@ load("results/sdmTMB_models/birds_meanvert.RData")
 sanity(mod) # ok
 
 load("results/sdmTMB_models/birds_sesvert.RData")
+load("results/sdmTMB_models/model_selection/birds_sesvert.RData")
 sanity(mod) # ok
 
 rm(mod, pred, pred.f)
