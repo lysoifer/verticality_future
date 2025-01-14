@@ -50,16 +50,18 @@ plt_rast_margin = function(r, v, plot.title, margin.title, base_text_size = 12, 
           legend.title = element_blank(),
           axis.line.x = element_blank(),
           axis.text.x = element_blank(),
-          axis.ticks.x = element_blank())
+          axis.ticks.x = element_blank(),
+          plot.margin = unit(c(0,0,0,0), units = "mm"))
   
   # add titles on the secondary axis
   plot_main <- plot_main +
   # titles on secondary axis, for later
-    scale_y_continuous(limits = c(ymin-5, ymax), breaks = c(-60,-30,0,30,60), 
+    scale_y_continuous(limits = c(ymin-60, ymax), breaks = c(-60,-30,0,30,60), 
                        sec.axis = dup_axis(name = margin.title), expand = expansion(mult = c(0.1,0))) +
     scale_x_continuous(expand = c(0,0)) +
     theme(axis.title.x = element_blank(),
-          axis.title.y.left = element_blank())
+          axis.title.y.left = element_blank(),
+          axis.title.y.right = element_text(size = 12))
   
   # Getting averages by x,y
   marg_y <- r[[var]] %>%
@@ -72,7 +74,7 @@ plt_rast_margin = function(r, v, plot.title, margin.title, base_text_size = 12, 
   br_4marginal <- c(round(min(marg_y$avg),rd), 0, round(max(marg_y$avg),rd))
   
   labs <- data.frame(labs = paste(prettyNum(br_4marginal, big.mark = " ")))
-  labs$for_y <- ymin-5
+  labs$for_y <- ymin-10
   labs$y <- br_4marginal
   
   # y-axis margin
@@ -96,7 +98,8 @@ plt_rast_margin = function(r, v, plot.title, margin.title, base_text_size = 12, 
     theme(axis.line.y = element_blank(),
           axis.text.y = element_blank(),
           axis.title.y = element_blank(),
-          panel.background = element_blank())
+          panel.background = element_blank(),
+          axis.text.x = element_text(size = 12))
   
   # Combine all plots into one
   sizes_axis <- grid::unit(.3, "null")
@@ -393,14 +396,24 @@ p = row0 + row1 + row2 + row3 + row4 + row5 +
   col1 + birds.sesvert.dif.plt + mammals.sesvert.dif.plt + rept.sesvert.dif.plt + amph.sesvert.dif.plt + legend.sesvert +
   col2 + birds.meanvert.dif.plt + mammals.meanvert.dif.plt + rept.meanvert.dif.plt + amph.meanvert.dif.plt + legend.meanvert +
   plot_layout(design = design, heights = c(0.1, -1, -1, -1, -1, 0.2), widths = c(0.1, -1, -1, 0.2)) +
-  plot_annotation(tag_levels = list(c("", "", "", "", "", "", "", "A", "B", "C", "D", "", "", "E", "F", "G", "H",""))) +
-  theme(plot.title = element_blank())
+  plot_annotation(tag_levels = list(c("", "", "", "", "", "", "", "a", "b", "c", "d", "", "", "e", "f", "g", "h","")),
+                  theme = theme(plot.margin = margin(0,0,0,0, unit = "mm"),
+                                panel.spacing = margin(0,0,0,0, unit = "mm"))) &
+  theme(plot.title = element_blank(),
+        panel.spacing = margin(0,0,0,0, unit = "mm"),
+        panel.background = element_blank(),
+        plot.tag.position = c(0.025, 0.95))
 
 
-png("figures/main_figs/vert_reldifs.png", height = 250, width = 300, res = 300, units = "mm")
+png("figures/main_figs/fig5_vert_reldifs.png", height = 215, width = 300, res = 300, units = "mm")
 p
 dev.off()
 
+png("figures/main_figs/fig5_vert_reldifs_test.png", height = 150, width = 180, res = 600, units = "mm")
+p
+dev.off()
+
+ggsave("figures/main_figs/fig5_vert_reldifs_test.svg", height = 150, width = 180, dpi = 600, units = "mm")
 
 # PROPORTION ARBOREAL FIGURE -------------------------------------------------------------
 

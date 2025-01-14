@@ -141,7 +141,8 @@ dif.biome = dat %>%
         panel.grid.minor = element_blank(),
         panel.background = element_rect(color = "black", fill = NA),
         strip.background = element_rect(color = "black"),
-        legend.position = "none")
+        legend.position = "none",
+        axis.text.y = element_text(size = 12))
 
 png("figures/supp_figs/dif_biome_forestOnly_forestSES.png", width = 4000, height = 2000, res = 300)
 dif.biome
