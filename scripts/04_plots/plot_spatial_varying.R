@@ -24,12 +24,12 @@ plot_spatial_varying = function(mod, pred, var, v, legend_title) {
     project("epsg:4326")
     
   thm = theme(legend.position = "inside",
-              legend.position.inside = c(0.03,0.7),
+              legend.position.inside = c(0.03,0.75),
               legend.justification = c(0,1),
               legend.margin = margin(0,0,0.2,0.3),
               #legend.key = element_blank(),
               legend.background = element_blank(),
-              legend.key.height = unit(3, units = "mm"),
+              legend.key.height = unit(2, units = "mm"),
               legend.key.width = unit(2, units = "mm"),
               legend.box.margin = margin(0,0,0,0),
               legend.box.spacing = unit(1,"mm"),
@@ -165,10 +165,14 @@ p = plot_spacer() + row1 + row2 + row3 + row4 +
   col1 + birds.sesvert+ mammals.sesvert + rept.sesvert + amph.sesvert +
   col2 + birds.meanvert + mammals.meanvert + rept.meanvert + amph.meanvert + 
   plot_layout(design = design,  heights = c(0.2,1,1,1,1), widths = c(0.2,1,1)) +
-  plot_annotation(tag_levels = list(c("","","","","", "A", "B", "C", "D", "", "E", "F", "G", "H"))) &
+  plot_annotation(tag_levels = list(c("","","","","", "a", "b", "c", "d", "", "e", "f", "g", "h"))) &
   theme(plot.tag.position = c(0.025, 0.9), legend.title = element_blank(), legend.position.inside = c(0.03, 0.5))
 
 png("figures/supp_figs/canopy_height_coefs.png", height = 180, width = 200, res = 300, units = "mm")
+p
+dev.off()
+
+png("figures/main_figs/fig3_canopy_height_coefs.png", height = 120, width = 180, res = 600, units = "mm")
 p
 dev.off()
 
@@ -285,9 +289,9 @@ load("results/sdmTMB_models/amphibians_meanvert.RData")
 amph.meanvert = svc_uncertainty(mod = mod, pred = pred, legend_title = "coefficient")
 writeRaster(amph.meanvert, file = "results/sdmTMB_models/svc_uncertainty/amph_meanvert.tif", overwrite = T)
 
-# load("results/sdmTMB_models/amphibians_parb.RData")
-# amph.parb = svc_uncertainty(mod = mod, pred = pred, legend_title = "coefficient")
-# writeRaster(amph.parb, file = "results/sdmTMB_models/svc_uncertainty/amph_parb.tif")
+load("results/sdmTMB_models/amphibians_parb.RData")
+amph.parb = svc_uncertainty(mod = mod, pred = pred, legend_title = "coefficient")
+writeRaster(amph.parb, file = "results/sdmTMB_models/svc_uncertainty/amph_parb.tif")
 
 
 # Reptiles

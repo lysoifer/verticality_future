@@ -124,6 +124,23 @@ coefs = bind_rows(sesvert.coefs, meanvert.coefs) %>%
     "I(tmax_warm^2)", "tmax_warm", "tmin_cold")),
     class = factor(class, levels = c("Birds", "Mammals", "Reptiles", "Amphibians")))
 
+coefs = bind_rows(sesvert.coefs, meanvert.coefs) %>% 
+  filter(term != "(Intercept)") %>%
+  mutate(term = case_when(term == "log_clim_velocity" ~ "Climate velocity",
+                          term == "canopy_height" ~ "Canopy height",
+                          term == "veg_den" ~ "Vegetation density",
+                          term == "precip_wet" ~ "Wet season precip",
+                          term == "log_precip_dry" ~ "log(dry season precip)",
+                          term == "I(tmax_warm^2)" ~ "(Max temp wamest month)\u00b2",
+                          term == "tmax_warm" ~ "Max temp warmest month",
+                          term == "tmin_cold" ~ "Min temp coldest month"),
+         term = factor(term, levels = c(
+    "Climate velocity", "Canopy height", "Vegetation density",
+    "Wet season precip", "log(dry season precip)",
+    "(Max temp wamest month)\u00b2", "Max temp warmest month", "Min temp coldest month")),
+    class = factor(class, levels = c("Birds", "Mammals", "Reptiles", "Amphibians")))
+
+
 library(ggh4x)
 coef.plt = coefs %>%
   ggplot(aes(x = estimate, y = term, xmin = conf.low, xmax = conf.high, color = sig)) +
@@ -150,8 +167,9 @@ coef.plt = coefs %>%
         legend.box.margin = margin(0,0,0,0),
         legend.box.spacing = unit(0.1, "mm"),
         legend.title.position = "top",
-        legend.title = element_text(hjust = 0.5))
+        legend.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(size = 6))
 
-png("figures/main_figs/sdmTMB_coefs.png", width = 220, height = 120, res = 300, units = "mm")
+png("figures/main_figs/fig2_sdmTMB_coefs.png", width = 180, height = 98, res = 600, units = "mm")
 coef.plt
 dev.off()
