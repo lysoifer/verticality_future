@@ -31,21 +31,38 @@ plot_compMods_coefs = function(mods, fname) {
 
 # CHECK RESIDUAL PLOTS ----------------------------------------------------
 
-plot_resids = function(mod, response_var, fpath) {
+plot_resids = function(mod, response_var, fpath, integer_response) {
   # mod: sdmTMB model to check residuals on
   # response variable used in the model
   # file path without file extension
   
+  
+  # predtest = predict(mod)
   pred = predict(mod, type = "response")
+  sum(dat$p.arb == 0) / length(dat$p.arb)
+  sum(s==0) / length(s)
   s = simulate(mod, nsim = 500, seed = 12345, type = "mle-mvn")
+  #s = sdmTMB:::simulate.sdmTMB(mod, nsim = 500, seed = 12345, type = "mle-mvn")
+  
+  dharma_resid = dharma_residuals(s, mod, return_DHARMa = T)
+  plot(dharma_resid)
+  testResiduals(dharma_resid)
+  
+  simulate(mod, nsim = 500, type = "mle-mvn") |>
+    dharma_residuals(mod)
+  
+  richmat = matrix(rep(c(pred$rich), 500), ncol = 500)
+  stest = s/richmat
   
   # simulate quantile residuals
   r <- DHARMa::createDHARMa(
     simulatedResponse = s,
     observedResponse = pred[,response_var],
-    fittedPredictedResponse = pred[,"est"]
+    fittedPredictedResponse = pred[,"est"],
+    integerResponse = integer_response
   )
   
+
   png(paste0(fpath, "01.png"), height = 105, width = 210, res = 300, units = "mm")
   plot(r)
   dev.off()

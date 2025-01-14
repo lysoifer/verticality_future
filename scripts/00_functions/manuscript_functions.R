@@ -100,7 +100,7 @@ gridcell_dat = function(occ, tr, env, reps = 100) {
 
 # FIT MESH ----------------------------------------------------------------
 
-fit_mesh = function(f, dat, range, v, family) {
+fit_mesh = function(f, dat, range, v, family, wts = NULL) {
   # Determine optimal mesh size and sensitivity of results to changes in the mesh
   # optimal mesh size occurs when the range of the resulting model is at least 5 times the max.edge length
   
@@ -135,8 +135,9 @@ fit_mesh = function(f, dat, range, v, family) {
     while(!all_ok & iter2 <= 2) {
       print(paste0("iter2 = ", iter2))
       if(iter2 == 1) {
-            mod[[iter]] = sdmTMB(f, 
+            mod[[iter]] = sdmTMB(f,
                  data = dat,
+                 weights = wts,
                  mesh = mesh[[iter]],
                  spatial = "on",
                  reml = T, 
@@ -145,8 +146,9 @@ fit_mesh = function(f, dat, range, v, family) {
                  control = sdmTMBcontrol(eval.max = 8000, iter.max = 4000))
 
       } else {
-        mod[[iter]] = sdmTMB(f, 
+        mod[[iter]] = sdmTMB(f,
                              data = dat,
+                             weights = wts,
                              mesh = mesh[[iter]],
                              spatial = "on",
                              reml = T, 
@@ -239,11 +241,121 @@ fit_mesh = function(f, dat, range, v, family) {
   
 }
 
+# FIT MESH RICHNESS ----------------------------------------------------------------
+
+fit_mesh_richness = function(f, dat, range, v, family, wts = NULL, edge.ratio) {
+  # Determine optimal mesh size and sensitivity of results to changes in the mesh
+  # optimal mesh size occurs when the range of the resulting model is at least 5 times the max.edge length
+  
+  # f = formula to fit the model
+  # dat = data frame with response and predictor variables and x,y coords (colnames must be named "x" and "y")
+  # range = starting range for the mesh (max.edge is 1/5 of the starting range)
+  # vector of world outline
+  
+  # initialize max.edge ratio
+  er = edge.ratio # the ratio of max edge to spatial range. Generally max edge should be less than 1/5 of the spatial range (so edge ratio should be 0.2), but sometimes this does not converge
+  
+  # initialize iteration
+  iter = 1
+  
+  # initialize list to store models and meshes
+  mesh = list()
+  mod = list()
+  
+  while(er >= edge.ratio) {
+    print(iter)
+    max.edge = range/5
+    
+    # estimate mesh
+    m = fm_mesh_2d(loc = dat[,c('x', 'y')], cutoff = max.edge/5, 
+                   max.edge = c(max.edge, max.edge*5),  
+                   offset = c(max.edge, max.edge*10),
+                   crs = fm_crs("+proj=cea +datum=WGS84"))
+    mesh[[iter]] = make_mesh(dat[,c('x', 'y')], xy_cols = c("x", "y"), mesh = m)
+    
+    iter2 = 1
+    all_ok = FALSE
+    while(!all_ok & iter2 <= 2) {
+      print(paste0("iter2 = ", iter2))
+      if(iter2 == 1) {
+        mod[[iter]] = sdmTMB(f,
+                             data = dat,
+                             weights = wts,
+                             mesh = mesh[[iter]],
+                             spatial = "on",
+                             reml = T, 
+                             family = family,
+                             control = sdmTMBcontrol(eval.max = 8000, iter.max = 4000))
+        
+      } else {
+        mod[[iter]] = sdmTMB(f,
+                             data = dat,
+                             weights = wts,
+                             mesh = mesh[[iter]],
+                             spatial = "on",
+                             reml = T, 
+                             family = family,
+                             control = sdmTMBcontrol(eval.max = 8000, iter.max = 4000, start = list(ln_phi = ln_phi,
+                                                                                                    ln_tau_O = ln_tau_o,
+                                                                                                    ln_tau_Z = ln_tau_z,
+                                                                                                    ln_kappa = ln_kappa)))
+        
+      }
+      
+      all_ok = sanity(mod[[iter]])$all_ok
+      pars = get_pars(mod[[iter]])
+      ln_phi = pars$ln_phi
+      ln_tau_o = pars$ln_tau_O
+      ln_tau_z = pars$ln_tau_Z
+      ln_kappa = pars$ln_kappa
+      iter2 = iter2+1
+      gc()
+    }
+    
+    
+    # update mesh with range parameter from the previous model
+    ranpars = tidy(mod[[iter]], "ran_pars", conf.int = TRUE)
+    range = ranpars$estimate[ranpars$term == "range"]
+    
+    er = max.edge/range
+    iter = iter + 1
+    gc()
+    
+  }
+  
+  # compare model coefs
+  coefs = foreach(i = 1:length(mod), .combine = "rbind") %do% {
+    coefs = tidy(mod[[i]], conf.int = T, conf.level = 0.95) %>% 
+      mutate(model = paste0("mesh",i))
+  }
+  
+  ranpars = foreach(i = 1:length(mod), .combine = "rbind") %do% {
+    ranpars = tidy(mod[[i]], "ran_pars", conf.int = T, conf.level = 0.95) %>% 
+      mutate(model = paste0("mesh",i))
+  }
+  
+  coefs.plt = ggplot(coefs, aes(x = estimate, y = term, xmin = conf.low, xmax = conf.high, color = model)) +
+    geom_pointrange(position = position_dodge2(width = 0.5)) +
+    theme_bw()
+  
+  
+  ranpars.plt = ggplot(ranpars, aes(x = estimate, y = term, xmin = conf.low, xmax = conf.high, color = model)) +
+    geom_pointrange(position = position_dodge2(width = 0.5)) +
+    theme_bw()
+  
+  
+  
+  # the last model and mesh in the list will be the optimal one
+  return(list(meshes = mesh, mods = mod, max.edge = max.edge,
+              coefs.plt = coefs.plt, ranpars.plt = ranpars.plt))
+  
+}
+
 
 
 # COMPARE MODELS USING AIC ------------------------------------------------
 
-compareMods_AIC = function(f, dat, mesh, taxon, response_var, family) {
+compareMods_AIC = function(f, dat, mesh, taxon, response_var, family, wts = NULL) {
   # f: formula for sdmTMB model
   # dat = dataframe for sdmTMB model
   # mesh = mesh used for sdmTMB model
@@ -256,6 +368,7 @@ compareMods_AIC = function(f, dat, mesh, taxon, response_var, family) {
     if(iter == 1) {
       mod = sdmTMB(f, 
                    data = dat,
+                   weights = wts,
                    mesh = mesh,
                    spatial = "on",
                    reml = T, 
@@ -264,6 +377,7 @@ compareMods_AIC = function(f, dat, mesh, taxon, response_var, family) {
     } else {
       mod = sdmTMB(f, 
                    data = dat,
+                   weights = wts,
                    mesh = mesh,
                    spatial = "on",
                    reml = T,
@@ -289,6 +403,7 @@ compareMods_AIC = function(f, dat, mesh, taxon, response_var, family) {
     if(iter == 1) {
       mod.svc = sdmTMB(f, 
                        data = dat,
+                       weights = wts,
                        mesh = mesh,
                        spatial = "on",
                        reml = T, 
@@ -298,6 +413,7 @@ compareMods_AIC = function(f, dat, mesh, taxon, response_var, family) {
     } else {
       mod.svc = sdmTMB(f, 
                        data = dat,
+                       weights = wts,
                        mesh = mesh,
                        spatial = "on",
                        reml = T, 
@@ -321,6 +437,7 @@ compareMods_AIC = function(f, dat, mesh, taxon, response_var, family) {
     if(iter == 1) {
       mod.realm = sdmTMB(update(f, ~ . + (1|realm)), 
                          data = dat,
+                         weights = wts,
                          mesh = mesh,
                          spatial = "on",
                          reml = T,
@@ -329,6 +446,7 @@ compareMods_AIC = function(f, dat, mesh, taxon, response_var, family) {
     } else {
       mod.realm = sdmTMB(update(f, ~ . + (1|realm)), 
                          data = dat,
+                         weights = wts,
                          mesh = mesh,
                          spatial = "on",
                          reml = T,
@@ -358,6 +476,7 @@ compareMods_AIC = function(f, dat, mesh, taxon, response_var, family) {
       # run model first time
       mod.realm.svc = sdmTMB(update(f, ~ . + (1|realm)), 
                              data = dat,
+                             weights = wts,
                              mesh = mesh,
                              spatial = "on",
                              reml = T, 
@@ -369,6 +488,7 @@ compareMods_AIC = function(f, dat, mesh, taxon, response_var, family) {
       # set ln_phi to the estimation of ln_phi from the previous model
       mod.realm.svc = sdmTMB(update(f, ~ . + (1|realm)), 
                              data = dat,
+                             weights = wts,
                              mesh = mesh,
                              spatial = "on",
                              reml = T, 
@@ -885,6 +1005,240 @@ compare_cv_beta = function(f, dat, mesh, folds, parallel = F, taxon, response_va
   
 }
 
+# binomial distribution for proportion arboreality
+compare_cv_binom = function(f, dat, mesh, folds, parallel = F, taxon, response_var) {
+  # f: formula for sdmTMB model
+  # dat = dataframe for sdmTMB model
+  # mesh = mesh used for sdmTMB model
+  # folds for cross validation
+  # logical: whether or not to run in parallel - default is false
+  # taxon: character, taxon being modeled - used for labelling output
+  # response_var: character; response variable for the model - used for labelling output
+  
+  # model with no svc or random intercept
+  all_ok = FALSE
+  iter = 1
+  while(sum(all_ok) < 5  & iter <= 2) {
+    print(iter)
+    if(iter == 1) {
+      if(parallel) {plan(multisession)}
+      mod.cv = sdmTMB_cv(f, 
+                         data = dat,
+                         mesh = mesh,
+                         spatial = "on",
+                         reml = T, 
+                         family = binomial(),
+                         fold_ids = folds,
+                         k_folds = length(unique(folds)),
+                         control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000),
+                         parallel = parallel,
+                         use_initial_fit = T)
+      if(parallel) {plan(sequential)}
+    } else {
+      if(parallel) {plan(multisession)}
+      mod.cv = sdmTMB_cv(f, 
+                         data = dat,
+                         mesh = mesh,
+                         spatial = "on",
+                         reml = T, 
+                         fold_ids = folds,
+                         k_folds = length(unique(folds)),
+                         control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000,
+                                                 start = list(ln_phi = ln_phi, 
+                                                              ln_tau_O = ln_tau_o,
+                                                              ln_kappa = ln_kappa)),
+                         future_globals = c("ln_phi", "ln_tau_o", "ln_kappa"),
+                         parallel = parallel,
+                         family = binomial(),
+                         use_initial_fit = T)
+      if(parallel) {plan(sequential)}
+    }
+    all_ok = lapply(mod.cv$models, sanity)
+    all_ok = sapply(all_ok, "[[", "all_ok")
+    pars = lapply(mod.cv$models, get_pars)
+    ln_phi = mean(sapply(pars, "[[", "ln_phi"))
+    ln_tau_o = mean(sapply(pars, "[[", "ln_tau_O"))
+    ln_kappa = sapply(pars, "[[", "ln_kappa")
+    ln_kappa = matrix(apply(ln_kappa, 1, mean), nrow = 2)
+    iter = iter+1
+    gc()
+  }
+  mod.cv_ok = all_ok
+
+  all_ok = FALSE
+  iter = 1
+  while(sum(all_ok) < 5  & iter <= 2) {
+    print(iter)
+    if(iter == 1) {
+      # run model first time
+      if(parallel) {plan(multisession)}
+      mod.svc.cv = sdmTMB_cv(f, 
+                             data = dat,
+                             mesh = mesh,
+                             spatial = "on",
+                             reml = T, 
+                             spatial_varying = ~ 0 + canopy_height,
+                             fold_ids = folds,
+                             k_folds = length(unique(folds)),
+                             family = binomial(),
+                             control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000),
+                             parallel = parallel)
+      if(parallel) {plan(sequential)}
+    } else {
+      # if model is not ok and has to run a second time
+      # set ln_phi to the estimation of ln_phi from the previous model
+      #plan(multisession)
+      mod.svc.cv = sdmTMB_cv(f, 
+                             data = dat,
+                             mesh = mesh,
+                             spatial = "on",
+                             reml = T, 
+                             spatial_varying = ~ 0 + canopy_height,
+                             fold_ids = folds,
+                             k_folds = length(unique(folds)),
+                             family = binomial(),
+                             control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000,
+                                                     start = list(ln_phi = ln_phi, 
+                                                                  ln_tau_O = ln_tau_o,
+                                                                  ln_kappa = ln_kappa)),
+                             future_globals = c("ln_phi", "ln_tau_o", "ln_kappa"),
+                             parallel = parallel)
+      if(parallel) {plan(sequential)}
+    }
+    
+    all_ok = lapply(mod.svc.cv$models, sanity)
+    all_ok = sapply(all_ok, "[[", "all_ok")
+    pars = lapply(mod.svc.cv$models, get_pars)
+    ln_phi = mean(sapply(pars, "[[", "ln_phi"))
+    ln_tau_o = mean(sapply(pars, "[[", "ln_tau_O"))
+    ln_kappa = sapply(pars, "[[", "ln_kappa")
+    ln_kappa = matrix(apply(ln_kappa, 1, mean), nrow = 2)
+    iter = iter+1
+    gc()
+  }
+  mod.svc.cv_ok = all_ok
+
+  # model with realm but no svc
+  all_ok = FALSE
+  iter = 1
+  while(sum(all_ok) < 5  & iter <= 2) {
+    print(iter)
+    if(iter == 1) {
+      if(parallel) {plan(multisession)}
+      mod.realm.cv = sdmTMB_cv(update(f, ~ . + (1|realm)), 
+                               data = dat,
+                               mesh = mesh,
+                               spatial = "on",
+                               reml = T, 
+                               fold_ids = folds,
+                               k_folds = length(unique(folds)),
+                               family = binomial(),
+                               control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000),
+                               parallel = parallel)
+      if(parallel) {plan(sequential)}
+    } else {
+      if(parallel) {plan(multisession)}
+      mod.realm.cv = sdmTMB_cv(update(f, ~ . + (1|realm)), 
+                               data = dat,
+                               mesh = mesh,
+                               spatial = "on",
+                               reml = T, 
+                               fold_ids = folds,
+                               k_folds = length(unique(folds)),
+                               family = binomial(),
+                               control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000,
+                                                       start = list(ln_phi = ln_phi,
+                                                                    ln_tau_O = ln_tau_o,
+                                                                    ln_kappa = ln_kappa)),
+                               parallel = parallel)
+      if(parallel) {plan(sequential)}
+    }
+    all_ok = lapply(mod.realm.cv$models, sanity)
+    all_ok = sapply(all_ok, "[[", "all_ok")
+    pars = lapply(mod.realm.cv$models, get_pars)
+    ln_phi = mean(sapply(pars, "[[", "ln_phi"))
+    ln_tau_o = mean(sapply(pars, "[[", "ln_tau_O"))
+    ln_kappa = sapply(pars, "[[", "ln_kappa")
+    ln_kappa = matrix(apply(ln_kappa, 1, mean), nrow = 2)
+    iter = iter+1
+    gc()
+  }
+  mod.realm.cv_ok = all_ok
+
+  
+  # model with realm and svc
+  # model with realm and svc
+  all_ok = FALSE
+  iter = 1
+  while(sum(all_ok) < 5  & iter <= 2) {
+    print(iter)
+    if(iter == 1) {
+      # run model first time
+      if(parallel) {plan(multisession)}
+      mod.realm.svc.cv = sdmTMB_cv(update(f, ~ . + (1|realm)),
+                                   data = dat,
+                                   mesh = mesh,
+                                   spatial = "on",
+                                   reml = T, 
+                                   spatial_varying = ~ 0 + canopy_height,
+                                   fold_ids = folds,
+                                   k_folds = length(unique(folds)),
+                                   family = binomial(),
+                                   control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000),
+                                   parallel = parallel)
+      if(parallel) {plan(sequential)}
+    } else {
+      # if model is not ok and has to run a second time
+      # set ln_phi to the estimation of ln_phi from the previous model
+      #plan(multisession)
+      mod.realm.svc.cv = sdmTMB_cv(update(f, ~ . + (1|realm)),
+                                   data = dat,
+                                   mesh = mesh,
+                                   spatial = "on",
+                                   reml = T, 
+                                   spatial_varying = ~ 0 + canopy_height,
+                                   fold_ids = folds,
+                                   k_folds = length(unique(folds)),
+                                   family = binomial(),
+                                   control = sdmTMBcontrol(eval.max = 8000, iter.max = 4000,
+                                                           start = list(ln_phi = ln_phi,
+                                                                        ln_tau_O = ln_tau_o,
+                                                                        ln_kappa = ln_kappa)),
+                                   parallel = parallel)
+      if(parallel) {plan(sequential)}
+    }
+    
+    all_ok = lapply(mod.realm.svc.cv$models, sanity)
+    all_ok = sapply(all_ok, "[[", "all_ok")
+    pars = lapply(mod.realm.svc.cv$models, get_pars)
+    ln_phi = mean(sapply(pars, "[[", "ln_phi"))
+    ln_tau_o = mean(sapply(pars, "[[", "ln_tau_O"))
+    ln_kappa = sapply(pars, "[[", "ln_kappa")
+    ln_kappa = matrix(apply(ln_kappa, 1, mean), nrow = 2)
+    iter = iter+1
+    gc()
+  }
+  mod.realm.svc.cv_ok = all_ok
+  
+
+  # since some of the folds did not converge, get average fold logLik across the models that did converge
+  mod.cv_ll = sum(mod.cv$fold_loglik[mod.cv_ok])/sum(mod.cv_ok)
+  mod.realm.cv_ll = sum(mod.realm.cv$fold_loglik[mod.realm.cv_ok])/sum(mod.realm.cv_ok)
+  mod.svc.cv_ll = sum(mod.svc.cv$fold_loglik[mod.svc.cv_ok])/sum(mod.svc.cv_ok)
+  mod.realm.svc.cv_ll = sum(mod.realm.svc.cv$fold_loglik[mod.realm.svc.cv_ok])/sum(mod.realm.svc.cv_ok)
+  
+  comp_ll = data.frame(model = c("mod", "mod.realm", "mod.svc", "mod.realm.svc"),
+                       avg_logLik = c(mod.cv_ll, mod.realm.cv_ll, mod.svc.cv_ll, mod.realm.svc.cv_ll)) %>% 
+    arrange(desc(avg_logLik)) %>% 
+    mutate(taxon = taxon, response_var = response_var)
+  
+  return(list(
+    mods = list(mod.cv = mod.cv, mod.realm.cv = mod.realm.cv, mod.svc.cv = mod.svc.cv, mod.realm.svc.cv = mod.realm.svc.cv),
+    all_ok = c(mod.cv = mod.cv_ok, mod.realm.cv = mod.realm.cv_ok, mod.svc.cv = mod.svc.cv_ok, mod.realm.svc.cv = mod.realm.svc.cv_ok),
+    compMods_cv = comp_ll
+  ))
+  
+}
 
 # PREDICT TO FUTURE ENV DATA ----------------------------------------------
 # Predicts sdmtmb model to present and future climate data
@@ -906,7 +1260,29 @@ predict_future = function(mod, newdata, type, fpath) {
 
 
 
+# DEVIANCE EXPLAINED ------------------------------------------------------
+# see https://github.com/groundfish-climatechange/multispecies-redistribution-climatechange/blob/main/scripts/sdmTMB-model-functions.Rmd
 
+calc_deviance <- function(mod, resp_var){
+  # mod = sdmTMB model object
+  # resp_var = character; response variable
+  fit <- mod
+  dat <- fit$data
+  f = as.formula(paste(resp_var, "~ 1", sep = " "))
+  null <- sdmTMB(vert.mean ~ 1,
+                 spatial="off",
+                 mesh = fit$spde,
+                 data = fit$data)
+  null_dev <- -2 * as.numeric(logLik(null))
+  
+  log_lik <- as.numeric(logLik(mod))
+  
+  resid_dev <- -2 * log_lik
+  
+  dev_explained <- 100 * (null_dev - resid_dev)/null_dev
+  
+  tibble(null_dev=null_dev,resid_dev=resid_dev,dev_explained=dev_explained)
+}
 
 
 
