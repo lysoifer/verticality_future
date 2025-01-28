@@ -1,7 +1,6 @@
 ---
-author: ""
-title: "Global patterns and drivers of vertebrate verticality"
 bibliography: "`r rbbt::bbt_write_bib('docs/r-refs.bib', overwrite = TRUE)`"
+csl: global-ecology-and-biogeography.csl
 output: 
   officedown::rdocx_document:
     reference_docx: "style-guide.docx"
@@ -12,7 +11,14 @@ plots:
     style: Image Caption
     pre: 'Figure '
     sep: ': '
+header-includes:
+- \usepackage{fancyhdr}
+- \pagestyle{fancy}
+- \rhead{Global Verticality}
+- \begin{document}
 ---
+
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, fig.cap = TRUE, warning=FALSE, message=FALSE, error=FALSE)
@@ -72,30 +78,64 @@ word_comment <- function(
 }
 ```
 
-# Abstract
-_Aim_: Vertical stratification of species from the ground to canopy is posited as a mechanistic link explaining positive relationships between canopy height and species richness. A key question is understanding how climate and vegetation impact verticality and spatial variation in verticality-diversity patterns. We examine these relationships and then project models of verticality under future climate conditions to examine how climate change may impact vertical community structure.
+**Global patterns and drivers of vertebrate verticality**
 
-_Location_: Global
+Lydia G. Soifer^1\*^, David P. Edwards^2,3^, Brett R. Scheffers^4^
 
-_Time period_: 1981-2010 to 2071-2100
+1 School of Natural Resource and Environment, University of Florida, USA
 
-_Major taxa studied_: Vertebrates
+2 Department of Plant Sciences and Centre for Global Wood Security, University of Cambridge, Cambridge, UK
 
-_Methods_: We modeled impacts of climate and vegetation on vertebrate verticality globally using spatial generalized linear mixed models with a spatially varying coefficient for canopy height. We projected models to future climate conditions to examine impacts of climate change on vertical community structure. We also examined global and biome-specific relationships between verticality and species richness.
+3 Conservation Research Institue, University of Cambridge, Cambridge, UK
 
-_Results_: Verticality patterns are globally consistent across vertebrate taxa, declining from low to high latitudes. Low precipitation and temperature constrain verticality outside moist tropical regions. Globally, positive relationships occurred between canopy height and verticality and between verticality and richness (except for reptiles). Regionally, canopy height exhibited largely neutral impacts on verticality, while verticality-richness relationships varied from negative or weakly positive in temperate and boreal biomes to generally positive in tropical biomes. Model projections indicated relatively small changes in verticality under future climate conditions.
+4 Department of Wildlife Ecology and Conservation, University of Florida, USA
 
-_Main conclusions_: Physiological constraints to arboreal lifestyles limit verticality in cold and dry macroclimate conditions. Globally, vertical stratification across increasingly tall forests (niche expansion) contributes to high richness in tropical regions. Regionally, climatic constraints limit positive verticality-richness relationships in higher latitudes, while niche packing largely contributes to positive verticality-richness relationships in tropical regions. Small changes to vertical community structure at a global scale could be caused by arboreal species increasing their use of understory habitat, becoming extirpated, or shifting geographic ranges to higher latitudes.
+Email addresses:
+
+^\*^ lysoifer@gmail.com (corresponding author)
+
+dpe29@cam.ac.uk
+
+brett.scheffers@ufl.edu
+
+**Funding Statement**
+
+LGS was funded by the National Science Foundation Graduate Research Fellowship. This material is based upon work supported by the National Science Foundation Graduate Research Fellowship under Grant No. DGE1842473. Any opinions, findings, and conclusions or recommendations expressed in this material are those of the authors and do not  necessarily reflect the views of the National Science Foundation.
+
+**Conflicts of Interest**
+
+The authors have no conflicts of interest.
+
+\newpage
+
+**Global patterns and drivers of vertebrate verticality**
+
+**Abstract**
+
+**Aim**: Vertical stratification of species from the ground to canopy is posited as a mechanistic link explaining positive relationships between canopy height and species richness. A key question is understanding how climate and vegetation impact verticality and spatial variation in verticality-diversity patterns. We examine these relationships and then project models of verticality under future climate conditions to examine how climate change may impact vertical community structure.
+
+**Location**: Global
+
+**Time period**: 1981-2010 to 2071-2100
+
+**Major taxa studied**: Vertebrates
+
+**Methods**: We modeled impacts of climate and vegetation on vertebrate verticality globally using spatial generalized linear mixed models with a spatially varying coefficient for canopy height. We projected models to future climate conditions to examine impacts of climate change on vertical community structure. We also examined global and biome-specific relationships between verticality and species richness.
+
+**Results**: Verticality patterns are globally consistent across vertebrate taxa, declining from low to high latitudes. Low precipitation and temperature constrain verticality outside moist tropical regions. Globally, positive relationships occurred between canopy height and verticality and between verticality and richness (except for reptiles). Regionally, canopy height exhibited largely neutral impacts on verticality, while verticality-richness relationships varied from negative or weakly positive in temperate and boreal biomes to generally positive in tropical biomes. Model projections indicated relatively small changes in verticality under future climate conditions.
+
+**Main conclusions**: Physiological constraints to arboreal lifestyles limit verticality in cold and dry macroclimate conditions. Globally, vertical stratification across increasingly tall forests (niche expansion) contributes to high richness in tropical regions. Regionally, climatic constraints limit positive verticality-richness relationships in higher latitudes, while niche packing largely contributes to positive verticality-richness relationships in tropical regions. Small changes to vertical community structure at a global scale could be caused by arboreal species increasing their use of understory habitat, becoming extirpated, or shifting geographic ranges to higher latitudes.
+
+\newpage
 
 # Introduction
 
-In forest ecosystems, species assemblages stratify vertically along resource and climate gradients that extend from beneath the ground to the top of the canopy, a phenomenon called vertical stratification [@bashamVerticalStratificationPatterns2023a; @xingEcologicalPatternsProcesses2023]. Tall, multi-layered forests increase both habitat volume and niche opportunities, enabling species to partition across vertical strata akin to multi-floored apartments (Fig. \@ref(fig:concept-fig)a;[@macarthurLimitingSimilarityConvergence1967; @macarthurBirdSpeciesDiversity1961; @larueDiversityVolumeRelationships2023]). This vertical stacking of species has been described as a mechanistic link between canopy height and species richness [@culbertInfluenceVerticalHorizontal2013; @fengForestCanopyHeight2020; @gillespieDistributionBirdSpecies2001; @oliveiraVerticalStratificationInfluences2019; @wagnerRemotelySensedTree2023], and is thought to contribute to the exceptionally high biodiversity in the tropics via niche expansion processes [@macarthurPopulationEcologyWarblers1958; @macarthurBirdSpeciesDiversity1961; @oliveiraVerticalStratificationInfluences2019; @bashamVerticalStratificationPatterns2023a]. Thus, as the amount of habitat space increases with forest height, species may be added to the assemblage, increasing richness relative to shorter forests (Fig. \@ref(fig:concept-fig); @pellissierNichePackingExpansion2018; @pigotFunctionalTraitsReveal2016). However, canopy height does not consistently impact species richness at regional to global scales, with weaker relationships observed at high latitudes where verticality is lower [@larueDiversityVolumeRelationships2023; @rollLinkingVertebrateSpecies2015; @oliveiraVerticalStratificationInfluences2019]. Whether verticality plays a central role in driving richness gradients globally remains an open question, and surprisingly little progress has been made in assessing whether this relationship holds across multiple taxonomic groups with differing sensitivities to climate variability.
+In forest ecosystems, species assemblages stratify vertically along resource and climate gradients that extend from beneath the ground to the top of the canopy, a phenomenon called vertical stratification [@bashamVerticalStratificationPatterns2023a; @xingEcologicalPatternsProcesses2023a]. Tall, multi-layered forests increase both habitat volume and niche opportunities, enabling species to partition across vertical strata akin to multi-floored apartments [Fig. \@ref(fig:concept-fig)a; @macarthurLimitingSimilarityConvergence1967; @macarthurBirdSpeciesDiversity1961; @larueDiversityVolumeRelationships2023]. This vertical stacking of species has been described as a mechanistic link between canopy height and species richness [@culbertInfluenceVerticalHorizontal2013; @fengForestCanopyHeight2020; @gillespieDistributionBirdSpecies2001; @oliveiraVerticalStratificationInfluences2019; @wagnerRemotelySensedTree2023], and is thought to contribute to the exceptionally high biodiversity in the tropics via niche expansion processes [@macarthurPopulationEcologyWarblers1958; @macarthurBirdSpeciesDiversity1961; @oliveiraVerticalStratificationInfluences2019; @bashamVerticalStratificationPatterns2023a]. Thus, as the amount of habitat space increases with forest height, species may be added to the assemblage, increasing richness relative to shorter forests [Fig. \@ref(fig:concept-fig); @pellissierNichePackingExpansion2018; @pigotFunctionalTraitsReveal2016]. However, canopy height does not consistently impact species richness at regional to global scales, with weaker relationships observed at high latitudes where verticality is lower [@larueDiversityVolumeRelationships2023; @rollLinkingVertebrateSpecies2015; @oliveiraVerticalStratificationInfluences2019]. Whether animal verticality plays a central role in driving richness gradients globally remains an open question, and surprisingly little progress has been made in assessing whether this relationship holds across multiple taxonomic groups with differing sensitivities to climate variability.
 
-Tall forests exhibit steep vertical climate gradients, characterized by high maximum temperatures, low minimum temperatures, and reduced moisture availability in the canopy and lower thermal variability and higher moisture availability toward the ground [@scheffersTropicalMountainPasses2018; @leahyVerticalNicheElevation2021; @defrenneGlobalBufferingTemperatures2019]. In wet tropical forests, macroclimate conditions produce warmer and wetter canopy microclimates, which reduce thermal and hydric stress and may allow species to stratify across the entire vertical habitat gradient, partitioning niche space including nesting and food resources [@oliveiraVerticalStratificationInfluences2019]. Taller canopies in these regions could thus lead to higher verticality and richness (Fig. \@ref(fig:concept-fig)). In contrast, at temperate and boreal latitudes, macroclimate conditions, including low temperature and precipitation, may cause canopy microclimates to exceed physiological thresholds for many species, often constraining them to lower vertical positions [@oliveiraVerticalStratificationInfluences2019; @bakenSalamanderArborealityLimited2021]. As a result, taller canopies in these regions are not necessarily associated with higher verticality and richness as harsh macroclimate conditions limit the availability of vertical habitat space (Fig. \@ref(fig:concept-fig)). We therefore expect a globally varying relationship between canopy height and verticality as well as between verticality and species richness, pending baseline regional conditions from positive in tropical to neutral in temperate and boreal ecosystems.
+Tall forests exhibit steep vertical climate gradients, characterized by high maximum temperatures, low minimum temperatures, and reduced moisture availability in the canopy and lower thermal variability and higher moisture availability toward the ground [@scheffersTropicalMountainPasses2018; @leahyVerticalNicheElevation2021; @defrenneGlobalBufferingTemperatures2019]. In wet tropical forests, macroclimate conditions produce warmer and wetter canopy microclimates, which reduce thermal and hydric stress and may allow species to stratify across the entire vertical habitat gradient, partitioning niche space for nesting and food resources [@oliveiraVerticalStratificationInfluences2019]. Taller canopies in tropical regions could thus support higher animal verticality and richness (Fig. \@ref(fig:concept-fig)). In contrast, at temperate and boreal latitudes, macroclimate conditions, including low temperature and precipitation, may cause canopy microclimates to exceed physiological thresholds for many species, often constraining them to lower vertical positions [@oliveiraVerticalStratificationInfluences2019; @bakenSalamanderArborealityLimited2021]. As a result, taller canopies in these regions do not necessarily provide additional vertical habitat opportunities or support higher verticality and richness, as harsh macroclimate conditions limit the suitability of vertical habitat space (Fig. \@ref(fig:concept-fig)). We therefore expect a globally varying relationship between animal verticality and two key factors: canopy height and species richness. These relationships are likely to depend on baseline regional conditions, ranging from positive in tropical ecosystems to neutral in temperate and boreal regions.
 
-Since verticality is influenced by both climate and vegetation structure, changing climatic conditions may alter constraints on arboreal life strategies, potentially reshaping assemblage verticality and its association with species richness. In tropical lowlands, novel high temperatures [@trewNovelTemperaturesAre2024] may impose physiological stress on arboreal animals, leading them to disperse toward higher elevations, lower vertical positions, or become locally extirpated [@scheffersIncreasingArborealityAltitude2013; @oliveiraVerticalStratificationInfluences2019]. These scenarios would reduce assemblage verticality in the lowlands, mirroring documented climate-driven shifts in assemblage thermal tolerance [@feeleyClimatedrivenChangesComposition2020; @lajeunesseTemporalAnalysisGBIF2023; @chustCrossbasinCrosstaxaPatterns2024; @borderieuxExtinctionDrivesRecent2024]. In contrast, at higher latitudes, warming minimum temperatures may alleviate climatic constraints on arboreal species, promoting range expansions that could increase assemblage verticality. These contrasting dynamics underscore the need for further investigation into how climate-driven changes influence the vertical structure of assemblages and its impacts on biodiversity gradients.
+Since animal verticality is influenced by both climate and vegetation structure, changing climatic conditions may alter constraints on arboreal life strategies, potentially reshaping assemblage verticality and its association with species richness. In tropical lowlands, novel high temperatures [@trewNovelTemperaturesAre2024] may impose physiological stress on arboreal animals, leading them to disperse toward higher elevations, lower vertical habitats, or become locally extirpated [@scheffersIncreasingArborealityAltitude2013; @oliveiraVerticalStratificationInfluences2019]. These scenarios would reduce assemblage verticality in the lowlands, mirroring documented climate-driven shifts in assemblage thermal tolerance [@feeleyClimatedrivenChangesComposition2020; @lajeunesseTemporalAnalysisGBIF2023; @chustCrossbasinCrosstaxaPatterns2024; @borderieuxExtinctionDrivesRecent2024]. In contrast, at higher latitudes, warming minimum temperatures may alleviate climatic constraints on arboreal species, promoting range expansions that could increase assemblage verticality. These contrasting dynamics underscore the need for further investigation into how climate-driven changes influence the vertical structure of assemblages and its impacts on biodiversity gradients.
 
-Despite decades of ecological inquiry into the relationships between verticality and species richness, global patterns of verticality, the environmental factors driving verticality, and the mechanistic link between verticality and species richness have not been comprehensively described for terrestrial vertebrates. To improve our understanding of the nuances of the relationships between climate, vegetation structure, verticality, and species richness, we integrate range maps of vertebrates (`r nbirds` birds, `r nmammals` mammals, `r nrept` reptiles, and `r namph` amphibians) with climate and vegetation data to examine global patterns and drivers of verticality in wooded biomes, as well as relationships between verticality and species richness. We ask 1) how do climate and vegetation structure impact verticality and does the impact of canopy height vary spatially, 2) how do relationships between verticality and richness vary across biomes, and 3) how might climate change impact global patterns of verticality?
 
 ```{r}
 birds = read.csv("data/derivative_data/species_data/birds_spdat_elton_forestsOnly.csv")
@@ -108,6 +148,8 @@ nmammals = nrow(mammals)
 namph = nrow(amph)
 nrept = nrow(repts)
 ```
+
+Despite decades of ecological inquiry into the relationships between verticality and species richness, key aspects remain poorly understood for terrestrial vertebrates. These include global patterns of verticality, their environmental drivers, and the mechanisms linking verticality and species richness. To improve our understanding of the relationships between climate, vegetation structure, verticality, and species richness, we integrate range maps of nearly 24,000 vertebrate species with climate and vegetation data to examine global patterns and drivers of verticality in wooded biomes, as well as relationships between verticality and species richness. We ask 1) how do climate and vegetation structure impact verticality and does the impact of canopy height vary spatially, 2) how do relationships between verticality and richness vary across biomes, and 3) how might climate change impact global patterns of verticality?
 
 # Methods
 
@@ -135,21 +177,20 @@ amphibians.arb.tropicalmoist = round(mean(amphibians$p.arb[amphibians$biome == "
 
 ## Species data
 
-We mapped global verticality and richness of vertebrate assemblages in wooded habitats [@dinersteinEcoregionBasedApproachProtecting2017] within 50-km grid cells and using a cylindrical equal area projection (Supplementary Methods). Grid cells with fewer than five species were excluded, because they may reduce the performance of null models. Range maps were obtained from the IUCN red list for mammals and amphibians [@iucnIUCNRedList2023], BirdLife International for birds [@birdlifeinternationalandhandbookofthebirdsoftheworldBirdSpeciesDistribution2022; using breeding plus resident ranges], and the Global Assessment of Reptile Distributions (GARD) for reptiles [@rollGlobalDistributionTetrapods2017; @caetanoAutomatedAssessmentReveals2022].
+We mapped global verticality and richness of terrestrial vertebrate assemblages in wooded habitats [@dinersteinEcoregionBasedApproachProtecting2017] within 50-km grid cells and using a cylindrical equal area projection (Supplementary Methods). Grid cells with fewer than five species were excluded, because they may reduce the performance of null models. Range maps were obtained from the IUCN Red List for mammals and amphibians [@iucnIUCNRedList2023], BirdLife International for birds [@birdlifeinternationalandhandbookofthebirdsoftheworldBirdSpeciesDistribution2022; using breeding plus resident ranges], and the Global Assessment of Reptile Distributions (GARD) for reptiles [@rollGlobalDistributionTetrapods2017; @caetanoAutomatedAssessmentReveals2022]. Overall, we obtained range maps for `r nbirds` birds, `r nmammals` mammals, `r nrept` reptiles, and `r namph` amphibians.
 
-To calculate the verticality of each assemblage (i.e., grid cell), we assigned each species a verticality score between zero and one and took the average verticality of all species whose ranges overlapped with the grid cell. For mammals, reptiles, and amphibians, verticality scores were based on their use of fossorial (0), terrestrial (0.5), and arboreal (1) habitats as defined in the TetrapodTraits database [@mouraPhylogenyinformedCharacterisationGlobal2024]. For birds, we calculated verticality scores based on their use of different foraging strata as identified in the EltonTraits database [@wilmanEltonTraitsSpecieslevelForaging2014], which provides a finer scale vertical classification than the dataset from Moura et al. [-@mouraPhylogenyinformedCharacterisationGlobal2024]. We classified foraging below the water surface, around the water surface, and on the ground as 0.5, in the understory as 0.667, mid-high canopy as 0.8337, and in or above the upper canopy as 1. If species used multiple vertical habitats, vertical scores were averaged. For example, if a species occurred in terrestrial (0.5) and arboreal (1) habitats, it would receive a verticality score of 0.75. Species that occupied only aerial vertical niches or that did not occur in terrestrial habitats were excluded from the analysis.
+To calculate the verticality of each assemblage (i.e., grid cell), we assigned each species a verticality score from zero to one and then took the average verticality of all species whose ranges overlapped with the grid cell. For mammals, reptiles, and amphibians, verticality scores were based on their use of fossorial (0), terrestrial (0.5), and arboreal (1) habitats as defined in the TetrapodTraits database [@mouraPhylogenyinformedCharacterisationGlobal2024]. For birds, we calculated verticality scores based on their use of different foraging strata as identified in the EltonTraits database [@wilmanEltonTraitsSpecieslevelForaging2014], which provides a finer scale vertical classification than the dataset from Moura et al. [-@mouraPhylogenyinformedCharacterisationGlobal2024]. We classified foraging below the water surface, around the water surface, and on the ground as 0.5, in the understory as 0.667, mid-high canopy as 0.8337, and in or above the upper canopy as 1. If species used multiple vertical habitats, vertical scores were averaged. For example, if a species occurred in terrestrial (0.5) and arboreal (1) habitats, it would receive a verticality score of 0.75. Species that occupied only aerial vertical niches or that did not occur in terrestrial habitats were excluded from the analysis.
 
-To examine spatial patterns of assemblage verticality independently of species richness, we calculated the standard effect size (SES) of mean verticality: $SES = (x_i - \bar{x})/sd(x)$, where x is a vector of expected mean verticality scores given random selection of species from a species pool. We defined species pools as all species inhabiting wooded habitats within a given biogeographic realm [@dinersteinEcoregionBasedApproachProtecting2017] and generated a null distribution of expected verticality for each grid cell by conducting 100 simulations with random samples matching the observed richness. Highly positive SES verticality scores represent assemblages having much higher verticality than expected given the species richness, while low SES verticality scores represent assemblages having much lower verticality than expected given the species richness.
+To examine spatial patterns of assemblage verticality independently of species richness, we calculated the standard effect size (SES) of mean verticality: $SES = (x_i - \bar{x})/sd(x)$, where x is a vector of expected mean verticality scores given random selection of species from a species pool. For each vertebrate class, we defined species pools as all species inhabiting wooded habitats within a given biogeographic realm [@dinersteinEcoregionBasedApproachProtecting2017] and generated a null distribution of expected verticality for each grid cell by conducting 100 simulations with random samples matching the observed richness. Highly positive SES verticality scores represent assemblages having much higher verticality than expected given the species richness, while low SES verticality scores represent assemblages having much lower verticality than expected given the species richness.
 
 ## Environmental data
 
-We obtained present and future global climate data from CHELSA v2.1 (30 arc-second resolution) for mean daily maximum air temperature of the warmest month, mean daily minimum air temperature of the coldest month, temperature seasonality, precipitation of the wettest month, precipitation of the driest month, and precipitation seasonality [@kargerDataClimatologiesHigh2021; @kargerClimatologiesHighResolution2017]. Present climate data represents the time period 1981-2010 and future climate data represents an ensemble of climate scenarios for SSP585 for the time period 2071-2100. Vegetation data included canopy height [@langHighresolutionCanopyHeight2023], vegetation density [@crowtherMappingTreeDensity2015], and vegetation complexity (the product of canopy height and vegetation density). Additionally, we included historical climate velocity (0.25° resolution), which represents the average rate at which thermal isotherms have shifted between the last glacial maximum and present climate conditions [@sandelInfluenceLateQuaternary2011] and influences global patterns of verticality [@oliveiraVerticalStratificationInfluences2019]. All environmental data were resampled to the resolution and projection of the species data.
+We used 10 variables to represent variation in environmental conditions. Climate data were represented with six predictors: (i) mean daily maximum air temperature of the warmest month, (ii) mean daily minimum air temperature of the coldest month, (iii) temperature seasonality, (iv) precipitation of the wettest month, (v) precipitation of the driest month, and (vi)  precipitation seasonality [@kargerDataClimatologiesHigh2021; @kargerClimatologiesHighResolution2017]. All climatic variables were extracted from CHELSA v2.1 (30 arc-second resolution) for both current (1981-2010) and future (2071-2100) periods, the later represented by an ensemble of the five general circulation models in CHELSA CMIP6 ISIMIP3 data projected under the Shared Socioeconomic Pathway (SSP) 585. Vegetation data included (vii) canopy height [@langHighresolutionCanopyHeight2023], (viii) vegetation density [@crowtherMappingTreeDensity2015], and (ix) vegetation complexity (the product of canopy height and vegetation density). Additionally, we included (x) historical climate velocity (0.25° resolution), which represents the average rate at which thermal isotherms have shifted between the last glacial maximum and present climate conditions [@sandelInfluenceLateQuaternary2011] and influences global patterns of verticality [@oliveiraVerticalStratificationInfluences2019]. All environmental data were resampled to the spatial resolution and projection of the species data.
 
 ## Analysis
 
 ### Variable selection
-We examined relationships between mean or SES verticality and the ten environmental variables: canopy height, vegetation density, vegetation complexity, maximum temperature of the warmest month, minimum temperature of the coldest month, temperature seasonality, precipitation of the wettest month, precipitation of the driest month, precipitation seasonality, and climate velocity. To linearize the relationships between predictor and response variables, we log10-transformed climate velocity and precipitation of the driest month. We then scaled all predictor variables to mean zero and variance one. 
-To reduce impacts of collinearity on the model, we examined VIF factors of all variables and sequentially removed one variable at a time until all VIFs were less than five [@wartonEcostatsDataAnalysis2022]. We chose variables to remove based on a combination of which had the highest VIF and which were most likely to directly impact physiological limits to arboreality. For example, we excluded precipitation seasonality because it was strongly correlated with dry season precipitation and has a less direct impact on physiological limits to verticality than dry season precipitation. This procedure resulted in a final set of seven variables that included canopy height, vegetation density, maximum temperature of the warmest month, minimum temperature of the coldest month, precipitation of the wettest month, precipitation of the driest month, and climate velocity. The additive effects of these variables were included as fixed effects in the model in addition to a quadratic term for maximum temperature of the warmest month, as we expected that verticality may increase with temperature up to a certain point but then decline under extremely high temperatures.
+We examined relationships between mean verticality and SES verticality and the ten environmental variables. To linearize the relationships between predictor and response variables, we log10-transformed climate velocity and precipitation of the driest month. We then scaled all predictor variables to mean zero and variance one and examined their multicollinearity using the Variation Inflation Factor (VIF). We iteratively removed the predictor variables until all VIFs were less than five [@wartonEcostatsDataAnalysis2022]. We chose variables to remove based on a combination of which had the highest VIF and which were most likely to directly impact physiological limits to arboreality. For example, we excluded precipitation seasonality because it was strongly correlated with dry season precipitation and has a less direct impact on physiological limits to verticality than dry season precipitation. This procedure resulted in a final set of seven variables that included canopy height, vegetation density, maximum temperature of the warmest month, minimum temperature of the coldest month, precipitation of the wettest month, precipitation of the driest month, and climate velocity. The additive effects of these variables were included as fixed effects in the model in addition to a quadratic term for maximum temperature of the warmest month, as we expected that verticality may increase with temperature up to a certain point but then decline under extremely high temperatures.
 
 ### Model description
 
@@ -167,17 +208,17 @@ $$
 
 where $y_s$ is mean or SES verticality at location $s$ defined by x and y coordinates, $𝜇_s$ is the expected mean or SES verticality, and $𝑓^{-1}$ represents an inverse link function. We modeled SES verticality as a normal distribution and mean verticality as a beta distribution with a logit link function because values are constrained between 0 and 1. $𝜲^{main}_s$ is a vector of main effect covariates and 𝛽 represents a corresponding vector of estimated main effect coefficients. $α_g$ represents a random intercept defined by biogeographic realm [@dinersteinEcoregionBasedApproachProtecting2017], which accounts for potential variation in verticality driven by global evolutionary patterns. $⍵_s$ represents a spatial random field at location $s$, and describes additional spatial variation in the data not explained by the environmental covariates or random intercept. $𝜲^{svc}_sζ_s$ represents a spatially varying coefficient, where $𝜲^{svc}$ represents the vector of spatially varying parameter values and $ζ_s$ represents the spatially varying coefficients, which are described using a random field such that the coefficients follow a multivariate normal distribution with mean zero and covariance ($𝚺_ζ$). 
 
-Both the spatial random field and the spatially varying coefficients are modeled as Gaussian random fields with a covariance matrix modeled by the Matérn covariance function, which defines the decay rate of correlation with distance. Gaussian random fields were approximated for models of mean and SES verticality for each taxa using a spatial mesh optimized such that the edge length was as large as possible to reduce computational time while remaining less than five times the spatial range of the model [@andersonSdmTMBPackageFast2024; @krainskiAdvancedSpatialModeling2019] (Supplementary methods). The model is specified such that both spatial terms share the same range parameter.
+Both the spatial random field and the spatially varying coefficients were modeled as Gaussian random fields with a covariance matrix modeled by the Matérn covariance function, which defines the decay rate of correlation with distance. Gaussian random fields were approximated for models of mean and SES verticality for each taxa using a spatial mesh optimized such that the edge length was as large as possible to reduce computational time while remaining less than five times the spatial range of the model [@andersonSdmTMBPackageFast2024; @krainskiAdvancedSpatialModeling2019] (Supplementary methods). The model is specified such that both spatial terms share the same range parameter.
 
 ### Model comparison and evaluation
 
-For each taxonomic group and type of verticality (i.e., SES or mean verticality), we used restricted maximum likelihood (REML) to fit models with four different random effects structure [@zuurMixedEffectsModels2009]. The base model only included a spatial random field. Subsequent models additionally included biogeographic realm (sensu @dinersteinEcoregionBasedApproachProtecting2017) as a random intercept, a spatially varying coefficient for canopy height, and the combination of both. The SVC allows the impact of canopy height on verticality to vary globally and allows us to test the hypothesis that canopy height has a positive effect on verticality only where climatic conditions support arboreality. 
+For each taxonomic group and verticality metric (i.e., mean or SES verticality), we used restricted maximum likelihood (REML) to fit models with four different random effects structure [@zuurMixedEffectsModels2009]. The base model only included a spatial random field. Subsequent models additionally included biogeographic realm (sensu @dinersteinEcoregionBasedApproachProtecting2017) as a random intercept, a spatially varying coefficient (SVC) for canopy height, and the combination of both. The SVC allows the impact of canopy height on verticality to vary globally, enabling us to test the hypothesis that canopy height has a positive effect on verticality only where climatic conditions support arboreality. 
 
-We compared models using AIC and cross-validation. AIC is frequently used to identify the most parsimonious model (e.g., @barnettImprovingEstimatesSpecies2021); however, the metric is not completely appropriate for hierarchical models [@commanderShadowModelHow2022]. Therefore, we additionally used cross-validation to evaluate out-of-sample predictive ability [@commanderShadowModelHow2022]. We randomly assigned each data point to one of five folds, and then iteratively fit the model using four of the five folds while one fold was withheld for testing. The sum of the log-likelihoods for each left-out fold provides a measure of predictive ability that is compared across models. Cross validation was conducted using the ‘sdmTMB_cv’ function from the sdmTMB package. Models that included both a spatially varying coefficient for canopy height and geographic realm as a random intercept consistently had the lowest AIC value across all models, while model performance varied based on cross validation (Tabel S\@ref(tab:mod-compare-tab)). Given consistent performance based on AIC and our interest in the SVC, all predictions were made based on the model that included both realm and the SVC.
+We compared models using AIC and cross-validation. AIC is frequently used to identify the most parsimonious model (e.g., @barnettImprovingEstimatesSpecies2021); however, the metric is not completely appropriate for hierarchical models [@commanderShadowModelHow2022]. Therefore, we additionally used cross-validation to evaluate out-of-sample predictive ability [@commanderShadowModelHow2022]. We randomly assigned each data point to one of five folds, and then iteratively fit the model using four of the five folds while one fold was withheld for testing. The sum of the log-likelihoods for each left-out fold provides a measure of predictive ability that is compared across models. Cross validation was conducted using the ‘sdmTMB_cv’ function from the sdmTMB package. Models that included both a spatially varying coefficient for canopy height and geographic realm as a random intercept consistently had the lowest AIC value across all models, while model performance varied based on cross validation (Table S\@ref(tab:mod-compare-tab)). Given consistent performance based on AIC and our interest in the SVC, all predictions were made based on the model including an SVC for canopy height and a random effect of realm.
 
-We validated models first using the ‘sanity’ function from the sdmTMB package. We additionally calculated quantile residuals using the DHARMa R package [@hartigDHARMaResidualDiagnostics2022] to visually assess that residuals were normally distributed and lacked patterning across space and to examine any patterns across rank transformed and raw model predictions.
+We validated models first using the ‘sanity’ function from the sdmTMB package. We additionally calculated quantile residuals using the DHARMa R package [@hartigDHARMaResidualDiagnostics2022] to assess residual normality and lack of patterning across space.
 
-We estimated uncertainty of SVCs for canopy height by adding draws of the SVC random field to draws of the fixed parameter for canopy height from 300 simulations. We then calculated the median and 0.025 and 0.975 quantiles to obtain a 95% confidence interval for each SVC estimate. Confidence intervals that did not overlap zero were considered significant [@andersonSdmTMBPackageFast2024].
+We estimated uncertainty of SVCs for canopy height by adding draws of the SVC random field to draws of the fixed effect parameter for canopy height across 300 simulations. From these draws, we calculated the median and a 95% confidence interval bounded by 2.5% and 97.5% quantiles. Confidence intervals that did not overlap zero were considered significant [@andersonSdmTMBPackageFast2024].
 
 ## Relationships between verticality and richness
 
@@ -185,7 +226,9 @@ We fit linear models of richness as a function of SES or mean verticality for al
 
 ## Future predictions
 
-To examine potential impacts of climate change on assemblage verticality, we used the models to predict mean and SES verticality under a future climate scenario. We held vegetation variables constant at present-day values due to lack of global predictions of future canopy height and vegetation density. We subtracted predictions to the present-day climate data used to train the model from future predictions and mapped the resulting differences. To standardize measures of change across taxa and between mean and SES verticality, we calculated the relative percent change between present and future predictions for mean and SES verticality as $(verticality_{future,t,i} - verticality_{present,t,i})/(verticality_{max,t} - verticality_{min, t})*100$, where t indicates a given taxon and i indicates a given grid cell. Negative values indicate predicted declines in verticality and positive values indicate predicted increases in verticality.
+To examine potential impacts of climate change on assemblage verticality, we used the models to project mean and SES verticality under a future climate scenario. We held vegetation variables constant at present-day values due to lack of global predictions of future canopy height and vegetation density. We calculated the verticality change by subtracting present-day predictions, based on current climate, from the future projections. These differences were then standardized to reflect the  relative change in mean and SES verticality:
+
+$relative change = (verticality_{future,t,i} - verticality_{present,t,i})/(verticality_{max,t} - verticality_{min, t})*100$, where t indicates a given taxon and i indicates a given grid cell. Negative values indicate predicted declines in verticality and positive values indicate predicted increases in verticality.
 
 # Results
 
@@ -282,46 +325,57 @@ Increasing minimum cold temperatures could release constraints on arboreality in
 
 We show that verticality exhibits globally consistent patterns across taxa and is constrained by minimum temperatures and low precipitation. Global positive impacts of canopy height on verticality suggest vertical stratification across increasingly tall forests contributes to high species richness in tropical regions. However, neutral regional impacts of canopy height suggest that climatic constraints limit relationships between verticality and richness in boreal and temperate regions, while niche packing contributes to positive relationships between verticality and richness in tropical regions. While predictions of verticality under future climate conditions indicate small changes in global patterns of verticality, understanding the extent to which increases or decreases in verticality are realized and attributable to climate change will require long-term monitoring of taxa and vertical microclimates across latitudes.
 
+\newpage
+
+# References
+
+\newpage
+
+**Data Availability Statement**
+
+All data used are publicly available. Code is available at https://github.com/lysoifer/verticality_future.
+
+\newpage
 
 # Figures
 
-```{r fig.id="concept-fig", fig.width=160, fig.height=90, fig.cap.pre="Fig. ", fig.cap="a) Niche expansion: Canopy height positively impacts verticality by allowing species to occupy novel habitat space as canopy height increases. As assemblage verticality increases, species richness also increases. Thus verticality mediates positive relationships that have been observed between canopy height and species richness. b) Niche packing: Canopy height has no impact on verticality or richness, yet verticality and richness are still positively correlated. This pattern could be caused by niche packing within arboreal habitats.", include=TRUE5}
+```{r fig.id="concept-fig", fig.width=160, fig.height=100.65, fig.cap.pre="Fig. ", fig.cap="a) Niche expansion: Canopy height positively impacts verticality by allowing species to occupy novel habitat space as canopy height increases. As assemblage verticality increases, species richness also increases. Thus verticality mediates positive relationships that have been observed between canopy height and species richness. b) Niche packing: Canopy height has no impact on verticality or richness, yet verticality and richness are still positively correlated. This pattern could be caused by niche packing within arboreal habitats.", include=TRUE}
 
-knitr::include_graphics("figures/main_figs/vert_maps.png", error = F)
+knitr::include_graphics("figures/main_figs/fig1_concept_fig.png", error = F)
 ```
 
 
-```{r fig.id="vert-map-global", fig.width=160, fig.height=96, fig.cap.pre="Fig. ", fig.cap="Standard effect size (SES) and mean verticality of birds, mammals, reptiles, and amphibians. Line plots indicate the average proportion of arboreal (red), terrestrial (yellow), and fossorial (blue) species across latitudes. Gray areas indicate areas that are not wooded or that have fewer than five species.", include=TRUE}
+```{r fig.id="vert-map-global", fig.width=180, fig.height=140.02, fig.cap.pre="Fig. ", fig.cap="Standard effect size (SES) and mean verticality of birds, mammals, reptiles, and amphibians. Line plots indicate the average proportion of arboreal (red), terrestrial (yellow), and fossorial (blue) species across latitudes. Gray areas indicate areas that are not wooded or that have fewer than five species.", include=TRUE}
 
-knitr::include_graphics("figures/main_figs/vert_maps.png", error = F)
+knitr::include_graphics("figures/main_figs/fig2_vert_maps.png", error = F)
 ```
 
 \newpage
 
 ```{r fig.id="mod-coefs", fig.width=160, fig.height=87.3, fig.cap.pre="Fig. ", fig.cap=" Coefficient estimates for models of mean and SES verticality with 95% confidence intervals. Red points indicate coefficients with 95% CIs that do not overlap zero."}
 
-include_graphics("figures/main_figs/sdmTMB_coefs.png", error = F)
+include_graphics("figures/main_figs/fig3_sdmTMB_coefs.png", error = F)
 ```
 
 \newpage
 
-```{r fig.id="svc", fig.width=160, fig.height=143.95, fig.cap.pre="Fig. ", fig.cap="Spatially varying effect of canopy height on the mean and standard effect size (SES) of verticality for birds, mammals, reptiles, and amphibians. The spatially varying effect is the sum of the main effect of canopy and height and the spatially varying random effect at any given point. Larger positive numbers indicate a stronger positive effect of canopy height on verticality and larger negative numbers indicate a stronger negative effect of canopy height on verticality. Dark gray areas indicate locations where the effect of canopy height was not significant. Light gray areas indicate areas that are not wooded or that have fewer than five species."}
+```{r fig.id="svc", fig.width=180, fig.height=120, fig.cap.pre="Fig. ", fig.cap="Spatially varying effect of canopy height on the mean and standard effect size (SES) of verticality for birds, mammals, reptiles, and amphibians. The spatially varying effect is the sum of the main effect of canopy and height and the spatially varying random effect at any given point. Larger positive numbers indicate a stronger positive effect of canopy height on verticality and larger negative numbers indicate a stronger negative effect of canopy height on verticality. Dark gray areas indicate locations where the effect of canopy height was not significant. Light gray areas indicate areas that are not wooded or that have fewer than five species."}
 
-include_graphics("figures/main_figs/canopy_height_coefs.png", error = F)
+include_graphics("figures/main_figs/fig4_canopy_height_coefs.png", error = F)
 ```
 
 \newpage
 
 ```{r fig.id="richness-mods", fig.width = 160, fig.height=115.6, fig.cap.pre="Fig. ", fig.cap="Slopes for linear models of richness as a function of SES or mean verticality across all biomes and for individual biomes. Hollow circles indicate non-significant relationships (p ≥ 0.05) and filled circles indicate significant relationships. R^2^ values are represented by the size of the circle. Purple = all biomes, gray = boreal biomes, orange = temperate biomes, green = tropical biomes. Flooded GS = Flooded grassland and savannas, Mediterranean FWS = Mediterranean forests, woodlands, and scrub, Montane GS = Montane grasslands and shrublands, Temperate BMF = Temperate broadleaf and mixed forests, Temperate CF = Temperate conifer forests, Temperate GSS = Temperate grasslands, savannas, and shrublands, Tropical CF = Tropical and subtropical conifer forests, Tropical DBF = Tropical and subtropical dry broadleaf forests, Tropical GSS = Tropical and subtropical grasslands, savannas, and shrublands, Tropical MBF = Tropical and subtropical moist broadleaf forests"}
 
-include_graphics("figures/main_figs/vert_rich_lm_slopes.png", error = F)
+include_graphics("figures/main_figs/fig5_vert_rich_lm_slopes.png", error = F)
 ```
 
 \newpage
 
 ```{r fig.id="vert-dif-map", fig.width=160, fig.height=133.3, fig.cap.pre="Fig. ", fig.cap="Relative percent change in SES and mean verticality for birds, mammals, reptiles, and amphibians. Bar plots indicate average relative percent change per latitude. Gray areas indicate areas that are not wooded or that have fewer than five species."}
 
-include_graphics("figures/main_figs/fig5_vert_reldifs.png", error = F)
+include_graphics("figures/main_figs/fig6_vert_reldifs.png", error = F)
 ```
 
 \newpage
@@ -361,8 +415,6 @@ flextable(tab) %>%
 ```
 
 
-# estimated coefficients and confidence intervals from the best model for each taxa - include all model parameters: fixed effects, spatial paramters (matern range, marginal spatial standard, deviation), distribution parameters
-
 \newpage
 
 # Supplementary figures
@@ -379,7 +431,7 @@ include_graphics("figures/supp_figs/cond_effects_meanvert.png", error = F)
 
 \newpage
 
-```{r fig.id="condeff-ses", fig.lp="suppfig", fig.cap="Conditional effect plots for SES verticality in response to precipitation of the driest month and maximum temperature of the warmest month.", fig.cap.pre="Fig. S", height=213.3, width=160}
+```{r fig.id="condeff-ses", fig.lp="suppfig", fig.cap="Conditional effect plots for SES verticality (indicated by blue-red color scale) in response to precipitation of the driest month and maximum temperature of the warmest month. The first column shows SES verticality across gradients of maximum temperature of the warmest month and log(dry season precipitation). The second column shows SES verticality across gradients of minimum temperature of the coldest month and log(dry season precipitation).", fig.cap.pre="Fig. S", height=213.3, width=160}
 include_graphics("figures/supp_figs/cond_effects_sesvert.png", error = F)
 ```
 
@@ -392,10 +444,8 @@ include_graphics("figures/supp_figs/vert_richness_correlations.png", error = F)
 
 \newpage
 
-```{r fig.id="vert-dif-biome", fig.lp="suppfig", fig.cap.pre="Fig. S", fig.cap="Average percent relative difference between SES and mean verticality predicted under present and future climate conditions for global biomes. Negative values indicate predicted declines in verticality and positive values indicate predicted increases in verticality. Biomes along the y-axis are ordered from those that were predicted to exhibit the greatest average in verticality across taxa at the top to those that were predicted to exhibit the greatest average decrease in verticality at the bottom.", fig.height=80, fig.width=160}
+```{r fig.id="vert-dif-biome", fig.lp="suppfig", fig.cap.pre="Fig. S", fig.cap="Average relative percent difference between SES and mean verticality predicted under present and future climate conditions for global biomes. Negative values indicate predicted declines in verticality and positive values indicate predicted increases in verticality. Biomes along the y-axis are ordered from those that were predicted to exhibit the greatest average invrease in verticality across taxa at the top to those that were predicted to exhibit the greatest average decrease in verticality at the bottom.", fig.height=80, fig.width=160}
 
 include_graphics("figures/supp_figs/dif_biome_forestOnly_forestSES.png", error = F)
 ```
 
-
-# References
