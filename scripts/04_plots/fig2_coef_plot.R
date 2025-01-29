@@ -126,18 +126,18 @@ coefs = bind_rows(sesvert.coefs, meanvert.coefs) %>%
 
 coefs = bind_rows(sesvert.coefs, meanvert.coefs) %>% 
   filter(term != "(Intercept)") %>%
-  mutate(term = case_when(term == "log_clim_velocity" ~ "Climate velocity",
+  mutate(term = case_when(term == "log_clim_velocity" ~ "log(climate velocity)",
                           term == "canopy_height" ~ "Canopy height",
                           term == "veg_den" ~ "Vegetation density",
                           term == "precip_wet" ~ "Wet season precip",
                           term == "log_precip_dry" ~ "log(dry season precip)",
-                          term == "I(tmax_warm^2)" ~ "(Max temp wamest month)\u00b2",
+                          term == "I(tmax_warm^2)" ~ "(Max temp warmest month)\u00b2",
                           term == "tmax_warm" ~ "Max temp warmest month",
                           term == "tmin_cold" ~ "Min temp coldest month"),
          term = factor(term, levels = c(
-    "Climate velocity", "Canopy height", "Vegetation density",
+    "log(climate velocity)", "Canopy height", "Vegetation density",
     "Wet season precip", "log(dry season precip)",
-    "(Max temp wamest month)\u00b2", "Max temp warmest month", "Min temp coldest month")),
+    "(Max temp warmest month)\u00b2", "Max temp warmest month", "Min temp coldest month")),
     class = factor(class, levels = c("Birds", "Mammals", "Reptiles", "Amphibians")))
 
 
@@ -151,11 +151,12 @@ coef.plt = coefs %>%
   #scale_color_manual(values = c("black", "red3")) +
   #scale_size_continuous(range = c(0.02,0.5)) +
   scale_y_discrete("") +
-  scale_x_continuous("Estimate") +
+  #scale_x_continuous("Effect size of standardized predictors") +
   scale_color_manual(values = c("black", "red3")) +
   facet_grid2(rows = vars(type), cols = vars(class), scales = "free_x", independent = "x") +
-  scale_x_facet(ROW == 1, limits = c(-0.08, 0.25)) +
-  scale_x_facet(ROW == 2, limits = c(-0.2, 0.8)) +
+  scale_x_facet(ROW == 1, limits = c(-0.08, 0.18)) +
+  scale_x_facet(ROW == 2, limits = c(-0.2, 0.7)) +
+  labs(x = "Effect size of standardized predictors") +
   #facet_grid(class ~ type, scales = "free") +
   #ggtitle("SES Mean Verticality") +
   theme(plot.title = element_text(hjust = 0.5),
@@ -170,6 +171,6 @@ coef.plt = coefs %>%
         legend.title = element_text(hjust = 0.5),
         axis.text.x = element_text(size = 6))
 
-png("figures/main_figs/fig2_sdmTMB_coefs.png", width = 180, height = 98, res = 600, units = "mm")
+png("figures/main_figs/fig3_sdmTMB_coefs.png", width = 180, height = 98, res = 600, units = "mm")
 coef.plt
 dev.off()
