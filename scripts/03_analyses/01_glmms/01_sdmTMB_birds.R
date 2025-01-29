@@ -14,7 +14,7 @@ library(DHARMa)
 source("scripts/00_functions/00_plot_functions.R")
 source("scripts/00_functions/manuscript_functions.R")
 
-# amphibian forest only 50km resolution
+# bird forest only 50km resolution
 raw = read.csv("data/derivative_data/gridcell_data/env_forest/50_km/birds_comdat.csv")
 
 # remove cells with fewer than five species
