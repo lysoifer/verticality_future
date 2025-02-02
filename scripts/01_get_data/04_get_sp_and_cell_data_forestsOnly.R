@@ -472,7 +472,7 @@ traits.birds = traits.birds %>%
 
 # subset occurrence data to species that occur in both iucn and trait datasets
 occr = occr %>% 
-  dplyr::select(x,y,traits_birds$sciname)
+  dplyr::select(x,y,traits.birds$sciname)
 
 # filter out rows that don't have realm information
 occr = env.forest %>% 
