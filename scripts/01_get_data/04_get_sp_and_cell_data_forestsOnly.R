@@ -46,7 +46,9 @@ env = read.csv("data/derivative_data/env_data_50km.csv")
 
 # clip env data to wooded habitats only
 env.forest = env %>% 
-  filter(grepl("forest|woodland|taiga|Forest|várzea|Yungas|savanna|thicket|mallee", ecoregion))
+  filter((grepl("Forests", biome) | grepl("forest|forests|pine|woodland|woodlands|Woodlands|Woodland|taiga|Forest|Forests|Espinal|várzea|Yungas|savanna|savannas|thicket|matorral|Matorral|mallee|chaparral|Woods|mezquital|pineyards|Pantanal|Cuban wetlands|Cerrado|bushveld|Chaco|lowveld", ecoregion))) %>% 
+  filter(biome != "Mangroves")
+  #filter(grepl("forest|woodland|taiga|Forest|várzea|Yungas|savanna|thicket|mallee", ecoregion))
 fwrite(env.forest, "data/derivative_data/env_data_50km_forest.csv", row.names = F)
 
 # Moura traits
