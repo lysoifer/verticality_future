@@ -178,6 +178,12 @@ fwrite(occdat, "data/derivative_data/gridcell_data/env_forest/50_km/amph_comdat_
 
 # takes 13 min
 
+# add bio18
+griddat = fread("data/derivative_data/gridcell_data/env_forest/50_km/amph_comdat.csv")
+env = env %>% dplyr::select(x,y, precip_warm)
+griddat = left_join(griddat, env, by = c("x", "y"))
+fwrite(griddat, "data/derivative_data/gridcell_data/env_forest/50_km/amph_comdat.csv", row.names = F)
+
 # # error here because I didn't use forest env
 # tic()
 # amph_comdat = get_gridcell_vert_parallel(trait_dat = amph_spdat, occ = occr, env = env, rich_min = 5, ncore = 7, nsim = 100)
@@ -286,6 +292,11 @@ fwrite(griddat,
 fwrite(occdat, 
        "data/derivative_data/gridcell_data/env_forest/50_km/mammals_comdat_occr.csv", row.names = F)
 
+# add bio18
+griddat = fread("data/derivative_data/gridcell_data/env_forest/50_km/mammals_comdat.csv")
+env = env %>% dplyr::select(x,y, precip_warm)
+griddat = left_join(griddat, env, by = c("x", "y"))
+fwrite(griddat,  "data/derivative_data/gridcell_data/env_forest/50_km/mammals_comdat.csv", row.names = F)
 
 # tic()
 # mammals_comdat = get_gridcell_vert_parallel(trait_dat = mammals_spdat, occ = occr, env = env.forest, rich_min = 5, ncore = 7, nsim = 100)
@@ -378,6 +389,13 @@ fwrite(griddat,
           "data/derivative_data/gridcell_data/env_forest/50_km/reptiles_comdat.csv", row.names = F)
 fwrite(occdat, 
        "data/derivative_data/gridcell_data/env_forest/50_km/reptiles_comdat_occr.csv", row.names = F)
+
+# add bio18
+griddat = fread("data/derivative_data/gridcell_data/env_forest/50_km/reptiles_comdat.csv")
+env = env %>% dplyr::select(x,y, precip_warm)
+griddat = left_join(griddat, env, by = c("x", "y"))
+fwrite(griddat,  "data/derivative_data/gridcell_data/env_forest/50_km/reptiles_comdat.csv", row.names = F)
+
 
 
 # takes 2825 sec
@@ -536,6 +554,12 @@ fwrite(griddat,
        "data/derivative_data/gridcell_data/env_forest/50_km/birds_comdat.csv", row.names = F)
 fwrite(occdat, 
        "data/derivative_data/gridcell_data/env_forest/50_km/birds_comdat_occr.csv", row.names = F)
+
+# add bio18
+griddat = fread("data/derivative_data/gridcell_data/env_forest/50_km/birds_comdat.csv")
+env = env %>% dplyr::select(x,y, precip_warm)
+griddat = left_join(griddat, env, by = c("x", "y"))
+fwrite(griddat,  "data/derivative_data/gridcell_data/env_forest/50_km/birds_comdat.csv", row.names = F)
 
 
 # # takes 7051 sec sec
