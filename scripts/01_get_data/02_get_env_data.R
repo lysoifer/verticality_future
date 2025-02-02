@@ -9,7 +9,7 @@ library(cluster)
 library(foreach)
 
 # change tempdir so that I can easily delete temp files that take up too much space
-tempdir(tmpdir = "tempfiles/")
+# tempdir(tmpdir = "tempfiles/")
 
 # template raster used to get grid level pres/abs data at 111km
 mapa = rast(extent = c(-20592508, 20588492, -5743602, 6573398), crs = "+proj=cea +datum=WGS84")
@@ -23,6 +23,7 @@ res(mapa) = 50000
 bio = list.files(path = "data/original/env_data/chelsa/", pattern = ".tif", full.names = T)
 #bio = lapply(bio, rast)
 bio = bio[c(1:5,9:12)]
+bio18 = bio[grepl("bio18", bio)] # precip warmest quarter
 
 # Resmaple chelsa climate data to 50 km resolution and project to cylindrical equal area projection
 cl = makeCluster(7)
@@ -36,6 +37,14 @@ bio = foreach(i = 1:length(bio), .packages = c("terra")) %dopar% {
   writeRaster(r, paste0("data/derivative_data/resampled_env_rasters_50km/", names(r), ".tif"))
 }
 stopCluster(cl)
+
+# bio18
+mapa = rast(extent = c(-20592508, 20588492, -5743602, 6573398), crs = "+proj=cea +datum=WGS84")
+res(mapa) = 50000
+r = rast(bio18)
+r = project(r, "+proj=cea +datum=WGS84")
+r = resample(r, mapa, threads = T)
+writeRaster(r, paste0("data/derivative_data/resampled_env_rasters_50km/", names(r), ".tif"))
 
 
 # future climate ----------------------------------------------------------
@@ -69,6 +78,16 @@ writeRaster(bio.f[[2]], "tempfiles/bio_future_ipsl.tif")
 writeRaster(bio.f[[3]], "tempfiles/bio_future_mpi.tif")
 writeRaster(bio.f[[4]], "tempfiles/bio_future_mri.tif")
 writeRaster(bio.f[[5]], "tempfiles/bio_future_ukesm.tif")
+
+# crop bio18
+bio18.1 = bio.f.gfdl[[grepl("bio18", names(bio.f.gfdl))]]
+bio18.2 = bio.f.ipsl[[grepl("bio18", names(bio.f.ipsl))]]
+bio18.3 = bio.f.mpi[[grepl("bio18", names(bio.f.mpi))]]
+bio18.4 = bio.f.mri[[grepl("bio18", names(bio.f.mri))]]
+bio18.5 = bio.f.ukesm[[grepl("bio18", names(bio.f.ukesm))]]
+
+bio18 = c(bio18.1, bio18.2, bio18.3, bio18.4, bio18.5)
+bio18 = crop(bio18, ext(-180, 180, -64.7937, 90))
 
 
 # Get raster stacks for each bio layer (5 scenarios per bio layer)
@@ -141,7 +160,12 @@ precip_sea.f = resample(precip_sea.f, mapa, threads = T)
 names(precip_sea.f) = "precip_sea"
 writeRaster(precip_sea.f, "data/derivative_data/resampled_env_rasters_50km/chelsa_future/2071_2100/ensemble/chelsa_bio_15.tif")
 
-
+# add bio18: average monthly precip during warmest quarter
+precip_warm.f = mean(bio18)
+precip_warm.f = project(precip_warm.f, "+proj=cea +datum=WGS84")
+precip_warm.f = resample(precip_warm.f, mapa, threads = T)
+names(precip_warm.f) = "precip_warm"
+writeRaster(precip_warm.f, "data/derivative_data/resampled_env_rasters_50km/chelsa_future/2071_2100/ensemble/chelsa_bio_18.tif")
 
 # canopy height
 # canopy height from Lang et al. 2023 https://doi.org/10.1038/s41559-023-02206-6
@@ -209,11 +233,11 @@ r = rast(list.files(path = "data/derivative_data/resampled_env_rasters_50km/", p
 r$biome = biome
 r$realm = realm
 r$ecoregion = ecoregion
-bionames = names(r)[3:11]
+bionames = names(r)[3:12]
 bionames = sapply(bionames, strsplit, split = "_")
 bionames = sapply(bionames, "[[", 2)
 #bionames[10:13] = c(hurs_mean", "hurs_range", "vpd_mean", "vpd_range")
-names(r)[3:11] =  bionames
+names(r)[3:12] =  bionames
 #r = c(r, realm, biome)
 
 env_df = as.data.frame(r, xy = T)
@@ -225,7 +249,7 @@ env_df = as.data.frame(r, xy = T)
 env_df = env_df %>% 
   dplyr::mutate(bio4 = bio4/100) %>% 
   dplyr::rename(mat = bio1, temp_diu = bio2, temp_sea = bio4, tmax_warm = bio5, tmin_cold = bio6,
-         precip_ann = bio12, precip_wet = bio13, precip_dry = bio14, precip_sea = bio15) %>% 
+         precip_ann = bio12, precip_wet = bio13, precip_dry = bio14, precip_sea = bio15, precip_warm = bio18) %>% 
   dplyr::mutate(veg_complexity = canopy_height * veg_den)
 
 write.csv(env_df, "data/derivative_data/env_data_50km.csv", row.names = F)
@@ -240,6 +264,7 @@ write.csv(env_df, "data/derivative_data/env_data_50km.csv", row.names = F)
 # bio14 = precip amount of the driest month
 # bio12 = annual precip amount
 # bio15 = precip seasonality
+# bio18 = precip of the warmest quarter
 # hurs_mean = Mean monthly near-surface relative humidity
 # hurs_range = Annual range of monthly near-surface relative humidity
 # vpd_mean = Mean monthly vapor pressure deficit

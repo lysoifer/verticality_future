@@ -49,6 +49,14 @@ for(i in 1:length(f)) {
   curl::curl_download(f[i], dest)
 }
 
+# add bio18
+f = "https://os.zhdk.cloud.switch.ch/chelsav2/GLOBAL/climatologies/2071-2100/GFDL-ESM4/ssp585/bio/CHELSA_bio18_2071-2100_gfdl-esm4_ssp585_V.2.1.tif"
+f = str_squish(f)
+fname = str_split(f, "/")
+fname = sapply(fname, "[[", 11)
+dest = paste0("data/original/env_data/chelsa_future/2071-2100/gfdl-esm4-ssp585/", fname)
+curl::curl_download(f, dest)
+
 # 2071-2100_ispl-cm61-lr_ssp585
 f = read.delim("data/original/env_data/chelsa_future/2071-2100/ipsl-cm61-lr_ssp585/envidatS3paths.txt", header = F)[,1]
 f = str_squish(f)
@@ -59,6 +67,15 @@ for(i in 1:length(f)) {
   dest = paste0("data/original/env_data/chelsa_future/2071-2100/ipsl-cm61-lr_ssp585/", fname[i])
   curl::curl_download(f[i], dest)
 }
+
+# add bio18
+f = "https://os.zhdk.cloud.switch.ch/chelsav2/GLOBAL/climatologies/2071-2100/IPSL-CM6A-LR/ssp585/bio/CHELSA_bio18_2071-2100_ipsl-cm6a-lr_ssp585_V.2.1.tif"
+f = str_squish(f)
+fname = str_split(f, "/")
+fname = sapply(fname, "[[", 11)
+dest = paste0("data/original/env_data/chelsa_future/2071-2100/ipsl-cm61-lr_ssp585/", fname)
+curl::curl_download(f, dest)
+
 
 # 2071-2100_mpi-esm-1-2-hr_ssp585
 f = read.delim("data/original/env_data/chelsa_future/2071-2100/mpi-esm1-2-hr_ssp585/envidatS3paths.txt", header = F)[,1]
@@ -71,6 +88,14 @@ for(i in 1:length(f)) {
   curl::curl_download(f[i], dest)
 }
 
+# add bio18
+f = "https://os.zhdk.cloud.switch.ch/chelsav2/GLOBAL/climatologies/2071-2100/MPI-ESM1-2-HR/ssp585/bio/CHELSA_bio18_2071-2100_mpi-esm1-2-hr_ssp585_V.2.1.tif"
+f = str_squish(f)
+fname = str_split(f, "/")
+fname = sapply(fname, "[[", 11)
+dest = paste0("data/original/env_data/chelsa_future/2071-2100/mpi-esm1-2-hr_ssp585/", fname)
+curl::curl_download(f, dest)
+
 # mri-esm2-0_ssp585
 f = read.delim("data/original/env_data/chelsa_future/2071-2100/mri-esm2-0_ssp585/envidatS3paths.txt", header = F)[,1]
 f = str_squish(f)
@@ -82,6 +107,14 @@ for(i in 1:length(f)) {
   curl::curl_download(f[i], dest)
 }
 
+# add bio18
+f = "https://os.zhdk.cloud.switch.ch/chelsav2/GLOBAL/climatologies/2071-2100/MRI-ESM2-0/ssp585/bio/CHELSA_bio18_2071-2100_mri-esm2-0_ssp585_V.2.1.tif"
+f = str_squish(f)
+fname = str_split(f, "/")
+fname = sapply(fname, "[[", 11)
+dest = paste0("data/original/env_data/chelsa_future/2071-2100/mri-esm2-0_ssp585/", fname)
+curl::curl_download(f, dest)
+
 # ukesm1-0-II_ssp585
 f = read.delim("data/original/env_data/chelsa_future/2071-2100/ukesm1-0-II_ssp585/envidatS3paths.txt", header = F)[,1]
 f = str_squish(f)
@@ -92,6 +125,15 @@ for(i in 1:length(f)) {
   dest = paste0("data/original/env_data/chelsa_future/2071-2100/ukesm1-0-II_ssp585/", fname[i])
   curl::curl_download(f[i], dest)
 }
+
+# add bio18
+f = "https://os.zhdk.cloud.switch.ch/chelsav2/GLOBAL/climatologies/2071-2100/UKESM1-0-LL/ssp585/bio/CHELSA_bio18_2071-2100_ukesm1-0-ll_ssp585_V.2.1.tif"
+f = str_squish(f)
+fname = str_split(f, "/")
+fname = sapply(fname, "[[", 11)
+dest = paste0("data/original/env_data/chelsa_future/2071-2100/ukesm1-0-II_ssp585/", fname)
+curl::curl_download(f, dest)
+
 
 
 
