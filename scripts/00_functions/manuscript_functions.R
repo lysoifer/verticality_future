@@ -142,7 +142,7 @@ fit_mesh = function(f, dat, range, v, family, wts = NULL) {
                  spatial = "on",
                  reml = T, 
                  family = family,
-                 spatial_varying = ~ 0 + canopy_height,
+                 #spatial_varying = ~ 0 + canopy_height, # don't include SVC for canopy height
                  control = sdmTMBcontrol(eval.max = 8000, iter.max = 4000))
 
       } else {
@@ -153,7 +153,7 @@ fit_mesh = function(f, dat, range, v, family, wts = NULL) {
                              spatial = "on",
                              reml = T, 
                              family = family,
-                             spatial_varying = ~ 0 + canopy_height,
+                             #spatial_varying = ~ 0 + canopy_height, # don't include SVC for canopy height
                              control = sdmTMBcontrol(eval.max = 8000, iter.max = 4000, start = list(ln_phi = ln_phi,
                                                                                                     ln_tau_O = ln_tau_o,
                                                                                                     ln_tau_Z = ln_tau_z,
@@ -361,173 +361,192 @@ compareMods_AIC = function(f, dat, mesh, taxon, response_var, family, wts = NULL
   # mesh = mesh used for sdmTMB model
   # taxon: character, taxon being modeled - used for labelling output
   # response_var: character; response variable for the model - used for labelling output
-  all_ok = FALSE
-  iter = 1
-  while(!all_ok & iter <= 2) {
-    print(iter)
-    if(iter == 1) {
-      mod = sdmTMB(f, 
-                   data = dat,
-                   weights = wts,
-                   mesh = mesh,
-                   spatial = "on",
-                   reml = T, 
-                   family = family,
-                   control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000))
-    } else {
-      mod = sdmTMB(f, 
-                   data = dat,
-                   weights = wts,
-                   mesh = mesh,
-                   spatial = "on",
-                   reml = T,
-                   family = family,
-                   control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000, 
-                                           start = list(ln_phi = ln_phi,
-                                                        ln_tau_O = ln_tau_o)))
+  
+  modlist = foreach(i = 1:length(f)) %do% {
+    all_ok = FALSE
+    iter = 1
+    while(!all_ok & iter <= 2) {
+      print(iter)
+      if(iter == 1) {
+        mod = sdmTMB(f[[i]], 
+                     data = dat,
+                     #weights = wts,
+                     mesh = mesh,
+                     spatial = "on",
+                     reml = T, 
+                     family = family,
+                     control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000))
+      } else {
+        mod = sdmTMB(f[[i]], 
+                     data = dat,
+                     #weights = wts,
+                     mesh = mesh,
+                     spatial = "on",
+                     reml = T,
+                     family = family,
+                     control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000, 
+                                             start = list(ln_phi = ln_phi,
+                                                          ln_tau_O = ln_tau_o)))
+      }
+      all_ok = sanity(mod)$all_ok
+      pars = get_pars(mod)
+      ln_phi = pars$ln_phi
+      ln_tau_o = pars$ln_tau_O
+      iter = iter+1
+      gc()
     }
-    all_ok = sanity(mod)$all_ok
-    pars = get_pars(mod)
-    ln_phi = pars$ln_phi
-    ln_tau_o = pars$ln_tau_O
-    iter = iter+1
-    gc()
+    mod
   }
+  # compare AIC
+  aic = sapply(modlist, AIC)
+  names(aic) = paste0(1:length(aic))
+  min_aic = min(aic)
+  aic = as.data.frame(aic) %>%
+    rownames_to_column(var = "mod") %>% 
+    mutate(deltaAIC = aic - min_aic)
+  
+  ll = sapply(modlist, function(x){as.numeric(logLik(x))})
+  aic$loglik = ll
+  aic$taxon = taxon
+  aic$response_var = response_var
+  
+  aic = aic %>% arrange(deltaAIC)
+  return(list(modlist = modlist, modsel = aic))
   
   
   # model with svc but no random effect
-  all_ok = FALSE
-  iter = 1
-  while(!all_ok & iter <= 2) {
-    print(iter)
-    if(iter == 1) {
-      mod.svc = sdmTMB(f, 
-                       data = dat,
-                       weights = wts,
-                       mesh = mesh,
-                       spatial = "on",
-                       reml = T, 
-                       spatial_varying = ~ 0 + canopy_height,
-                       family = family,
-                       control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000))
-    } else {
-      mod.svc = sdmTMB(f, 
-                       data = dat,
-                       weights = wts,
-                       mesh = mesh,
-                       spatial = "on",
-                       reml = T, 
-                       spatial_varying = ~ 0 + canopy_height,
-                       family = family,
-                       control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000,
-                                               start = list(ln_phi = ln_phi)))
-    }
-    all_ok = sanity(mod.svc)$all_ok
-    ln_phi = get_pars(mod.svc)$ln_phi
-    iter = iter+1
-    gc()
-  }
+  # all_ok = FALSE
+  # iter = 1
+  # while(!all_ok & iter <= 2) {
+  #   print(iter)
+  #   if(iter == 1) {
+  #     mod.svc = sdmTMB(f, 
+  #                      data = dat,
+  #                      weights = wts,
+  #                      mesh = mesh,
+  #                      spatial = "on",
+  #                      reml = T, 
+  #                      spatial_varying = ~ 0 + canopy_height,
+  #                      family = family,
+  #                      control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000))
+  #   } else {
+  #     mod.svc = sdmTMB(f, 
+  #                      data = dat,
+  #                      weights = wts,
+  #                      mesh = mesh,
+  #                      spatial = "on",
+  #                      reml = T, 
+  #                      spatial_varying = ~ 0 + canopy_height,
+  #                      family = family,
+  #                      control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000,
+  #                                              start = list(ln_phi = ln_phi)))
+  #   }
+  #   all_ok = sanity(mod.svc)$all_ok
+  #   ln_phi = get_pars(mod.svc)$ln_phi
+  #   iter = iter+1
+  #   gc()
+  # }
   
   
   # model with realm random intercept but no svc
-  all_ok = FALSE
-  iter = 1
-  while(!all_ok & iter <= 2) {
-    print(iter)
-    if(iter == 1) {
-      mod.realm = sdmTMB(update(f, ~ . + (1|realm)), 
-                         data = dat,
-                         weights = wts,
-                         mesh = mesh,
-                         spatial = "on",
-                         reml = T,
-                         family = family,
-                         control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000))
-    } else {
-      mod.realm = sdmTMB(update(f, ~ . + (1|realm)), 
-                         data = dat,
-                         weights = wts,
-                         mesh = mesh,
-                         spatial = "on",
-                         reml = T,
-                         family = family,
-                         control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000,
-                                                 start = list(ln_phi = ln_phi,
-                                                              ln_kappa = ln_kappa,
-                                                              ln_tau_O = ln_tau_o)))
-    }
-    all_ok = sanity(mod.realm)$all_ok
-    pars = get_pars(mod.realm)
-    ln_phi = pars$ln_phi
-    ln_kappa = pars$ln_kappa
-    ln_tau_o = pars$ln_tau_O
-    iter = iter+1
-    gc()
-  }
+  # all_ok = FALSE
+  # iter = 1
+  # while(!all_ok & iter <= 2) {
+  #   print(iter)
+  #   if(iter == 1) {
+  #     mod.realm = sdmTMB(update(f, ~ . + (1|realm)), 
+  #                        data = dat,
+  #                        weights = wts,
+  #                        mesh = mesh,
+  #                        spatial = "on",
+  #                        reml = T,
+  #                        family = family,
+  #                        control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000))
+  #   } else {
+  #     mod.realm = sdmTMB(update(f, ~ . + (1|realm)), 
+  #                        data = dat,
+  #                        weights = wts,
+  #                        mesh = mesh,
+  #                        spatial = "on",
+  #                        reml = T,
+  #                        family = family,
+  #                        control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000,
+  #                                                start = list(ln_phi = ln_phi,
+  #                                                             ln_kappa = ln_kappa,
+  #                                                             ln_tau_O = ln_tau_o)))
+  #   }
+  #   all_ok = sanity(mod.realm)$all_ok
+  #   pars = get_pars(mod.realm)
+  #   ln_phi = pars$ln_phi
+  #   ln_kappa = pars$ln_kappa
+  #   ln_tau_o = pars$ln_tau_O
+  #   iter = iter+1
+  #   gc()
+  # }
   
   
   
   # model with realm random intercept and svc
-  all_ok = FALSE
-  iter = 1
-  while(!all_ok & iter <= 2) {
-    print(iter)
-    if(iter == 1) {
-      # run model first time
-      mod.realm.svc = sdmTMB(update(f, ~ . + (1|realm)), 
-                             data = dat,
-                             weights = wts,
-                             mesh = mesh,
-                             spatial = "on",
-                             reml = T, 
-                             spatial_varying = ~ 0 + canopy_height,
-                             family = family,
-                             control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000))
-    } else {
-      # if model is not ok and has to run a second time
-      # set ln_phi to the estimation of ln_phi from the previous model
-      mod.realm.svc = sdmTMB(update(f, ~ . + (1|realm)), 
-                             data = dat,
-                             weights = wts,
-                             mesh = mesh,
-                             spatial = "on",
-                             reml = T, 
-                             spatial_varying = ~ 0 + canopy_height,
-                             family = family,
-                             control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000,
-                                                     start = list(ln_phi = ln_phi)))
-    }
-    
-    all_ok = sanity(mod.realm.svc)$all_ok
-    ln_phi = get_pars(mod.realm.svc)$ln_phi
-    iter = iter+1
-    gc()
-  }
+  # all_ok = FALSE
+  # iter = 1
+  # while(!all_ok & iter <= 2) {
+  #   print(iter)
+  #   if(iter == 1) {
+  #     # run model first time
+  #     mod.realm.svc = sdmTMB(update(f, ~ . + (1|realm)), 
+  #                            data = dat,
+  #                            weights = wts,
+  #                            mesh = mesh,
+  #                            spatial = "on",
+  #                            reml = T, 
+  #                            spatial_varying = ~ 0 + canopy_height,
+  #                            family = family,
+  #                            control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000))
+  #   } else {
+  #     # if model is not ok and has to run a second time
+  #     # set ln_phi to the estimation of ln_phi from the previous model
+  #     mod.realm.svc = sdmTMB(update(f, ~ . + (1|realm)), 
+  #                            data = dat,
+  #                            weights = wts,
+  #                            mesh = mesh,
+  #                            spatial = "on",
+  #                            reml = T, 
+  #                            spatial_varying = ~ 0 + canopy_height,
+  #                            family = family,
+  #                            control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000,
+  #                                                    start = list(ln_phi = ln_phi)))
+  #   }
+  #   
+  #   all_ok = sanity(mod.realm.svc)$all_ok
+  #   ln_phi = get_pars(mod.realm.svc)$ln_phi
+  #   iter = iter+1
+  #   gc()
+  # }
 
   
   # compare AIC and log-likelihood of models
-  aic = AIC(mod.realm.svc, mod.realm, mod.svc, mod)
-  min_aic = min(aic$AIC)
-  aic = aic %>% 
-    mutate(deltaAIC = aic$AIC - min_aic) %>% 
-    rownames_to_column(var = "model")
-  
-  ll = sort(c(mod.realm.svc = as.numeric(logLik(mod.realm.svc)),
-              mod.realm = as.numeric(logLik(mod.realm)),
-              mod.svc = as.numeric(logLik(mod.svc)),
-              mod = as.numeric(logLik(mod)))) %>% 
-    as.data.frame() %>% 
-    rownames_to_column(var = "model") %>% 
-    rename(logLik = ".")
-  
-  comp = inner_join(ll, aic, by = "model") %>% 
-    mutate(taxon = taxon, response_var = response_var) %>% 
-    arrange(deltaAIC)
-  
-  return(list(
-    mods = list(mod = mod, mod.realm = mod.realm, mod.svc = mod.svc, mod.realm.svc = mod.realm.svc),
-    compare = comp
-  ))
+  # aic = AIC(mod.realm.svc, mod.realm, mod.svc, mod)
+  # min_aic = min(aic$AIC)
+  # aic = aic %>% 
+  #   mutate(deltaAIC = aic$AIC - min_aic) %>% 
+  #   rownames_to_column(var = "model")
+  # 
+  # ll = sort(c(mod.realm.svc = as.numeric(logLik(mod.realm.svc)),
+  #             mod.realm = as.numeric(logLik(mod.realm)),
+  #             mod.svc = as.numeric(logLik(mod.svc)),
+  #             mod = as.numeric(logLik(mod)))) %>% 
+  #   as.data.frame() %>% 
+  #   rownames_to_column(var = "model") %>% 
+  #   rename(logLik = ".")
+  # 
+  # comp = inner_join(ll, aic, by = "model") %>% 
+  #   mutate(taxon = taxon, response_var = response_var) %>% 
+  #   arrange(deltaAIC)
+  # 
+  # return(list(
+  #   mods = list(mod = mod, mod.realm = mod.realm, mod.svc = mod.svc, mod.realm.svc = mod.realm.svc),
+  #   compare = comp
+  # ))
 }
 
 

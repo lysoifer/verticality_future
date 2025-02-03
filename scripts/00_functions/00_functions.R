@@ -126,16 +126,16 @@ get_sp_dat = function(trait_dat, filter_col=NA, filter_val=NA, occ, env, traitba
   trait_dat$precip_sea = apply(subset(occ, select = trait_dat$sciname), 2, function(x) mean(env[which(x==1), "precip_sea"], na.rm = T))
 
   # mean humidity within species range
-  trait_dat$hurs_mean = apply(subset(occ, select = trait_dat$sciname), 2, function(x) min(env[which(x==1), "hurs_mean"], na.rm = T))
+  trait_dat$hurs_mean = apply(subset(occ, select = trait_dat$sciname), 2, function(x) mean(env[which(x==1), "hurs_mean"], na.rm = T))
   
   # mean annual range in humidity within species range
-  trait_dat$hurs_range = apply(subset(occ, select = trait_dat$sciname), 2, function(x) min(env[which(x==1), "hurs_range"], na.rm = T))
+  trait_dat$hurs_range = apply(subset(occ, select = trait_dat$sciname), 2, function(x) mean(env[which(x==1), "hurs_range"], na.rm = T))
   
   # mean vpd within species range
-  trait_dat$vpd_mean = apply(subset(occ, select = trait_dat$sciname), 2, function(x) min(env[which(x==1), "vpd_mean"], na.rm = T))
+  trait_dat$vpd_mean = apply(subset(occ, select = trait_dat$sciname), 2, function(x) mean(env[which(x==1), "vpd_mean"], na.rm = T))
   
   # mean annual range in vpd within species range
-  trait_dat$vpd_range = apply(subset(occ, select = trait_dat$sciname), 2, function(x) min(env[which(x==1), "vpd_range"], na.rm = T))
+  trait_dat$vpd_range = apply(subset(occ, select = trait_dat$sciname), 2, function(x) mean(env[which(x==1), "vpd_range"], na.rm = T))
   
   # max elevation within species range
   # warning occurs when all values are NA - silence warning
