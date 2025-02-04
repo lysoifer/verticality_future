@@ -202,42 +202,45 @@ fit_mesh = function(f, dat, range, v, family, wts = NULL) {
     geom_pointrange(position = position_dodge2(width = 0.5)) +
     theme_bw()
   
-  plot_spatial_varying = function(mod, var, v, legend_title) {
-    coefs = tidy(mod)
-    coef.var = as.numeric(coefs[which(coefs$term == var), "estimate"])
-    pred = predict(mod, type = "response")
-    datpred = pred %>% 
-      mutate(x = x*1e5, y = y*1e5,
-             canopy_height_est_slope = zeta_s_canopy_height + coef.var) %>% 
-      relocate(x, y, .before = rich) %>% 
-      rast(crs = "+proj=cea + datum=WGS84") %>% 
-      project("epsg:4326")
-    
-    
-    ggplot() +
-      #geom_spatvector(data = v, color = "black", fill = "gray70") +
-      geom_spatraster(data = datpred, aes(fill = canopy_height_est_slope)) +
-      #geom_spatvector(data = v, color = "black", fill = NA) +
-      scale_fill_continuous_divergingx("BrBG", na.value = NA, guide = guide_colorbar(legend_title)) +
-      theme(axis.text = element_blank(),
-            axis.title = element_blank(),
-            axis.ticks = element_blank(),
-            panel.background = element_rect(color = "black", fill = NA),
-            panel.grid = element_blank(),
-            legend.key.height = unit(3, "mm"))
-    
-  }
+  # plot_spatial_varying = function(mod, var, v, legend_title) {
+  #   coefs = tidy(mod)
+  #   coef.var = as.numeric(coefs[which(coefs$term == var), "estimate"])
+  #   pred = predict(mod, type = "response")
+  #   datpred = pred %>%
+  #     mutate(x = x*1e5, y = y*1e5,
+  #            canopy_height_est_slope = zeta_s_canopy_height + coef.var) %>%
+  #     relocate(x, y, .before = rich) %>%
+  #     rast(crs = "+proj=cea + datum=WGS84") %>%
+  #     project("epsg:4326")
+  # 
+  #   
+  #   ggplot() +
+  #     #geom_spatvector(data = v, color = "black", fill = "gray70") +
+  #     geom_spatraster(data = datpred, aes(fill = canopy_height_est_slope)) +
+  #     #geom_spatvector(data = v, color = "black", fill = NA) +
+  #     scale_fill_continuous_divergingx("BrBG", na.value = NA, guide = guide_colorbar(legend_title)) +
+  #     theme(axis.text = element_blank(),
+  #           axis.title = element_blank(),
+  #           axis.ticks = element_blank(),
+  #           panel.background = element_rect(color = "black", fill = NA),
+  #           panel.grid = element_blank(),
+  #           legend.key.height = unit(3, "mm"))
+  #   
+  # }
   
-  svc.plts = foreach(i = 1:length(mod)) %do% {
-    plot_spatial_varying(mod = mod[[i]], var = "canopy_height", v = v, legend_title = "coefficient") +
-      ggtitle(paste0("model_", i))
-  }
-  
-  svcplt = wrap_plots(svc.plts, ncol = 2)
+  # svc.plts = foreach(i = 1:length(mod)) %do% {
+  #   plot_spatial_varying(mod = mod[[i]], var = "canopy_height", v = v, legend_title = "coefficient") +
+  #     ggtitle(paste0("model_", i))
+  # }
+  # 
+  # svcplt = wrap_plots(svc.plts, ncol = 2)
   
   # the last model and mesh in the list will be the optimal one
+  # return(list(meshes = mesh, mods = mod, max.edge = max.edge,
+  #             coefs.plt = coefs.plt, ranpars.plt = ranpars.plt, svc.plot = svcplt))
+  
   return(list(meshes = mesh, mods = mod, max.edge = max.edge,
-              coefs.plt = coefs.plt, ranpars.plt = ranpars.plt, svc.plot = svcplt))
+              coefs.plt = coefs.plt, ranpars.plt = ranpars.plt))
   
 }
 
