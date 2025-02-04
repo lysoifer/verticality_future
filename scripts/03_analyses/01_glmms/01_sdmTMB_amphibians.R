@@ -12,6 +12,7 @@ library(car)
 library(data.table)
 library(DHARMa)
 source("scripts/00_functions/manuscript_functions.R")
+source("scripts/00_functions/00_plot_functions.R")
 
 # amphibian forest only 50km resolution
 raw = read.csv("data/derivative_data/gridcell_data/env_forest/50_km/amph_comdat.csv")
@@ -231,17 +232,23 @@ saveRDS(list(mesh = mesh, compMods_aic = compMods_aic),  "results/sdmTMB_models2
 # spatial effects were not accounted for in any way and when biome or biorealm were included as random intercepts in the model
 
 # set up five random folds for cross validation
-set.seed(2345)
-folds = sample(1:5, size = nrow(dat), replace = T)
-
-compMods_cv = compare_cv(f1, dat, mesh, folds, parallel = F, taxon = taxon, response_var = response_var)
-
-save(compMods_aic, compMods_cv, fitmesh, file = paste0("results/sdmTMB_models/model_selection/",fname_end,".RData"))
-compMods_cv$compMods_cv
+# set.seed(2345)
+# folds = sample(1:5, size = nrow(dat), replace = T)
+# 
+# compMods_cv = compare_cv(f1, dat, mesh, folds, parallel = F, taxon = taxon, response_var = response_var)
+# 
+# save(compMods_aic, compMods_cv, fitmesh, file = paste0("results/sdmTMB_models/model_selection/",fname_end,".RData"))
+# compMods_cv$compMods_cv
 
 # * - residual check ----------------------------------------------------------
 
-load(paste0("results/sdmTMB_models/model_selection/",fname_end,".RData"))
+#load(paste0("results/sdmTMB_models/model_selection/",fname_end,".RData"))
+amphmods = readRDS("results/sdmTMB_models2/amph_sesvert.rds")
+
+amphmods$compMods_aic$modsel
+mod = amphmods$compMods_aic$modlist[[14]]
+
+plot_resids(mod = mod, response_var = "vert.mean.ses", fpath = paste0("figures/residual_checks/sdmTMB2/amphibians/sesvert/",fname_end))
 
 plot_resids(mod = compMods_aic$mods$mod.realm.svc, response_var = "vert.mean.ses", 
             fpath = paste0("figures/residual_checks/",fname_end))
