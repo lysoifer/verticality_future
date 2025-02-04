@@ -68,7 +68,7 @@ dat.t = raw %>%
 
 # scale the data
 dat = dat.t %>%
-  mutate_at(.vars = vars(canopy_height:clim_velocity, elev, veg_den, veg_complexity, log_precip_dry, log_clim_velocity), .funs = scale)
+  mutate_at(.vars = vars(canopy_height:clim_velocity, elev, veg_den, veg_complexity, log_precip_dry, log_clim_velocity, precip_warm), .funs = scale)
 
 
 # scale future data
@@ -82,6 +82,7 @@ dat.f = dat.f %>%
          precip_wet = (precip_wet - mean(dat.t$precip_wet))/sd(dat.t$precip_wet),
          precip_sea = (precip_sea - mean(dat.t$precip_sea))/sd(dat.t$precip_sea),
          canopy_height = (canopy_height - mean(dat.t$canopy_height))/sd(dat.t$canopy_height),
+         canopy_height = (canopy_height - mean(dat.t$canopy_height))/sd(dat.t$canopy_height),
          veg_den = (veg_den - mean(dat.t$veg_den))/sd(dat.t$veg_den),
          log_clim_velocity = (log10(clim_velocity) - mean(dat.t$clim_velocity))/sd(dat.t$clim_velocity))       
 
@@ -89,8 +90,9 @@ dat.f = dat.f %>%
 dat %>% 
   dplyr::select(canopy_height, veg_den, veg_complexity,
                 tmax_warm, tmin_cold, temp_sea,
-                precip_wet, log_precip_dry, precip_sea,
+                precip_wet, log_precip_dry, precip_sea, precip_warm,
                 log_clim_velocity) %>% 
+  slice_sample(n = 1000) %>% 
   pairs()
 
 plot((dat$log_precip_dry - dat.f$log_precip_dry), (dat$precip_sea - dat.f$precip_sea))
@@ -98,21 +100,25 @@ plot((dat$log_precip_dry - dat.f$log_precip_dry), (dat$precip_sea - dat.f$precip
 # veg_complexity strongly correlated with canopy height and veg den
 # temp sea strongly correlated with tmin_cold
 
-vif(lm(vert.mean.ses ~ canopy_height + veg_den + veg_complexity + tmax_warm + tmin_cold + temp_sea + precip_sea + precip_wet + log_precip_dry + log_clim_velocity, data = dat))
-
-# remove veg_complexity
-vif(lm(vert.mean.ses ~ canopy_height + veg_den + tmax_warm + tmin_cold + temp_sea + precip_sea + precip_wet + log_precip_dry + log_clim_velocity, data = dat))
+vif(lm(vert.mean.ses ~ canopy_height + veg_den + veg_complexity + tmax_warm + tmin_cold + temp_sea + precip_sea + precip_wet + precip_warm + log_precip_dry + log_clim_velocity, data = dat))
 
 # remove temp_sea
-vif(lm(vert.mean.ses ~ canopy_height + veg_den + tmax_warm + tmin_cold  + precip_sea + precip_wet + log_precip_dry + log_clim_velocity, data = dat))
+vif(lm(vert.mean.ses ~ canopy_height + veg_den + veg_complexity + tmax_warm + tmin_cold + precip_sea + precip_wet + log_precip_dry + precip_warm + log_clim_velocity, data = dat))
+
+# remove veg_complexity
+vif(lm(vert.mean.ses ~ canopy_height + veg_den + tmax_warm + tmin_cold  + precip_sea + precip_wet + log_precip_dry + precip_warm + log_clim_velocity, data = dat))
 
 # remove precip_sea
-vif(lm(vert.mean.ses ~ canopy_height + veg_den + tmax_warm + tmin_cold  + precip_wet + log_precip_dry + log_clim_velocity, data = dat))
+vif(lm(vert.mean.ses ~ canopy_height + veg_den + tmax_warm + tmin_cold + precip_wet + log_precip_dry + precip_warm + log_clim_velocity, data = dat))
 
 
 # VIF all under 4
 
-f1 = formula(vert.mean.ses ~ canopy_height + veg_den + I(tmax_warm^2) + tmax_warm + tmin_cold + precip_wet + log_precip_dry + log_clim_velocity)
+#f1 = formula(vert.mean.ses ~ canopy_height + veg_den + I(tmax_warm^2) + tmax_warm + tmin_cold + precip_wet + log_precip_dry + precip_warm + log_clim_velocity)
+f1 = formula(vert.mean.ses ~ I(tmax_warm^2) + I(tmin_cold^2) + I(canopy_height^2) + I(precip_warm^2) + I(log_precip_dry^2) +
+               precip_warm:canopy_height + tmin_cold:canopy_height + tmax_warm:canopy_height + log_precip_dry:canopy_height +
+               canopy_height + veg_den + tmax_warm + tmin_cold + precip_wet +
+               precip_warm + log_precip_dry + log_clim_velocity)
 
 dat$x = dat$x/1e5
 dat$y = dat$y/1e5
@@ -150,26 +156,75 @@ ncf:::plot.correlog(samp.cor, xlim = c(0,100))
 fitmesh = fit_mesh(f1, dat, range = samp.cor$x.intercept, v = v, family = gaussian())
 
 mesh = fitmesh$meshes[[length(fitmesh$meshes)]]
+saveRDS(list(mesh = mesh), "results/sdmTMB_models2/birds_sesvert.rds")
 
-save(fitmesh, file = paste0("results/sdmTMB_models/model_selection/",fname_end,".RData"))
+
+#save(fitmesh, file = paste0("results/sdmTMB_models/model_selection/",fname_end,".RData"))
 
 
 # * - Compare models with AIC -------------------------------------------------
+# Compare models using all points with AIC
+forms = list(f1,
+             update(f1, . ~ .-precip_warm:canopy_height - I(precip_warm^2)),
+             update(f1, . ~ .-log_precip_dry:canopy_height - I(log_precip_dry^2)),
+             update(f1, . ~ .-tmin_cold:canopy_height - I(tmin_cold^2)),
+             update(f1, . ~ .-tmax_warm:canopy_height),
+             update(f1, . ~ .-precip_warm:canopy_height - log_precip_dry:canopy_height - I(precip_warm^2) - I(log_precip_dry^2)),
+             update(f1, . ~ .-tmin_cold:canopy_height - tmax_warm:canopy_height - I(tmin_cold^2)),
+             update(f1, . ~ .-precip_warm:canopy_height - log_precip_dry:canopy_height -
+                      tmin_cold:canopy_height - tmax_warm:canopy_height -
+                      I(precip_warm^2) - I(log_precip_dry^2) - I(tmin_cold^2) - I(canopy_height^2)),
+             update(f1, . ~ .-precip_warm:canopy_height - log_precip_dry:canopy_height -
+                      tmin_cold:canopy_height - tmax_warm:canopy_height -
+                      I(precip_warm^2) - I(log_precip_dry^2) - I(tmin_cold^2) - I(canopy_height^2)-
+                      I(tmax_warm^2)),
+             update(f1, . ~ .-precip_warm:canopy_height - log_precip_dry:canopy_height -
+                      tmin_cold:canopy_height - tmax_warm:canopy_height -
+                      I(precip_warm^2) - I(log_precip_dry^2) - I(tmin_cold^2) - I(canopy_height^2)-
+                      I(tmax_warm^2) -
+                      veg_den),
+             update(f1, . ~ .-precip_warm:canopy_height - log_precip_dry:canopy_height -
+                      tmin_cold:canopy_height - tmax_warm:canopy_height -
+                      I(precip_warm^2) - I(log_precip_dry^2) - I(tmin_cold^2) - I(canopy_height^2)-
+                      I(tmax_warm^2) -
+                      log_clim_velocity),
+             update(f1, . ~ .-precip_warm:canopy_height - log_precip_dry:canopy_height -
+                      tmin_cold:canopy_height - tmax_warm:canopy_height -
+                      I(precip_warm^2) - I(log_precip_dry^2) - I(tmin_cold^2) - I(canopy_height^2)-
+                      I(tmax_warm^2) -
+                      veg_den - log_clim_velocity),
+             update(f1, . ~ .-precip_warm:canopy_height - log_precip_dry:canopy_height -
+                      tmin_cold:canopy_height - tmax_warm:canopy_height -
+                      I(precip_warm^2) - I(log_precip_dry^2) - I(tmin_cold^2) - I(canopy_height^2)-
+                      I(tmax_warm^2) -
+                      precip_wet),
+             update(f1, . ~ .-precip_warm:canopy_height - log_precip_dry:canopy_height -
+                      tmin_cold:canopy_height - tmax_warm:canopy_height -
+                      I(precip_warm^2) - I(log_precip_dry^2) - I(tmin_cold^2) - I(canopy_height^2)-
+                      I(tmax_warm^2) -
+                      veg_den - log_clim_velocity - precip_wet))
+
+compMods_aic = compareMods_AIC(f = forms, dat, mesh, taxon = taxon, response_var = response_var, family = gaussian())
+saveRDS(list(mesh = mesh, compMods_aic = compMods_aic),  "results/sdmTMB_models2/birds_sesvert.rds")
+
+compMods_aic$modsel
+sanity(compMods_aic$modlist[[2]])
+summary(compMods_aic$modlist[[2]])
 
 
 # Compare models using all points with AIC
 
-compMods_aic = compareMods_AIC(f1, dat, mesh, taxon = taxon, response_var = response_var, family = gaussian())
-sanity(compMods_aic$mods[[1]])
-sanity(compMods_aic$mods[[2]])
-sanity(compMods_aic$mods[[3]])
-sanity(compMods_aic$mods[[4]])
+# compMods_aic = compareMods_AIC(f1, dat, mesh, taxon = taxon, response_var = response_var, family = gaussian())
+# sanity(compMods_aic$mods[[1]])
+# sanity(compMods_aic$mods[[2]])
+# sanity(compMods_aic$mods[[3]])
+# sanity(compMods_aic$mods[[4]])
+# 
+# compMods_aic[[2]]
+# save(compMods_aic, fitmesh, file = paste0("results/sdmTMB_models/model_selection/",fname_end,".RData"))
+# load(paste0("results/sdmTMB_models/model_selection/",fname_end,".RData"))
 
-compMods_aic[[2]]
-save(compMods_aic, fitmesh, file = paste0("results/sdmTMB_models/model_selection/",fname_end,".RData"))
-load(paste0("results/sdmTMB_models/model_selection/",fname_end,".RData"))
 
-compMods_aic[[2]]
 
 # * - Cross validation --------------------------------------------------------
 
