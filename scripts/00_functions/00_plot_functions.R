@@ -36,69 +36,55 @@ plot_resids = function(mod, response_var, fpath, integer_response) {
   # response variable used in the model
   # file path without file extension
   
-  
-  # predtest = predict(mod)
-  pred = predict(mod, type = "response")
-  sum(dat$p.arb == 0) / length(dat$p.arb)
-  sum(s==0) / length(s)
+
+  pred = fitted(mod)
+  y = mod$response[,1]
   s = simulate(mod, nsim = 500, seed = 12345, type = "mle-mvn")
-  #s = sdmTMB:::simulate.sdmTMB(mod, nsim = 500, seed = 12345, type = "mle-mvn")
-  
-  dharma_resid = dharma_residuals(s, mod, return_DHARMa = T)
-  plot(dharma_resid)
-  testResiduals(dharma_resid)
-  
-  simulate(mod, nsim = 500, type = "mle-mvn") |>
-    dharma_residuals(mod)
-  
-  richmat = matrix(rep(c(pred$rich), 500), ncol = 500)
-  stest = s/richmat
   
   # simulate quantile residuals
   r <- DHARMa::createDHARMa(
     simulatedResponse = s,
-    observedResponse = pred[,response_var],
-    fittedPredictedResponse = pred[,"est"],
+    observedResponse = y,
+    fittedPredictedResponse = pred,
     integerResponse = integer_response
   )
   
-
   png(paste0(fpath, "01.png"), height = 105, width = 210, res = 300, units = "mm")
   plot(r)
   dev.off()
+  
+
+  # need to subset residuals to test spatial autocor - otherwise too computationally intensive
+  sub = sample(1:nrow(s), 10000)
+  r.sub = DHARMa::createDHARMa(
+    simulatedResponse = s[sub,],
+    observedResponse = y[sub],
+    fittedPredictedResponse = pred[sub]
+  )
+  
+  px = mod$data$x[sub]
+  py = mod$data$y[sub]
+  png(paste0(fpath,  "07.png"), height = 150, width = 300, res = 300, units = "mm")
+  testSpatialAutocorrelation(r.sub, x = px, y = py)
+  dev.off()
+
   
   png(paste0(fpath, "02.png"), height = 100, width = 150, res = 300, units = "mm")
   testQuantiles(r)
   dev.off()
   
-  png(paste0(fpath, "03.png"), height = 100, width = 300, res = 300, units = "mm")
-  testResiduals(r)
+  png(paste0(fpath, "03.png"), height = 100, width = 125, res = 300, units = "mm")
+  hist(r$scaledResiduals)
   dev.off()
   
   png(paste0(fpath, "04.png"), height = 150, width = 150, res = 300, units = "mm")
-  plotResiduals(r, rank = F, form = pred[,response_var])
-  dev.off()
-  
-  png(paste0(fpath, "05.png"), height = 150, width = 150, res = 300, units = "mm")
-  plot(pred[,response_var], pred$est_non_rf, xlab = response_var, ylab = paste0(response_var, " prediction without spatial random field"))
-  abline(a=0, b=1, col = "red")
+  plotResiduals(r, rank = T, form = mod$data[,response_var])
   dev.off()
   
   png(paste0(fpath, "06.png"), height = 150, width = 150, res = 300, units = "mm")
-  plot(pred[,response_var], pred$est, xlab = response_var, ylab = paste0(response_var, " prediction"))
+  plot(mod$data[,response_var], pred, xlab = response_var, ylab = paste0(response_var, " prediction"))
   abline(a=0, b=1, col = "red")
   dev.off()
   
-  # need to subset predictions to calculate spatial autocorrelation - otherwise there are too many points
-  sub = sample(1:nrow(s), 10000)
-  r.sub = DHARMa::createDHARMa(
-    simulatedResponse = s[sub,],
-    observedResponse = pred[,response_var][sub],
-    fittedPredictedResponse = pred[,"est"][sub]
-  )
-  
-  png(paste0(fpath,  "07.png"), height = 150, width = 300, res = 300, units = "mm")
-  testSpatialAutocorrelation(r.sub, x = pred$x[sub], y = pred$y[sub])
-  dev.off()
 }
 

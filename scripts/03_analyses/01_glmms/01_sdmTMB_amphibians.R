@@ -123,7 +123,6 @@ f1 = formula(vert.mean.ses ~ I(tmax_warm^2) + I(tmin_cold^2) + I(canopy_height^2
                canopy_height + veg_den + tmax_warm + tmin_cold + precip_wet +
                precip_warm + log_precip_dry + log_clim_velocity)
 
-m1 = lm(f1, data = dat)
 
 dat$x = dat$x/1e5
 dat$y = dat$y/1e5
@@ -158,6 +157,8 @@ fitmesh = fit_mesh(f1, dat, range = samp.cor$x.intercept, v = v, family = gaussi
 
 mesh = fitmesh$meshes[[length(fitmesh$meshes)]]
 saveRDS(list(mesh = mesh), "results/sdmTMB_models2/amph_sesvert.rds")
+out = readRDS("results/sdmTMB_models2/amph_sesvert.rds")
+mesh = out$mesh
 
 
 # * - Compare models with AIC -------------------------------------------------
@@ -168,9 +169,9 @@ fname_end = "amphibians_sesvert"
 
 # Compare models using all points with AIC
 forms = list(f1,
-             update(f1, . ~ .-precip_warm:canopy_height),
-             update(f1, . ~ .-log_precip_dry:canopy_height),
-             update(f1, . ~ .-tmin_cold:canopy_height),
+             update(f1, . ~ .-precip_warm:canopy_height - I(precip_warm^2)),
+             update(f1, . ~ .-log_precip_dry:canopy_height - I(log_precip_dry^2)),
+             update(f1, . ~ .-tmin_cold:canopy_height - I(tmin_cold^2)),
              update(f1, . ~ .-tmax_warm:canopy_height),
              update(f1, . ~ .-precip_warm:canopy_height - log_precip_dry:canopy_height - I(precip_warm^2) - I(log_precip_dry^2)),
              update(f1, . ~ .-tmin_cold:canopy_height - tmax_warm:canopy_height - I(tmin_cold^2)),
@@ -207,9 +208,23 @@ forms = list(f1,
                       I(tmax_warm^2) -
                       veg_den - log_clim_velocity - precip_wet))
 
-compMods_aic = compareMods_AIC(f = forms, dat, mesh, taxon = taxon, response_var = response_var, family = gaussian())
-sanity(compMods_aic$modlist[[14]])
+# fit models using ML estimation to compare fixed effect structures
+compMods_aic = compareMods_AIC(f = forms, dat, mesh, taxon = taxon, response_var = response_var, family = gaussian(), reml = F)
 saveRDS(list(mesh = mesh, compMods_aic = compMods_aic),  "results/sdmTMB_models2/amph_sesvert.rds")
+
+# refit best model with REML estimation
+compMods_aic$modsel
+sanity(compMods_aic$modlist[[2]])
+summary(compMods_aic$modlist[[2]])
+out = readRDS("results/sdmTMB_models2/amph_sesvert.rds")
+mesh = out$mesh
+compMods_aic = out$compMods_aic
+
+# refit model using REML
+bestmod = compareMods_AIC(f = list(forms[[2]]), dat, mesh, taxon = taxon, response_var = response_var, family = gaussian(), reml = T)
+bestmod = bestmod$modlist[[1]]
+saveRDS(list(mesh = mesh, compMods_aic = compMods_aic, bestmod = bestmod), "results/sdmTMB_models2/amphibians_sesvert.rds")
+
 
 #compMods_aic = compareMods_AIC(f1, dat, mesh, taxon = taxon, response_var = response_var, family = gaussian())
 # sanity(compMods_aic$mods[[1]])
@@ -242,25 +257,29 @@ saveRDS(list(mesh = mesh, compMods_aic = compMods_aic),  "results/sdmTMB_models2
 
 # * - residual check ----------------------------------------------------------
 
+out = readRDS("results/sdmTMB_models2/amphibians_sesvert.rds")
+bestmod = out$bestmod
+
+plot_resids(mod = bestmod, response_var = "vert.mean.ses", 
+            fpath = paste0("figures/residual_checks/sdmTMB2/amphibians/",fname_end), integer_response = F)
+
 #load(paste0("results/sdmTMB_models/model_selection/",fname_end,".RData"))
-amphmods = readRDS("results/sdmTMB_models2/amph_sesvert.rds")
+# amphmods = readRDS("results/sdmTMB_models2/amph_sesvert.rds")
 
-amphmods$compMods_aic$modsel
-mod = amphmods$compMods_aic$modlist[[14]]
-
-plot_resids(mod = mod, response_var = "vert.mean.ses", fpath = paste0("figures/residual_checks/sdmTMB2/amphibians/sesvert/",fname_end))
-
-plot_resids(mod = compMods_aic$mods$mod.realm.svc, response_var = "vert.mean.ses", 
-            fpath = paste0("figures/residual_checks/",fname_end))
+# 
+# plot_resids(mod = mod, response_var = "vert.mean.ses", fpath = paste0("figures/residual_checks/sdmTMB2/amphibians/sesvert/",fname_end))
+# 
+# plot_resids(mod = compMods_aic$mods$mod.realm.svc, response_var = "vert.mean.ses", 
+#             fpath = paste0("figures/residual_checks/",fname_end))
 
 # * - plot model coefs for comparison models ---------------------------
 
-plot_compMods_coefs(mods = compMods_aic$mods, fname = paste0("figures/model_selection/",fname_end,".png"))
+# plot_compMods_coefs(mods = compMods_aic$mods, fname = paste0("figures/model_selection/",fname_end,".png"))
 
 # * - predict svc + realm model to the future ---------------------------------------
 
-predict_future(mod = compMods_aic$mods$mod.realm.svc, newdata = dat.f, type = "response",
-               fpath = paste0("results/sdmTMB_models/",fname_end,".RData"))
+predict_future(mod = bestmod, newdata = dat.f, type = "response",
+               fpath = paste0("results/sdmTMB_models2/predictions/",fname_end,".RData"))
 
 
 
@@ -366,12 +385,12 @@ plot_resids(mod = compMods_aic$mods$mod.realm.svc, response_var = "vert.mean",
 
 # * - plot model coefs for comparison models ---------------------------
 
-plot_compMods_coefs(mods = compMods_aic$mods, fname = paste0("figures/model_selection/", fname_end, ".png"))
-
-# * - predict svc + realm model to the future ---------------------------------------
-
-predict_future(mod = compMods_aic$mods$mod.realm.svc, newdata = dat.f, type = "response",
-               fpath = paste0("results/sdmTMB_models/", fname_end,".RData"))
+# plot_compMods_coefs(mods = compMods_aic$mods, fname = paste0("figures/model_selection/", fname_end, ".png"))
+# 
+# # * - predict svc + realm model to the future ---------------------------------------
+# 
+# predict_future(mod = compMods_aic$mods$mod.realm.svc, newdata = dat.f, type = "response",
+#                fpath = paste0("results/sdmTMB_models/", fname_end,".RData"))
 
 
 

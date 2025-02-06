@@ -358,7 +358,7 @@ fit_mesh_richness = function(f, dat, range, v, family, wts = NULL, edge.ratio) {
 
 # COMPARE MODELS USING AIC ------------------------------------------------
 
-compareMods_AIC = function(f, dat, mesh, taxon, response_var, family, wts = NULL) {
+compareMods_AIC = function(f, dat, mesh, taxon, response_var, family, wts = NULL, reml) {
   # f: formula for sdmTMB model
   # dat = dataframe for sdmTMB model
   # mesh = mesh used for sdmTMB model
@@ -376,7 +376,7 @@ compareMods_AIC = function(f, dat, mesh, taxon, response_var, family, wts = NULL
                      #weights = wts,
                      mesh = mesh,
                      spatial = "on",
-                     reml = T, 
+                     reml = reml, 
                      family = family,
                      control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000))
       } else {
@@ -385,7 +385,7 @@ compareMods_AIC = function(f, dat, mesh, taxon, response_var, family, wts = NULL
                      #weights = wts,
                      mesh = mesh,
                      spatial = "on",
-                     reml = T,
+                     reml = reml,
                      family = family,
                      control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000, 
                                              start = list(ln_phi = ln_phi,
@@ -1277,7 +1277,7 @@ predict_future = function(mod, newdata, type, fpath) {
   
   pred.f$est.dif = pred.f$est - pred$est
   
-  save(mod, pred, pred.f, file = fpath)
+  saveRDS(list(mod = mod, pred = pred, pred.f = pred.f), file = fpath)
 }
 
 
