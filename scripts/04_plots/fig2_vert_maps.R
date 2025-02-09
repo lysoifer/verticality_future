@@ -178,3 +178,18 @@ grid.draw(pfinal)
 dev.off()
 
 # figure finished in inkscape
+
+library(rphylopic)
+squirrel = get_uuid("Sciurus vulgaris")
+squirrel = get_phylopic(squirrel)
+save_phylopic(squirrel, path = "figures/main_figs/fig2_vert_maps/squirrel.svg")
+
+lizard = pick_phylopic("Coleonyx fasciatus")
+save_phylopic(lizard, path = "figures/main_figs/fig2_vert_maps/lizard.svg")
+
+
+frog = pick_phylopic("Plectrohyla avia")
+save_phylopic(frog, path = "figures/main_figs/fig2_vert_maps/frog.svg")
+
+bird = pick_phylopic("Cuculidae")
+save_phylopic(bird, path = "figures/main_figs/fig2_vert_maps/bird.svg")
