@@ -80,7 +80,7 @@ word_comment <- function(
 
 **Global patterns and drivers of vertebrate verticality**
 
-Lydia G. Soifer^1\*^, David P. Edwards^2,3^, Brett R. Scheffers^4^
+Lydia G. Soifer^1\*^, David P. Edwards^2,3^, Brunno F Oliveira^4,5^, Mario R Moura^6^, Brett R. Scheffers^4^
 
 1 School of Natural Resource and Environment, University of Florida, USA
 
@@ -88,7 +88,12 @@ Lydia G. Soifer^1\*^, David P. Edwards^2,3^, Brett R. Scheffers^4^
 
 3 Conservation Research Institue, University of Cambridge, Cambridge, UK
 
-4 Department of Wildlife Ecology and Conservation, University of Florida, USA
+4 Centre de Synthèse et d’Analyse sur la Biodiversité, Montpellier, France
+
+5 Department of Wildlife Ecology and Conservation, University of Florida, USA
+
+6 Departamento de Sistemática e Ecologia, Universidade Federal da Paraíba, João Pessoa, Brazil
+
 
 Email addresses:
 
@@ -96,7 +101,12 @@ Email addresses:
 
 dpe29@cam.ac.uk
 
+brunno.oliveira@me.com
+
+mariormoura@gmail.com
+
 brett.scheffers@ufl.edu
+
 
 **Funding Statement**
 
@@ -242,7 +252,7 @@ In temperate biomes, verticality was lower in less-dense wooded habitats (e.g., 
 
 ## Environmental drivers of verticality
 
-Spatial GLMMs indicated that mean and SES verticality were limited by dry and wet season precipitation, while impacts of maximum temperatures, minimum temperatures, and canopy height varied across taxa (Fig. \@ref(fig:mod-coefs)). Specifically, the minimum temperature of the coldest month positively impacted mean and SES verticality of mammals and reptiles, but did not significantly impact birds and amphibians. Maximum temperatures of the warmest month exhibited a quadratic relationship with mean and SES verticality of birds, reptiles, and amphibians, while exhibiting a positive linear relationship with mammal verticality. The negative effects of high and low maximum temperatures were most pronounced under dry conditions (Fig. S\@ref(fig:condeff-mean),\@ref(fig:condeff-ses)). These patterns led to lower mean and SES verticality at both high and low maximum temperatures in regions with low dry season precipitation for reptiles and amphibians, while verticality increased with maximum temperature across varying levels of dry season precipitation for birds and mammals (Fig. S\@ref(fig:condeff-mean),\@ref(fig:condeff-ses)).
+Spatial GLMMs indicated that mean and SES verticality were limited by dry and, to some extent, wet season precipitation, while impacts of maximum temperatures, minimum temperatures, and canopy height varied across taxa (Fig. \@ref(fig:mod-coefs)). Specifically, the minimum temperature of the coldest month positively impacted mean and SES verticality of mammals and reptiles, but did not significantly impact birds and amphibians. Maximum temperatures of the warmest month exhibited a quadratic relationship with mean and SES verticality of birds, reptiles, and amphibians, while exhibiting a positive linear relationship with mammal verticality. The negative effects of high and low maximum temperatures were most pronounced under dry conditions (Fig. S\@ref(fig:condeff-mean),\@ref(fig:condeff-ses)). These patterns led to lower mean and SES verticality at both high and low maximum temperatures in regions with low dry season precipitation for reptiles and amphibians, while verticality increased with maximum temperature across varying levels of dry season precipitation for birds and mammals (Fig. S\@ref(fig:condeff-mean),\@ref(fig:condeff-ses)).
 
 Canopy height had globally significant positive impacts on SES verticality of reptiles and amphibians and mean verticality of amphibians, and trended toward a positive impact for mammals, birds, and mean verticality of reptiles. Vegetation density had no significant impact on mean or SES verticality for any taxon (Fig. \@ref(fig:mod-coefs)). Notably, the impact of canopy height varied spatially. Despite exhibiting neutral impacts on verticality across most regions globally, canopy height positively impacted verticality in tropical regions with greater topographic relief, such as the Andes, southern India, east-central Africa including the Eastern Arc Mountain Range, and Madagascar (Fig. \@ref(fig:svc)). 
 
@@ -290,15 +300,15 @@ amphmean.maxreldif = round(max(amph.meanvert$est.reldif),2)
 
 ```
 
-Changes in verticality in response to climate change were small relative to the total variation in mean and SES verticality and varied across taxa (Fig. \@ref(fig:vert-dif-map)). However, models predicted that tropical regions will experience small declines in verticality across all taxonomic groups. Amphibians exhibited the highest predicted relative percent change, with predicted declines reaching 5% for SES and mean verticality in parts of the tropics, and predicted increases reaching up to 4.4% for SES verticality and 5.1% for mean verticality in the African forest-savanna matrix. For all other taxa, changes in verticality are expected to vary less than 1.5%. Within biomes, the models predicted the highest relative declines in verticality in tropical and subtropical moist forests and the highest relative increases at high latitudes in boreal forests. Within these biomes, the models predicted the greatest average relative decline for amphibians (SES verticality: `r round(sessumm[1, "mean.reldif"], 2)`%, mean verticality: `r round(meansumm[1, "mean.reldif"], 2)`%)) and the greatest average relative increase for birds (SES verticality: `r round(sessumm[which(sessumm$class == "Birds" & sessumm$biome == "Boreal Forests/Taiga"), "mean.reldif"], 2)`%, mean verticality: `r round(meansumm[which(meansumm$class == "Birds" & meansumm$biome == "Boreal Forests/Taiga"), "mean.reldif"], 2)`%) (Fig. S\@ref(fig:vert-dif-biome)).
+Changes in verticality in response to projected climate change were small relative to the total variation in mean and SES verticality and varied across taxa (Fig. \@ref(fig:vert-dif-map)). However, our future projections show small declines in verticality across tropical regions for all taxonomic groups. Amphibians exhibited the highest predicted relative percent change, with the SES and mean of verticality expected to decrease by up to 5% in parts of the tropics, whereas a 4.4-5.1% increase is projected along the African forest-savanna matrix. For all other taxa, changes in verticality are expected to vary less than 1.5%. Within biomes, the models predicted the highest relative decreases in verticality in tropical and subtropical moist forests and the highest relative increases at high latitudes in boreal forests. Within these biomes, the models predicted the greatest average relative decrease for amphibians (SES verticality: `r round(sessumm[1, "mean.reldif"], 2)`%, mean verticality: `r round(meansumm[1, "mean.reldif"], 2)`%)) and the greatest average relative increase for birds (SES verticality: `r round(sessumm[which(sessumm$class == "Birds" & sessumm$biome == "Boreal Forests/Taiga"), "mean.reldif"], 2)`%, mean verticality: `r round(meansumm[which(meansumm$class == "Birds" & meansumm$biome == "Boreal Forests/Taiga"), "mean.reldif"], 2)`%) (Fig. S\@ref(fig:vert-dif-biome)).
 
 # Discussion
 
-Understanding global patterns and drivers of verticality is key to understanding how verticality mediates geographic patterns of species richness. Our results reveal globally consistent macroscale patterns of verticality across taxa in wooded biomes, with epicenters of verticality in the wet tropics and declining verticality toward the poles (Fig. \@ref(fig:vert-map-global)). 
+Understanding global patterns and drivers of verticality is key to understanding how vertical habitat use mediates species richness gradients. Our results reveal globally consistent patterns of animal verticality in wooded biomes, with epicenters of verticality in the wet tropics and declining verticality toward the poles (Fig. \@ref(fig:vert-map-global)). 
 
 ## Climatic drivers of verticality
 
-Climate influences global patterns of verticality because more extreme climates in the canopy, including increased exposure to hot, cold, and dry conditions, pose physiological challenges to living in arboreal habitats in regions where macroclimate conditions are also more extreme [@oliveiraVerticalStratificationInfluences2019]. Consistently high precipitation facilitates verticality, while temperatures at both hot and cold extremes and low or highly seasonal precipitation generally limit verticality. For example, more severe water limitation in the canopy than the understory [@scheffersIncreasingArborealityAltitude2013] may contribute to observed declines in arboreal life strategies outside moist tropical forests. However, our models indicated nuanced influences of drivers across taxa.
+Climate influences global patterns of verticality because more extreme climates in the canopy, including increased exposure to hot, cold, and dry conditions, pose physiological challenges to living in arboreal habitats in regions where macroclimate conditions are also more extreme [@oliveiraVerticalStratificationInfluences2019]. Consistently high precipitation facilitates verticality, while temperatures at both hot and cold extremes and low precipitation generally limit verticality. For example, more severe water limitation in the canopy than the understory [@scheffersIncreasingArborealityAltitude2013] may contribute to observed declines in arboreal life strategies outside moist tropical forests. However, our models indicated nuanced influences of drivers across taxa.
 
 Precipitation strongly influenced amphibian verticality, while a combination of precipitation and maximum temperatures influenced bird verticality. In tropical wet forests, consistent water availability from precipitation and/or fog allows amphibians and birds to maintain body temperatures below critical thermal maxima via evapotranspiration while avoiding desiccation [@mckechnieAvianThermoregulationHeat2017; @sundayThermalsafetyMarginsNecessity2014]. In tropical regions with pronounced dry seasons, amphibians and birds may increase their use of understory habitats to avoid desiccation, reducing assemblage verticality [@bashamVerticalStratificationCollapses2020; @rajaonariveloSeasonalVariationVertical2021]. In many temperate or boreal biomes, low precipitation similarly constrains amphibian arboreality, where basking to increase body temperatures can quickly lead to desiccation without adequate moisture availability or physiological defenses [@sundayThermalsafetyMarginsNecessity2014; @tracyNotJustSmall2010].
 
@@ -307,7 +317,7 @@ For mammals and reptiles, our models indicated that cold temperatures had the gr
 
 ## Canopy height, verticality, and richness
 
-At a global scale, our models indicated positive relationships between both canopy height and verticality and canopy height and species richness (barring reptiles; Figs. \@ref(fig:mod-coefs), \@ref(fig:richness-mods). The co-occurrence of these patterns suggests that verticality may mediate positive relationships between canopy height and richness via niche expansion, which have been observed for several taxonomic groups, including birds, mammals, and amphibians [@fengForestCanopyHeight2020; @macarthurBirdSpeciesDiversity1961; @rollLinkingVertebrateSpecies2015]. Therefore, from high latitude boreal forests to the equatorial tropics, increasing tree height [@langHighresolutionCanopyHeight2023] combined with macroclimate conditions that facilitate arboreality allow the addition of arboreal species to assemblages, increasing both verticality and species richness (Fig. \@ref(fig:concept-fig)) [@oliveiraVerticalStratificationInfluences2019].
+At a global scale, our findings indicate positive relationships between both canopy height and verticality and verticality and species richness (barring reptiles; Figs. \@ref(fig:mod-coefs), \@ref(fig:richness-mods). The co-occurrence of these patterns suggests that verticality may mediate positive relationships between canopy height and richness via niche expansion, which have been observed for several taxonomic groups, including birds, mammals, and amphibians [@fengForestCanopyHeight2020; @macarthurBirdSpeciesDiversity1961; @rollLinkingVertebrateSpecies2015]. Therefore, from high latitude boreal forests to the equatorial tropics, increasing tree height [@langHighresolutionCanopyHeight2023] combined with macroclimate conditions that facilitate arboreality allow the addition of arboreal species to assemblages, increasing both verticality and species richness (Fig. \@ref(fig:concept-fig)) [@oliveiraVerticalStratificationInfluences2019].
 
 At a regional scale, positive relationships between both verticality and richness and verticality and canopy height were limited to small regions within the tropics where relatively rapid increases in vegetation height from high to low elevations (e.g., the Andes) or dry to wet forests (e.g., Madagascar) may facilitate the addition of arboreal species to novel habitat space [@verschuylEffectForestStructure2008; @pellissierNichePackingExpansion2018]. These regions generally correspond to previously reported spatially varying impacts of canopy height on taxonomic and functional richness [@rollLinkingVertebrateSpecies2015; @fengForestCanopyHeight2020; @coopsDisentanglingVegetationClimate2018]. For example, canopy height positively affects verticality and richness of amphibians in Madagascar, the Andes, Central America, Southern India, and New Guinea, birds in the Himalayas, New Guinea, and southeastern Australia, and mammals in northwestern Mexico and eastern Madagascar, while negative effects occur for mammals in parts of the Amazon basin (Fig. \@ref(fig:svc)) [@rollLinkingVertebrateSpecies2015; @fengForestCanopyHeight2020; @coopsDisentanglingVegetationClimate2018]. The co-occurrence of these patterns further supports the roll of verticality in mediating relationships between canopy height and richness in select regions.
 
@@ -345,9 +355,9 @@ knitr::include_graphics("figures/main_figs/fig1_concept_fig.png", error = F)
 ```
 
 
-```{r fig.id="vert-map-global", fig.width=180, fig.height=140.02, fig.cap.pre="Fig. ", fig.cap="Standard effect size (SES) and mean verticality of birds, mammals, reptiles, and amphibians. Line plots indicate the average proportion of arboreal (red), terrestrial (yellow), and fossorial (blue) species across latitudes. Gray areas indicate areas that are not wooded or that have fewer than five species.", include=TRUE}
+```{r fig.id="vert-map-global", fig.width=180, fig.height=175.52, fig.cap.pre="Fig. ", fig.cap="a) Line plots and b) ternary maps showing the proportion of birds, mammals, reptiles, and amphibians exhibiting arboreal, terrestrial, and fossorial life strategies. In line plots, lines represent the average proportion for a given latitude ± standard deviation. The sum of pProportions may exceed one, because a single species can exhibit multiple strategies. c) The standard effect size (SES) of verticality in wooded biomes. Gray areas indicate areas that are not wooded or that have fewer than five species.", include=TRUE}
 
-knitr::include_graphics("figures/main_figs/fig2_vert_maps.png", error = F)
+knitr::include_graphics("figures/main_figs/fig2_vert_maps/fig2_vert_maps.png", error = F)
 ```
 
 \newpage
@@ -359,7 +369,7 @@ include_graphics("figures/main_figs/fig3_sdmTMB_coefs.png", error = F)
 
 \newpage
 
-```{r fig.id="svc", fig.width=180, fig.height=120, fig.cap.pre="Fig. ", fig.cap="Spatially varying effect of canopy height on the mean and standard effect size (SES) of verticality for birds, mammals, reptiles, and amphibians. The spatially varying effect is the sum of the main effect of canopy and height and the spatially varying random effect at any given point. Larger positive numbers indicate a stronger positive effect of canopy height on verticality and larger negative numbers indicate a stronger negative effect of canopy height on verticality. Dark gray areas indicate locations where the effect of canopy height was not significant. Light gray areas indicate areas that are not wooded or that have fewer than five species."}
+```{r fig.id="svc", fig.width=180, fig.height=120, fig.cap.pre="Fig. ", fig.cap="Spatially varying effect of canopy height on the mean and standard effect size (SES) of verticality for birds, mammals, reptiles, and amphibians. The spatially varying effect is the sum of the main effect of canopy height and the spatially varying random effect at any given point. Larger positive numbers indicate a stronger positive effect of canopy height on verticality and larger negative numbers indicate a stronger negative effect of canopy height on verticality. Dark gray areas indicate locations where the effect of canopy height was not significant. Light gray areas indicate areas that are not wooded or that have fewer than five species."}
 
 include_graphics("figures/main_figs/fig4_canopy_height_coefs.png", error = F)
 ```
@@ -384,7 +394,7 @@ include_graphics("figures/main_figs/fig6_vert_reldifs.png", error = F)
 
 ## Species data
 
-We identified wooded habitats by ecoregions including forests, woodlands, taiga, várzea, Yungas, savanna, thicket, and mallee as defined by Dinerstein et al. [-@dinersteinEcoregionBasedApproachProtecting2017]. The TetrapodTraits dataset uses phylogenetic imputation to identify traits if trait data is not available in the literature. For species where imputation was necessary, we considered a species to use a given vertical stratum if the imputation probability exceeded 0.7.
+We identified wooded habitats by ecoregions including forests, woodlands, taiga, várzea, Yungas, savanna, thicket, and mallee as defined by Dinerstein et al. [-@dinersteinEcoregionBasedApproachProtecting2017]. The TetrapodTraits dataset uses phylogenetic imputation to identify traits if trait data is not available in the literature. For species where imputation was necessary, we considered a species to use a given vertical stratum if over 70% of the 10,000 imputations predicted use of the stratum.
 
 ## Mesh development
 
