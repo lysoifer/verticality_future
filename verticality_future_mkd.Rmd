@@ -362,16 +362,9 @@ knitr::include_graphics("figures/main_figs/fig2_vert_maps/fig2_vert_maps.png", e
 
 \newpage
 
-```{r fig.id="mod-coefs", fig.width=160, fig.height=87.3, fig.cap.pre="Fig. ", fig.cap=" Coefficient estimates for models of mean and SES verticality with 95% confidence intervals. Red points indicate coefficients with 95% CIs that do not overlap zero."}
+```{r fig.id="mod-coefs", fig.width=160, fig.height=87.3, fig.cap.pre="Fig. ", fig.cap=" Coefficient estimates for the most parsimonious models of SES verticality with 95% confidence intervals. Red points indicate coefficients with 95% CIs that do not overlap zero."}
 
-include_graphics("figures/main_figs/fig3_sdmTMB_coefs.png", error = F)
-```
-
-\newpage
-
-```{r fig.id="svc", fig.width=180, fig.height=120, fig.cap.pre="Fig. ", fig.cap="Spatially varying effect of canopy height on the mean and standard effect size (SES) of verticality for birds, mammals, reptiles, and amphibians. The spatially varying effect is the sum of the main effect of canopy height and the spatially varying random effect at any given point. Larger positive numbers indicate a stronger positive effect of canopy height on verticality and larger negative numbers indicate a stronger negative effect of canopy height on verticality. Dark gray areas indicate locations where the effect of canopy height was not significant. Light gray areas indicate areas that are not wooded or that have fewer than five species."}
-
-include_graphics("figures/main_figs/fig4_canopy_height_coefs.png", error = F)
+include_graphics("figures/main_figs/fig3/fig3_sdmTMB_coefs.png", error = F)
 ```
 
 \newpage
@@ -383,9 +376,9 @@ include_graphics("figures/main_figs/fig5_vert_rich_lm_slopes.png", error = F)
 
 \newpage
 
-```{r fig.id="vert-dif-map", fig.width=160, fig.height=133.3, fig.cap.pre="Fig. ", fig.cap="Relative percent change in SES and mean verticality for birds, mammals, reptiles, and amphibians. Bar plots indicate average relative percent change per latitude. Gray areas indicate areas that are not wooded or that have fewer than five species."}
+```{r fig.id="vert-dif-map", fig.width=180, fig.height=76.94, fig.cap.pre="Fig. ", fig.cap="Difference in predicted vertical between future and present climate conditions for a) birds, b) mammals, c) reptiles, and d) amphibians. Bar plots indicate average difference per latitude. Gray areas indicate areas that are not wooded or that have fewer than five species."}
 
-include_graphics("figures/main_figs/fig6_vert_reldifs.png", error = F)
+include_graphics("figures/main_figs/fig5/fig5_vert_difs.png", error = F)
 ```
 
 \newpage
