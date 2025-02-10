@@ -213,12 +213,10 @@ compMods_aic = compareMods_AIC(f = forms, dat, mesh, taxon = taxon, response_var
 saveRDS(list(mesh = mesh, compMods_aic = compMods_aic),  "results/sdmTMB_models2/amph_sesvert.rds")
 
 # refit best model with REML estimation
+compMods_aic = out$compMods_aic
 compMods_aic$modsel
 sanity(compMods_aic$modlist[[2]])
 summary(compMods_aic$modlist[[2]])
-out = readRDS("results/sdmTMB_models2/amph_sesvert.rds")
-mesh = out$mesh
-compMods_aic = out$compMods_aic
 
 # refit model using REML
 bestmod = compareMods_AIC(f = list(forms[[2]]), dat, mesh, taxon = taxon, response_var = response_var, family = gaussian(), reml = T)
@@ -260,6 +258,7 @@ saveRDS(list(mesh = mesh, compMods_aic = compMods_aic, bestmod = bestmod), "resu
 out = readRDS("results/sdmTMB_models2/amphibians_sesvert.rds")
 bestmod = out$bestmod
 
+
 plot_resids(mod = bestmod, response_var = "vert.mean.ses", 
             fpath = paste0("figures/residual_checks/sdmTMB2/amphibians/",fname_end), integer_response = F)
 
@@ -279,7 +278,7 @@ plot_resids(mod = bestmod, response_var = "vert.mean.ses",
 # * - predict svc + realm model to the future ---------------------------------------
 
 predict_future(mod = bestmod, newdata = dat.f, type = "response",
-               fpath = paste0("results/sdmTMB_models2/predictions/",fname_end,".RData"))
+               fpath = paste0("results/sdmTMB_models2/predictions/",fname_end,".rds"))
 
 
 
