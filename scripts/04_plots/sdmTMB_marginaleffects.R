@@ -2,6 +2,8 @@ library(sdmTMB)
 library(ggeffects)
 library(foreach)
 library(doParallel)
+library(tidyverse)
+library(data.table)
 
 amph = readRDS("results/sdmTMB_models2/predictions/amphibians_sesvert.rds")
 amphmod = amph$mod
@@ -111,11 +113,12 @@ df = bind_rows(ampheffects, birdeffects, repteffects, mammaleffects) %>%
                           term == "veg_den" ~ "Vegetation\ndensity"),
          taxa = factor(taxa, levels = c("Birds", "Mammals", "Reptiles", "Amphibians")))
 
+# plot SES vert from min to max of predictor
 ggplot(df, aes(x, predicted)) +
   geom_line() +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.2) +
-  facet_grid(taxa ~ term, switch = "x") +
-  scale_y_continuous("Predicted") +
+  facet_grid(taxa ~ term, switch = "x", scales = "free_x") +
+  scale_y_continuous("Predicted SES Verticality") +
   theme_bw() +
   theme(strip.placement = "outside",
         strip.background.x = element_blank(),
@@ -126,11 +129,22 @@ ggsave(filename = "figures/supp_figs/conditional_effects.png", height = 120, wid
 
 # canopy interaction term -------------------------------------------------
 
+
+  # "log_precip_dry [-4.6:2.3 by=0.1]",
+  # "tmax_warm [-3.6:2.7 by=0.1]",
+  # "tmin_cold [-2.54:1.37 by=0.1]",
+  # "canopy_height [-1.3:3.5 by=0.1]",
+  # "veg_den [-1.3:9.0 by=0.1]",
+  # "precip_wet [-1.4:11.5 by=0.1]",
+  # "precip_warm [-1.3:15.4 by=0.1]",
+  # "log_clim_velocity [-4.3:2.5 by=0.1]"
+
+
 var = list(
   c("canopy_height [-4:4 by=0.1]", "log_precip_dry [-4:4 by=2]"),
   c("canopy_height [-4:4 by=0.1]", "tmax_warm [-4:4 by=2]"),
   c("canopy_height [-4:4 by=0.1]", "tmin_cold[-4:4 by=2]"),
-  c("canopy_height [-4:4 by=0.1]", "precip_warm[-4:4 by=2]")
+  c("canopy_height [-4:4 by=0.1]", "precip_warm[-2:2 by=2]")
 )
 
 term = c(
@@ -187,10 +201,10 @@ rept.df = readRDS("results/sdmTMB_models2/marginal_effects/canopy_interactions/r
 rept.df = rbindlist(rept.df) %>% mutate(taxa = "Reptiles")
 
 mammals.df = readRDS("results/sdmTMB_models2/marginal_effects/canopy_interactions/mammals_interactions.rds")
-mammals.df = rbindlist(amph.df) %>% mutate(taxa = "Mammals")
+mammals.df = rbindlist(mammals.df) %>% mutate(taxa = "Mammals")
 
 birds.df = readRDS("results/sdmTMB_models2/marginal_effects/canopy_interactions/birds_interactions.rds")
-birds.df = rbindlist(amph.df) %>% mutate(taxa = "Birds")
+birds.df = rbindlist(birds.df) %>% mutate(taxa = "Birds")
 
 df = bind_rows(amph.df, rept.df, mammals.df, birds.df) %>% 
   filter(x >= -1.3 & x <= 3.5) %>% 
@@ -198,17 +212,21 @@ df = bind_rows(amph.df, rept.df, mammals.df, birds.df) %>%
   mutate(term = case_when(term == "canopy-log_precip_dry" ~ "log(Precip dry)",
                           term == "canopy-tmax_warm" ~ "Tmax warm",
                           term == "canopy-tmin_cold" ~ "Tmin cold",
-                          term ==  "canopy-precip_warm" ~ "Precip warm"))
+                          term ==  "canopy-precip_warm" ~ "Precip warm"),
+         taxa = factor(taxa, levels = c("Birds", "Mammals", "Reptiles", "Amphibians")))
 
 ggplot(df, aes(x, predicted, color = group, fill = group)) +
   geom_line() +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.2, color = NA) +
   facet_grid(term ~ taxa) +
-  scale_y_continuous("Predicted") +
+  scale_y_continuous("Predicted SES Verticality") +
   scale_x_continuous("Scaled canopy height") +
-  scale_color_discrete(guide = guide_legend("Scaled\ninteraction\nterm")) +
-  scale_fill_discrete(guide = guide_legend("Scaled\ninteraction\nterm")) +
-  theme_bw()
+  scale_color_discrete(guide = guide_legend("Scaled interaction term")) +
+  scale_fill_discrete(guide = guide_legend("Scaled interaction term")) +
+  theme_bw() +
+  theme(legend.position = "bottom",
+        legend.title.position = "top",
+        legend.title = element_text(hjust = 0.5))
 
 ggsave(filename = "figures/supp_figs/conditional_effects_interactions.png",
        height = 120, width = 150, units = "mm", dpi = 300)
