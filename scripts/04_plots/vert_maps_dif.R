@@ -186,7 +186,7 @@ load("results/sdmTMB_models/amphibians_meanvert.RData")
 
 # * reptiles SESVERT DIF -------------------------------------------------------------
 
-repts = readRDS("results/sdmTMB_models2/predictions/reptiles_sesvert.RData")
+repts = readRDS("results/sdmTMB_models2/predictions/reptiles_sesvert.rds")
 reptiles.sesvert = repts$pred.f
 # load("results/sdmTMB_models/reptiles_sesvert.RData")
 # reptiles.sesvert = pred.f
@@ -305,7 +305,7 @@ mammals.sesvert.dif.plt
 
 # * birds (breeding + resident) SESVERT DIF -------------------------------------------------------------
 
-birds = readRDS("results/sdmTMB_models2/predictions/birds_sesvert.RData")
+birds = readRDS("results/sdmTMB_models2/predictions/birds_sesvert.rds")
 birds.sesvert = birds$pred.f
 # load("results/sdmTMB_models/birds_sesvert.RData")
 # birds.sesvert = pred.f

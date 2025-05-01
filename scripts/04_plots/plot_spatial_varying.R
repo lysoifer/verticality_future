@@ -1,3 +1,5 @@
+# OLD CODE DO NOT USE #
+
 library(terra)
 library(ggplot2)
 library(colorspace)
@@ -22,6 +24,16 @@ plot_spatial_varying = function(mod, pred, var, v, legend_title) {
     relocate(x, y, .before = rich) %>% 
     rast(crs = "+proj=cea + datum=WGS84") %>% 
     project("epsg:4326")
+  
+  if(var == "vert.mean.ses") {
+    pred = predict(mod, type = "response")
+    dat = pred %>% 
+      mutate(x = x*1e5, y = y*1e5,
+             sesvert_est_slope = zeta_s_vert.mean.ses + coef.var) %>% 
+      relocate(x, y, .before = rich) %>% 
+      rast(crs = "+proj=cea + datum=WGS84") %>% 
+      project("epsg:4326")
+  }
     
   thm = theme(legend.position = "inside",
               legend.position.inside = c(0.03,0.75),
@@ -56,10 +68,19 @@ plot_spatial_varying = function(mod, pred, var, v, legend_title) {
     #       axis.ticks = element_blank(),
     #       panel.background = element_rect(color = "black", fill = NA),
     #       panel.grid = element_blank())
+  
+  if(var == "vert.mean.ses") {
+    ggplot() +
+      geom_spatvector(data = v, color = "black", fill = "gray70") +
+      geom_spatraster(data = dat, aes(fill = sesvert_est_slope)) +
+      geom_spatvector(data = v, color = "black", fill = NA) +
+      scale_fill_continuous_divergingx("BrBG", na.value = NA, guide = guide_colorbar(legend_title)) +
+      thm
+  }
 
 }
 
-# plot canopy height coefficienby canopy height standard deviation
+# plot canopy height coefficient by canopy height standard deviation
 plot_coef_height = function(pred) {
   height = pred %>% 
     dplyr::select(x,y,canopy_height) %>% 
@@ -99,6 +120,8 @@ coef.a.mean = plot_coef_height(pred)
 
 load("results/sdmTMB_models/amphibians_parb.RData")
 amph.parb = plot_spatial_varying(mod = mod, pred = pred, var = "canopy_height", v = wd, legend_title = "coefficient")
+
+
 
 
 # Reptiles

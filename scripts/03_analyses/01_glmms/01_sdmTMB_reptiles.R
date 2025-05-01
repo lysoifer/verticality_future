@@ -102,26 +102,27 @@ plot((dat$log_precip_dry - dat.f$log_precip_dry), (dat$precip_sea - dat.f$precip
 
 # veg_complexity strongly correlated with canopy height and veg den
 # temp sea strongly correlated with tmin_cold
-
-vif(lm(vert.mean.ses ~ canopy_height + veg_den + veg_complexity + tmax_warm + tmin_cold + temp_sea + precip_sea + precip_wet + precip_warm + log_precip_dry + log_clim_velocity, data = dat))
+vif(lm(vert.mean.ses ~ canopy_height + veg_den + veg_complexity + tmax_warm + tmin_cold + temp_sea + precip_sea + precip_warm + log_precip_dry + log_clim_velocity, data = dat))
 
 # remove temp_sea
-vif(lm(vert.mean.ses ~ canopy_height + veg_den + veg_complexity + tmax_warm + tmin_cold + precip_sea + precip_wet + log_precip_dry + precip_warm + log_clim_velocity, data = dat))
+vif(lm(vert.mean.ses ~ canopy_height + veg_den + veg_complexity + tmax_warm + tmin_cold + precip_sea + log_precip_dry + precip_warm + log_clim_velocity, data = dat))
 
 # remove veg_complexity
-vif(lm(vert.mean.ses ~ canopy_height + veg_den + tmax_warm + tmin_cold  + precip_sea + precip_wet + log_precip_dry + precip_warm + log_clim_velocity, data = dat))
+vif(lm(vert.mean.ses ~ canopy_height + veg_den + tmax_warm + tmin_cold  + precip_sea + log_precip_dry + precip_warm + log_clim_velocity, data = dat))
 
 # remove precip_sea
-vif(lm(vert.mean.ses ~ canopy_height + veg_den + tmax_warm + tmin_cold + precip_wet + log_precip_dry + precip_warm + log_clim_velocity, data = dat))
+vif(lm(vert.mean.ses ~ canopy_height + veg_den + tmax_warm + tmin_cold + log_precip_dry + precip_warm + log_clim_velocity, data = dat))
 
 
 # VIF all under 4
 
 #f1 = formula(vert.mean.ses ~ canopy_height + veg_den + I(tmax_warm^2) + tmax_warm + tmin_cold + precip_wet + log_precip_dry + precip_warm + log_clim_velocity)
-f1 = formula(vert.mean.ses ~ I(tmax_warm^2) + I(tmin_cold^2) + I(canopy_height^2) + I(precip_warm^2) + I(log_precip_dry^2) +
-               precip_warm:canopy_height + tmin_cold:canopy_height + tmax_warm:canopy_height + log_precip_dry:canopy_height +
-               canopy_height + veg_den + tmax_warm + tmin_cold + precip_wet +
-               precip_warm + log_precip_dry + log_clim_velocity)
+f1 = formula(vert.mean.ses ~ tmax_warm + I(tmax_warm^2) + tmin_cold +
+               precip_warm + log_precip_dry +
+               canopy_height + veg_den + 
+               log_clim_velocity +
+               precip_warm:canopy_height + tmin_cold:canopy_height + 
+               tmax_warm:canopy_height + I(tmax_warm^2):canopy_height + log_precip_dry:canopy_height)
 
 dat$x = dat$x/1e5
 dat$y = dat$y/1e5
@@ -159,8 +160,8 @@ ncf:::plot.correlog(samp.cor, xlim = c(0,100))
 fitmesh = fit_mesh(f1, dat, range = samp.cor$x.intercept, v = v, family = gaussian())
 mesh = fitmesh$meshes[[length(fitmesh$meshes)]]
 saveRDS(list(mesh = mesh), "results/sdmTMB_models2/reptiles_sesvert.rds")
-out = readRDS("results/sdmTMB_models2/mammals_sesvert.rds")
-mesh = out$mesh
+# out = readRDS("results/sdmTMB_models2/mammals_sesvert.rds")
+# mesh = out$mesh
 
 # save(fitmesh, file = paste0("results/sdmTMB_models/model_selection/",fname_end,".RData"))
 # load(paste0("results/sdmTMB_models/model_selection/",fname_end,".RData"))
@@ -172,54 +173,31 @@ mesh = out$mesh
 # Compare models using all points with AIC
 # Compare models using all points with AIC
 forms = list(f1,
-             update(f1, . ~ .-precip_warm:canopy_height - I(precip_warm^2)),
-             update(f1, . ~ .-log_precip_dry:canopy_height - I(log_precip_dry^2)),
-             update(f1, . ~ .-tmin_cold:canopy_height - I(tmin_cold^2)),
-             update(f1, . ~ .-tmax_warm:canopy_height),
-             update(f1, . ~ .-precip_warm:canopy_height - log_precip_dry:canopy_height - I(precip_warm^2) - I(log_precip_dry^2)),
-             update(f1, . ~ .-tmin_cold:canopy_height - tmax_warm:canopy_height - I(tmin_cold^2)),
-             update(f1, . ~ .-precip_warm:canopy_height - log_precip_dry:canopy_height -
-                      tmin_cold:canopy_height - tmax_warm:canopy_height -
-                      I(precip_warm^2) - I(log_precip_dry^2) - I(tmin_cold^2) - I(canopy_height^2)),
-             update(f1, . ~ .-precip_warm:canopy_height - log_precip_dry:canopy_height -
-                      tmin_cold:canopy_height - tmax_warm:canopy_height -
-                      I(precip_warm^2) - I(log_precip_dry^2) - I(tmin_cold^2) - I(canopy_height^2)-
-                      I(tmax_warm^2)),
-             update(f1, . ~ .-precip_warm:canopy_height - log_precip_dry:canopy_height -
-                      tmin_cold:canopy_height - tmax_warm:canopy_height -
-                      I(precip_warm^2) - I(log_precip_dry^2) - I(tmin_cold^2) - I(canopy_height^2)-
-                      I(tmax_warm^2) -
-                      veg_den),
-             update(f1, . ~ .-precip_warm:canopy_height - log_precip_dry:canopy_height -
-                      tmin_cold:canopy_height - tmax_warm:canopy_height -
-                      I(precip_warm^2) - I(log_precip_dry^2) - I(tmin_cold^2) - I(canopy_height^2)-
-                      I(tmax_warm^2) -
-                      log_clim_velocity),
-             update(f1, . ~ .-precip_warm:canopy_height - log_precip_dry:canopy_height -
-                      tmin_cold:canopy_height - tmax_warm:canopy_height -
-                      I(precip_warm^2) - I(log_precip_dry^2) - I(tmin_cold^2) - I(canopy_height^2)-
-                      I(tmax_warm^2) -
-                      veg_den - log_clim_velocity),
-             update(f1, . ~ .-precip_warm:canopy_height - log_precip_dry:canopy_height -
-                      tmin_cold:canopy_height - tmax_warm:canopy_height -
-                      I(precip_warm^2) - I(log_precip_dry^2) - I(tmin_cold^2) - I(canopy_height^2)-
-                      I(tmax_warm^2) -
-                      precip_wet),
-             update(f1, . ~ .-precip_warm:canopy_height - log_precip_dry:canopy_height -
-                      tmin_cold:canopy_height - tmax_warm:canopy_height -
-                      I(precip_warm^2) - I(log_precip_dry^2) - I(tmin_cold^2) - I(canopy_height^2)-
-                      I(tmax_warm^2) -
-                      veg_den - log_clim_velocity - precip_wet))
+             update(f1, . ~ .-precip_warm:canopy_height),
+             update(f1, . ~ .-log_precip_dry:canopy_height),
+             update(f1, . ~ .-tmin_cold:canopy_height),
+             update(f1, . ~ .-tmax_warm:canopy_height - I(tmax_warm^2):canopy_height),
+             update(f1, . ~ .-precip_warm:canopy_height - log_precip_dry:canopy_height),
+             update(f1, . ~ .-precip_warm:canopy_height - tmin_cold:canopy_height),
+             update(f1, . ~ .-precip_warm:canopy_height - tmax_warm:canopy_height - I(tmax_warm^2):canopy_height),
+             update(f1, . ~ .-log_precip_dry:canopy_height - tmin_cold:canopy_height),
+             update(f1, . ~ .-log_precip_dry:canopy_height - tmax_warm:canopy_height - I(tmax_warm^2):canopy_height),
+             update(f1, . ~ .-tmin_cold:canopy_height - tmax_warm:canopy_height - I(tmax_warm^2):canopy_height),
+             update(f1, . ~ .-precip_warm:canopy_height - log_precip_dry:canopy_height - tmin_cold:canopy_height),
+             update(f1, . ~ .-precip_warm:canopy_height - log_precip_dry:canopy_height - tmax_warm:canopy_height - I(tmax_warm^2):canopy_height),
+             update(f1, . ~ .-log_precip_dry:canopy_height - tmin_cold:canopy_height - tmax_warm:canopy_height - I(tmax_warm^2):canopy_height),
+             update(f1, . ~ .-precip_warm:canopy_height - log_precip_dry:canopy_height - tmin_cold:canopy_height - tmax_warm:canopy_height - I(tmax_warm^2):canopy_height))
+
 
 compMods_aic = compareMods_AIC(f = forms, dat, mesh, taxon = taxon, response_var = response_var, family = gaussian(), reml = F)
 saveRDS(list(mesh = mesh, compMods_aic = compMods_aic),  "results/sdmTMB_models2/reptiles_sesvert.rds")
 
 compMods_aic$modsel
-sanity(compMods_aic$modlist[[1]])
-summary(compMods_aic$modlist[[1]])
+sanity(compMods_aic$modlist[[3]])
+summary(compMods_aic$modlist[[3]])
 
 # refit model using REML
-bestmod = compareMods_AIC(f = list(forms[[1]]), dat, mesh, taxon = taxon, response_var = response_var, family = gaussian(), reml = T)
+bestmod = compareMods_AIC(f = list(forms[[3]]), dat, mesh, taxon = taxon, response_var = response_var, family = gaussian(), reml = T)
 bestmod = bestmod$modlist[[1]]
 saveRDS(list(mesh = mesh, compMods_aic = compMods_aic, bestmod = bestmod), "results/sdmTMB_models2/reptiles_sesvert.rds")
 
@@ -263,239 +241,239 @@ plot_resids(mod = bestmod, response_var = "vert.mean.ses",
 
 # * - plot model coefs for comparison models ---------------------------
 
-plot_compMods_coefs(mods = compMods_aic$mods, fname = paste0("figures/model_selection/",fname_end,".png"))
+#plot_compMods_coefs(mods = compMods_aic$mods, fname = paste0("figures/model_selection/",fname_end,".png"))
 
 # * - predict svc + realm model to the future ---------------------------------------
 
 predict_future(mod = bestmod, newdata = dat.f, type = "response",
-               fpath = paste0("results/sdmTMB_models2/predictions/",fname_end,".RData"))
+               fpath = paste0("results/sdmTMB_models2/predictions/",fname_end,".rds"))
 
 
 
 # MEAN VERTICALITY --------------------------------------------------------
 
-ls = ls()
-a = which(ls == "dat" | ls == "dat.f")
-rm(list = ls[-a])
-source("scripts/00_functions/manuscript_functions.R")
-source("scripts/00_functions/00_plot_functions.R")
-
-v = vect("data/original/rnaturalearth_world.shp")
-v = project(v, "+proj=cea +datum=WGS84")
-f1 = formula(vert.mean ~ canopy_height + veg_den + I(tmax_warm^2) + tmax_warm + tmin_cold + precip_wet + log_precip_dry + log_clim_velocity)
-
-# plot relationship between mean verticality and env predictors
-dat %>% 
-  dplyr::select(vert.mean, biome:clim_velocity, elev, veg_den, veg_complexity, log_precip_dry, log_clim_velocity) %>%
-  pivot_longer(cols = 3:17, names_to = "var", values_to = "val") %>% 
-  ggplot(aes(x = val, y = vert.mean, color = biome)) +
-  geom_point(pch = ".") +
-  facet_wrap(~var, scales = "free") +
-  theme_classic()
-
-
-
-taxon = "Reptiles"
-response_var = "Mean verticality"
-fname_end = "reptiles_meanvert"
-
-# Set up mesh for analysis ------------------------------------------------
-
-# set up spatial mesh
-
-# first estimate range of spatial autocorrelation
-samp = dat %>% sample_n(1000)
-samp.cor = ncf::correlog(x = samp$x, y = samp$y, z = samp$vert.mean, increment = 50000/1e5, resamp = 99)
-ncf:::plot.correlog(samp.cor)
-ncf:::plot.correlog(samp.cor, xlim = c(0,100))
-
-# set initial range as 30 and max.edge as range/5
-# https://haakonbakkagit.github.io/btopic104.html
-# Bakka, H., J. Vanhatalo, J. Illian, D. Simpson, and H. Rue. 2016. “Accounting for Physical Barriers in Species Distribution Modeling with Non-Stationary Spatial Random Effects.” arXiv preprint arXiv:1608.03787. Norwegian University of Science; Technology, Trondheim, Norway. 
-
-# NOTE: including realm as random effect led to not ok model (sigma_G smaller than 0.01 - consider omitting this part of the model)
-f1 = formula(vert.mean ~ canopy_height + veg_den + I(tmax_warm^2) + tmax_warm + tmin_cold + precip_wet + log_precip_dry + log_clim_velocity)
-
-fitmesh = fit_mesh(f = f1, dat, range = samp.cor$x.intercept, v = v, family = Beta())
-
-mesh = fitmesh$meshes[[length(fitmesh$meshes)]]
-
-save(fitmesh, file = paste0("results/sdmTMB_models/model_selection/", fname_end, ".RData"))
-load(paste0("results/sdmTMB_models/model_selection/", fname_end, ".RData"))
-
-
-# * - Compare models with AIC -------------------------------------------------
-
-# Compare models using all points with AIC
-
-compMods_aic = compareMods_AIC(f = f1, dat, mesh, taxon = taxon, response_var = response_var, family = Beta(link = "logit"))
-sanity(compMods_aic$mods[[1]])
-sanity(compMods_aic$mods[[2]])
-sanity(compMods_aic$mods[[3]])
-sanity(compMods_aic$mods[[4]])
-
-compMods_aic[[2]]
-save(compMods_aic, fitmesh, file = paste0( "results/sdmTMB_models/model_selection/", fname_end, ".RData"))
-#load(paste0("results/sdmTMB_models/model_selection/", fname_end, ".RData"))
-
-compMods_aic$compare
-
-
-# realm does not contribute to the model, but maybe best to keep it for consistency
-
-# * - Cross validation --------------------------------------------------------
-
-# compare random effects structure using cross validation
-# random effects include random intercept, spatial random field, and spatially varying coefficient
-# spatial random field and spatially varying coefficient both depend on mesh
-# preliminary assessment indicated that residuals displayed strong spatial autocorrelation when
-# spatial effects were not accounted for in any way and when biome or biorealm were included as random intercepts in the model
-
-# set up five random folds for cross validation
-set.seed(2345)
-folds = sample(1:5, size = nrow(dat), replace = T)
-
-compMods_cv = compare_cv_beta(f1, dat, mesh, folds, parallel = F, taxon = taxon, response_var = response_var)
-
-load("tempfiles/amph_mods.RData")
-load("tempfiles/amph_mods2.RData")
-load("tempfiles/amph_mods3.RData")
-
-lapply(compMods_cv$mods$mod.realm.cv$models, sanity)
-
-save(compMods_aic, compMods_cv, fitmesh, file = paste0("results/sdmTMB_models/model_selection/", fname_end, ".RData"))
-
-compMods_cv$compMods_cv
-
-# * - residual check ----------------------------------------------------------
-
-load(paste0("results/sdmTMB_models/model_selection/", fname_end, ".RData"))
-
-plot_resids(mod = compMods_aic$mods$mod.realm.svc, response_var = "vert.mean", 
-            fpath = paste0("figures/residual_checks/", fname_end))
-
-# * - plot model coefs for comparison models ---------------------------
-
-plot_compMods_coefs(mods = compMods_aic$mods, fname = paste0("figures/model_selection/", fname_end, ".png"))
-
-# * - predict svc + realm model to the future ---------------------------------------
-
-predict_future(mod = compMods_aic$mods$mod.realm.svc, newdata = dat.f, type = "response",
-               fpath = paste0("results/sdmTMB_models/", fname_end,".RData"))
-
-
-
-
-# PROPORTION ARBOREAL --------------------------------------------------------
-
-ls = ls()
-a = which(ls == "dat" | ls == "dat.f")
-rm(list = ls[-a])
-
-source("scripts/00_functions/manuscript_functions.R")
-source("scripts/00_functions/00_plot_functions.R")
-
-v = vect("data/original/rnaturalearth_world.shp")
-v = project(v, "+proj=cea +datum=WGS84")
-f1 = formula(p.arb ~ canopy_height + veg_den + I(tmax_warm^2) + tmax_warm + tmin_cold + precip_wet + log_precip_dry + log_clim_velocity)
-
-# plot relationship between proportion arboreality and env predictors
-dat %>% 
-  dplyr::select(p.arb, biome:clim_velocity, elev, veg_den, veg_complexity, log_precip_dry, log_clim_velocity) %>%
-  pivot_longer(cols = 3:17, names_to = "var", values_to = "val") %>% 
-  ggplot(aes(x = val, y = p.arb, color = biome)) +
-  geom_point(pch = ".") +
-  facet_wrap(~var, scales = "free") +
-  theme_classic()
-
-
-
-taxon = "Reptiles"
-response_var = "Proportion Arboreal"
-fname_end = "reptiles_parb"
-wts = dat$rich
-
-# Set up mesh for analysis ------------------------------------------------
-
-# set up spatial mesh
-
-# first estimate range of spatial autocorrelation
-samp = dat %>% sample_n(1000)
-samp.cor = ncf::correlog(x = samp$x, y = samp$y, z = samp$vert.mean, increment = 50000/1e5, resamp = 99)
-ncf:::plot.correlog(samp.cor)
-ncf:::plot.correlog(samp.cor, xlim = c(0,100), ylim = c(-1,1))
-
-# set initial range as 30 and max.edge as range/5
-# https://haakonbakkagit.github.io/btopic104.html
-# Bakka, H., J. Vanhatalo, J. Illian, D. Simpson, and H. Rue. 2016. “Accounting for Physical Barriers in Species Distribution Modeling with Non-Stationary Spatial Random Effects.” arXiv preprint arXiv:1608.03787. Norwegian University of Science; Technology, Trondheim, Norway. 
-
-dat$narb = dat$rich*dat$p.arb
-dat$notarb = dat$rich*(1-dat$p.arb)
-f1 = formula(cbind(narb,notarb) ~ canopy_height + veg_den + I(tmax_warm^2) + tmax_warm + tmin_cold + precip_wet + log_precip_dry + log_clim_velocity, weights = rich)
-
-
-fitmesh = fit_mesh(f = f1, dat, range = samp.cor$x.intercept, v = v, family = binomial())
-
-mesh = fitmesh$meshes[[length(fitmesh$meshes)]]
-
-save(fitmesh, file = paste0("results/sdmTMB_models/model_selection/", fname_end, ".RData"))
-load(paste0("results/sdmTMB_models/model_selection/", fname_end, ".RData"))
-
-
-# * - Compare models with AIC -------------------------------------------------
-
-# Compare models using all points with AIC
-
-compMods_aic = compareMods_AIC(f = f1, dat, mesh, taxon = taxon, response_var = response_var, family = binomial())
-sanity(compMods_aic$mods[[1]])
-sanity(compMods_aic$mods[[2]])
-sanity(compMods_aic$mods[[3]])
-sanity(compMods_aic$mods[[4]])
-
-compMods_aic[[2]]
-save(compMods_aic, fitmesh, file = paste0( "results/sdmTMB_models/model_selection/", fname_end, ".RData"))
-load(paste0("results/sdmTMB_models/model_selection/", fname_end, ".RData"))
-
-compMods_aic$compare
-
-
-# realm does not contribute to the model, but maybe best to keep it for consistency
-
-# * - Cross validation --------------------------------------------------------
-
-# compare random effects structure using cross validation
-# random effects include random intercept, spatial random field, and spatially varying coefficient
-# spatial random field and spatially varying coefficient both depend on mesh
-# preliminary assessment indicated that residuals displayed strong spatial autocorrelation when
-# spatial effects were not accounted for in any way and when biome or biorealm were included as random intercepts in the model
-
-# set up five random folds for cross validation
-set.seed(2345)
-folds = sample(1:5, size = nrow(dat), replace = T)
-
-compMods_cv = compare_cv_binom(f1, dat, mesh, folds, parallel = F, taxon = taxon, response_var = response_var)
-
-lapply(compMods_cv$mods$mod.realm.cv$models, sanity)
-
-save(compMods_aic, compMods_cv, fitmesh, file = paste0("results/sdmTMB_models/model_selection/", fname_end, ".RData"))
-
-compMods_cv$compMods_cv
-
-# * - residual check ----------------------------------------------------------
-# issues with this for parb
-load(paste0("results/sdmTMB_models/model_selection/", fname_end, ".RData"))
-
-plot_resids(mod = compMods_aic$mods$mod.realm.svc, response_var = "p.arb", 
-            fpath = paste0("figures/residual_checks/", fname_end))
-
-# * - plot model coefs for comparison models ---------------------------
-
-plot_compMods_coefs(mods = compMods_aic$mods, fname = paste0("figures/model_selection/", fname_end, ".png"))
-
-# * - predict svc + realm model to the future ---------------------------------------
-
-predict_future(mod = compMods_aic$mods$mod.realm.svc, newdata = dat.f, type = "response",
-               fpath = paste0("results/sdmTMB_models/", fname_end,".RData"))
+# ls = ls()
+# a = which(ls == "dat" | ls == "dat.f")
+# rm(list = ls[-a])
+# source("scripts/00_functions/manuscript_functions.R")
+# source("scripts/00_functions/00_plot_functions.R")
+# 
+# v = vect("data/original/rnaturalearth_world.shp")
+# v = project(v, "+proj=cea +datum=WGS84")
+# f1 = formula(vert.mean ~ canopy_height + veg_den + I(tmax_warm^2) + tmax_warm + tmin_cold + precip_wet + log_precip_dry + log_clim_velocity)
+# 
+# # plot relationship between mean verticality and env predictors
+# dat %>% 
+#   dplyr::select(vert.mean, biome:clim_velocity, elev, veg_den, veg_complexity, log_precip_dry, log_clim_velocity) %>%
+#   pivot_longer(cols = 3:17, names_to = "var", values_to = "val") %>% 
+#   ggplot(aes(x = val, y = vert.mean, color = biome)) +
+#   geom_point(pch = ".") +
+#   facet_wrap(~var, scales = "free") +
+#   theme_classic()
+# 
+# 
+# 
+# taxon = "Reptiles"
+# response_var = "Mean verticality"
+# fname_end = "reptiles_meanvert"
+# 
+# # Set up mesh for analysis ------------------------------------------------
+# 
+# # set up spatial mesh
+# 
+# # first estimate range of spatial autocorrelation
+# samp = dat %>% sample_n(1000)
+# samp.cor = ncf::correlog(x = samp$x, y = samp$y, z = samp$vert.mean, increment = 50000/1e5, resamp = 99)
+# ncf:::plot.correlog(samp.cor)
+# ncf:::plot.correlog(samp.cor, xlim = c(0,100))
+# 
+# # set initial range as 30 and max.edge as range/5
+# # https://haakonbakkagit.github.io/btopic104.html
+# # Bakka, H., J. Vanhatalo, J. Illian, D. Simpson, and H. Rue. 2016. “Accounting for Physical Barriers in Species Distribution Modeling with Non-Stationary Spatial Random Effects.” arXiv preprint arXiv:1608.03787. Norwegian University of Science; Technology, Trondheim, Norway. 
+# 
+# # NOTE: including realm as random effect led to not ok model (sigma_G smaller than 0.01 - consider omitting this part of the model)
+# f1 = formula(vert.mean ~ canopy_height + veg_den + I(tmax_warm^2) + tmax_warm + tmin_cold + precip_wet + log_precip_dry + log_clim_velocity)
+# 
+# fitmesh = fit_mesh(f = f1, dat, range = samp.cor$x.intercept, v = v, family = Beta())
+# 
+# mesh = fitmesh$meshes[[length(fitmesh$meshes)]]
+# 
+# save(fitmesh, file = paste0("results/sdmTMB_models/model_selection/", fname_end, ".RData"))
+# load(paste0("results/sdmTMB_models/model_selection/", fname_end, ".RData"))
+# 
+# 
+# # * - Compare models with AIC -------------------------------------------------
+# 
+# # Compare models using all points with AIC
+# 
+# compMods_aic = compareMods_AIC(f = f1, dat, mesh, taxon = taxon, response_var = response_var, family = Beta(link = "logit"))
+# sanity(compMods_aic$mods[[1]])
+# sanity(compMods_aic$mods[[2]])
+# sanity(compMods_aic$mods[[3]])
+# sanity(compMods_aic$mods[[4]])
+# 
+# compMods_aic[[2]]
+# save(compMods_aic, fitmesh, file = paste0( "results/sdmTMB_models/model_selection/", fname_end, ".RData"))
+# #load(paste0("results/sdmTMB_models/model_selection/", fname_end, ".RData"))
+# 
+# compMods_aic$compare
+# 
+# 
+# # realm does not contribute to the model, but maybe best to keep it for consistency
+# 
+# # * - Cross validation --------------------------------------------------------
+# 
+# # compare random effects structure using cross validation
+# # random effects include random intercept, spatial random field, and spatially varying coefficient
+# # spatial random field and spatially varying coefficient both depend on mesh
+# # preliminary assessment indicated that residuals displayed strong spatial autocorrelation when
+# # spatial effects were not accounted for in any way and when biome or biorealm were included as random intercepts in the model
+# 
+# # set up five random folds for cross validation
+# set.seed(2345)
+# folds = sample(1:5, size = nrow(dat), replace = T)
+# 
+# compMods_cv = compare_cv_beta(f1, dat, mesh, folds, parallel = F, taxon = taxon, response_var = response_var)
+# 
+# load("tempfiles/amph_mods.RData")
+# load("tempfiles/amph_mods2.RData")
+# load("tempfiles/amph_mods3.RData")
+# 
+# lapply(compMods_cv$mods$mod.realm.cv$models, sanity)
+# 
+# save(compMods_aic, compMods_cv, fitmesh, file = paste0("results/sdmTMB_models/model_selection/", fname_end, ".RData"))
+# 
+# compMods_cv$compMods_cv
+# 
+# # * - residual check ----------------------------------------------------------
+# 
+# load(paste0("results/sdmTMB_models/model_selection/", fname_end, ".RData"))
+# 
+# plot_resids(mod = compMods_aic$mods$mod.realm.svc, response_var = "vert.mean", 
+#             fpath = paste0("figures/residual_checks/", fname_end))
+# 
+# # * - plot model coefs for comparison models ---------------------------
+# 
+# plot_compMods_coefs(mods = compMods_aic$mods, fname = paste0("figures/model_selection/", fname_end, ".png"))
+# 
+# # * - predict svc + realm model to the future ---------------------------------------
+# 
+# predict_future(mod = compMods_aic$mods$mod.realm.svc, newdata = dat.f, type = "response",
+#                fpath = paste0("results/sdmTMB_models/", fname_end,".RData"))
+# 
+# 
+# 
+# 
+# # PROPORTION ARBOREAL --------------------------------------------------------
+# 
+# ls = ls()
+# a = which(ls == "dat" | ls == "dat.f")
+# rm(list = ls[-a])
+# 
+# source("scripts/00_functions/manuscript_functions.R")
+# source("scripts/00_functions/00_plot_functions.R")
+# 
+# v = vect("data/original/rnaturalearth_world.shp")
+# v = project(v, "+proj=cea +datum=WGS84")
+# f1 = formula(p.arb ~ canopy_height + veg_den + I(tmax_warm^2) + tmax_warm + tmin_cold + precip_wet + log_precip_dry + log_clim_velocity)
+# 
+# # plot relationship between proportion arboreality and env predictors
+# dat %>% 
+#   dplyr::select(p.arb, biome:clim_velocity, elev, veg_den, veg_complexity, log_precip_dry, log_clim_velocity) %>%
+#   pivot_longer(cols = 3:17, names_to = "var", values_to = "val") %>% 
+#   ggplot(aes(x = val, y = p.arb, color = biome)) +
+#   geom_point(pch = ".") +
+#   facet_wrap(~var, scales = "free") +
+#   theme_classic()
+# 
+# 
+# 
+# taxon = "Reptiles"
+# response_var = "Proportion Arboreal"
+# fname_end = "reptiles_parb"
+# wts = dat$rich
+# 
+# # Set up mesh for analysis ------------------------------------------------
+# 
+# # set up spatial mesh
+# 
+# # first estimate range of spatial autocorrelation
+# samp = dat %>% sample_n(1000)
+# samp.cor = ncf::correlog(x = samp$x, y = samp$y, z = samp$vert.mean, increment = 50000/1e5, resamp = 99)
+# ncf:::plot.correlog(samp.cor)
+# ncf:::plot.correlog(samp.cor, xlim = c(0,100), ylim = c(-1,1))
+# 
+# # set initial range as 30 and max.edge as range/5
+# # https://haakonbakkagit.github.io/btopic104.html
+# # Bakka, H., J. Vanhatalo, J. Illian, D. Simpson, and H. Rue. 2016. “Accounting for Physical Barriers in Species Distribution Modeling with Non-Stationary Spatial Random Effects.” arXiv preprint arXiv:1608.03787. Norwegian University of Science; Technology, Trondheim, Norway. 
+# 
+# dat$narb = dat$rich*dat$p.arb
+# dat$notarb = dat$rich*(1-dat$p.arb)
+# f1 = formula(cbind(narb,notarb) ~ canopy_height + veg_den + I(tmax_warm^2) + tmax_warm + tmin_cold + precip_wet + log_precip_dry + log_clim_velocity, weights = rich)
+# 
+# 
+# fitmesh = fit_mesh(f = f1, dat, range = samp.cor$x.intercept, v = v, family = binomial())
+# 
+# mesh = fitmesh$meshes[[length(fitmesh$meshes)]]
+# 
+# save(fitmesh, file = paste0("results/sdmTMB_models/model_selection/", fname_end, ".RData"))
+# load(paste0("results/sdmTMB_models/model_selection/", fname_end, ".RData"))
+# 
+# 
+# # * - Compare models with AIC -------------------------------------------------
+# 
+# # Compare models using all points with AIC
+# 
+# compMods_aic = compareMods_AIC(f = f1, dat, mesh, taxon = taxon, response_var = response_var, family = binomial())
+# sanity(compMods_aic$mods[[1]])
+# sanity(compMods_aic$mods[[2]])
+# sanity(compMods_aic$mods[[3]])
+# sanity(compMods_aic$mods[[4]])
+# 
+# compMods_aic[[2]]
+# save(compMods_aic, fitmesh, file = paste0( "results/sdmTMB_models/model_selection/", fname_end, ".RData"))
+# load(paste0("results/sdmTMB_models/model_selection/", fname_end, ".RData"))
+# 
+# compMods_aic$compare
+# 
+# 
+# # realm does not contribute to the model, but maybe best to keep it for consistency
+# 
+# # * - Cross validation --------------------------------------------------------
+# 
+# # compare random effects structure using cross validation
+# # random effects include random intercept, spatial random field, and spatially varying coefficient
+# # spatial random field and spatially varying coefficient both depend on mesh
+# # preliminary assessment indicated that residuals displayed strong spatial autocorrelation when
+# # spatial effects were not accounted for in any way and when biome or biorealm were included as random intercepts in the model
+# 
+# # set up five random folds for cross validation
+# set.seed(2345)
+# folds = sample(1:5, size = nrow(dat), replace = T)
+# 
+# compMods_cv = compare_cv_binom(f1, dat, mesh, folds, parallel = F, taxon = taxon, response_var = response_var)
+# 
+# lapply(compMods_cv$mods$mod.realm.cv$models, sanity)
+# 
+# save(compMods_aic, compMods_cv, fitmesh, file = paste0("results/sdmTMB_models/model_selection/", fname_end, ".RData"))
+# 
+# compMods_cv$compMods_cv
+# 
+# # * - residual check ----------------------------------------------------------
+# # issues with this for parb
+# load(paste0("results/sdmTMB_models/model_selection/", fname_end, ".RData"))
+# 
+# plot_resids(mod = compMods_aic$mods$mod.realm.svc, response_var = "p.arb", 
+#             fpath = paste0("figures/residual_checks/", fname_end))
+# 
+# # * - plot model coefs for comparison models ---------------------------
+# 
+# plot_compMods_coefs(mods = compMods_aic$mods, fname = paste0("figures/model_selection/", fname_end, ".png"))
+# 
+# # * - predict svc + realm model to the future ---------------------------------------
+# 
+# predict_future(mod = compMods_aic$mods$mod.realm.svc, newdata = dat.f, type = "response",
+#                fpath = paste0("results/sdmTMB_models/", fname_end,".RData"))
 
 
 

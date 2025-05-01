@@ -145,20 +145,26 @@ vert.biome = dat %>%
   summarise(vert = mean(vals, na.rm = T),
             lci = mean(vals, na.rm = T) - sd(vals, na.rm = T),
             uci = mean(vals, na.rm = T) + sd(vals, na.rm = T)) %>% 
+  filter(vertvar == "SES Mean Verticality") %>% 
   ggplot() +
-  geom_pointrange(aes(y = reorder(biome, biome.meanvert), x = vert, xmin = lci, xmax = uci), size = 0.25) +
+  geom_pointrange(aes(y = reorder(biome, biome.meanvert), x = vert, xmin = lci, xmax = uci), size = 0.15) +
   geom_blank(data = dummy, aes(x = vert)) +
-  geom_vline(data = data.frame(x = c(0,0.5), vertvar = c("SES Mean Verticality", "Mean Verticality")), aes(xintercept = x), linetype = "dashed", color = "red4", linewidth = 1) + 
+  #geom_vline(data = data.frame(x = c(0,0.5), vertvar = c("SES Mean Verticality", "Mean Verticality")), aes(xintercept = x), linetype = "dashed", color = "red4", linewidth = 1) + 
+  geom_vline(data = data.frame(x = c(0), vertvar = c("SES Mean Verticality")), aes(xintercept = x), linetype = "dashed", color = "red4", linewidth = 1) + 
   scale_y_discrete("Biome") +
-  scale_x_continuous("") +
+  scale_x_continuous("SES Verticality", limits = c(-6,6), breaks = seq(-6,6,2)) +
   #scale_color_manual(values = c("tan4", "forestgreen")) +
-  facet_grid2(vars(vertvar), vars(class), scales = "free_x", independent = "x") +
+  facet_wrap(~class, scales = "free_x", nrow = 1) +
+  #facet_grid2(vars(vertvar), vars(class), scales = "free_x", independent = "x") +
   theme(panel.grid = element_line(color = "gray"),
         panel.background = element_rect(color = "black", fill = NA),
         strip.background = element_rect(color = "black"),
-        legend.position = "none")
+        legend.position = "none",
+        axis.text = element_text(size = 5),
+        axis.title = element_text(size = 8),
+        strip.text = element_text(size = 8))
 
-png("figures/supp_figs/vert_biome_forestOnly_forestSES.png", width = 300, height = 150, res = 300, unit = "mm")
+png("figures/supp_figs/vert_biome_forestOnly_forestSES.png", width = 180, height = 70, res = 300, unit = "mm")
 vert.biome
 dev.off()
 

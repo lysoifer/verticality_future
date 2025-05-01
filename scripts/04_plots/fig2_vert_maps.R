@@ -16,6 +16,8 @@ library(lemon)
 wd = vect("data/original/rnaturalearth_world.shp") %>% 
   project("epsg:4326") %>% 
   crop(ext(-180,180,-60,83.64))
+ymin = -60
+ymax = 83.64
 
 amph = fread("data/derivative_data/gridcell_data/env_forest/50_km/amph_comdat.csv") %>% 
   dplyr::select(x, y, rich, p.arb, p.fos, p.ter, vert.mean, vert.mean.ses, biome) %>% 
@@ -62,9 +64,10 @@ all = bind_rows(amph, mammals, birds, repts) %>%
   mutate(taxa = factor(taxa, levels = c("Birds", "Mammals", "Reptiles", "Amphibians")))
 min = min(all$vert.mean.ses, na.rm = T)
 max = max(all$vert.mean.ses, na.rm = T)
+col.lims = range(all$vert.mean.ses, na.rm = T)
 
-rgbcols = Tricolore(all, "p.arb", "p.ter", "p.fos",breaks = Inf, spread = 1,
-                    show_data = F, hue = 1, chroma = 1, lightness = 0.6)
+rgbcols = Tricolore(all,  "p.ter", "p.fos", "p.arb" ,breaks = Inf, spread = 1,
+                    show_data = F, hue = 0.2, chroma = 1, lightness = 0.8)
 all$rgb = rgbcols$rgb
 
 thm = theme(legend.key.height = unit(3, units = "mm"),
@@ -114,9 +117,9 @@ p2.legend = as_ggplot(p2.legend)
 p2 = p2 + theme(legend.position = "none")
 
 cols = rgbcols$key$data
-cola = cols[which(cols$p1==1), "rgb"]
-colt = cols[which(cols$p2==1), "rgb"]
-colf = cols[which(cols$p3==1), "rgb"]
+colt = cols[which(cols$p1==1), "rgb"]
+colf = cols[which(cols$p2==1), "rgb"]
+cola = cols[which(cols$p3==1), "rgb"]
 
 
 p3 = all %>% 

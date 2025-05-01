@@ -94,18 +94,20 @@ vert_richness_mod = function(f, dat, family, wts = NULL, edge.ratio) {
     if(iter == 1) {
       mod = sdmTMB(f, 
                    data = dat,
-                   weights = wts,
+                  # weights = wts,
                    mesh = mesh,
                    spatial = "on",
+                   spatial_varying = ~ vert.mean.ses,
                    reml = T,
                    family = family,
                    control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000))
     } else {
       mod = sdmTMB(f, 
                    data = dat,
-                   weights = wts,
+                  # weights = wts,
                    mesh = mesh,
                    spatial = "on",
+                   spatial_varying = ~ vert.mean.ses,
                    reml = T,
                    family = family,
                    control = sdmTMBcontrol(eval.max = 6000, iter.max = 3000,
@@ -129,7 +131,7 @@ vert_richness_mod = function(f, dat, family, wts = NULL, edge.ratio) {
 # models account for spatial autocorrelation, but do not include realm as a random intercept or any spatially varying coefficient
 # if models error, try starting to run a different model and then rerun the one erroring - not sure why this works, but it does
 
-amph.mod = vert_richness_mod(f1, dat = amph, family = gaussian(), edge.ratio = 0.35) # had to increase edge ratio to get model to converge
+amph.mod = vert_richness_mod(f = f1, dat = amph, family = gaussian(), edge.ratio = 0.4) # had to increase edge ratio to get model to converge
 sanity(amph.mod)
 saveRDS(amph.mod, file = "results/sdmTMB_models/richness_vert_models/sesvert/amph_mod.rds")
 mod = readRDS("results/sdmTMB_models/richness_vert_models/sesvert/amph_mod.rds")
@@ -152,6 +154,8 @@ summary(birds.mod)
 summary(rept.mod)
 summary(mammals.mod)
 
+
+## DON'T NEED BIOME MODELS ##
 # now run the models for individual biomes
 for(b in unique(amph$biome)) {
   d = amph %>% filter(biome == b)

@@ -1,3 +1,5 @@
+## FOR OLD MODELS DO NOT USE THIS CODE OR ASSOCIATED PLOTS ##
+
 library(sdmTMB)
 library(foreach)
 library(doParallel)

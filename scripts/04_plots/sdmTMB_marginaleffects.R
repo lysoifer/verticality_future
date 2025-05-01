@@ -1,3 +1,7 @@
+# Goal: Make response plots to visualize predictions of SES verticality across predictor variables
+# These are conditional plots with all variables held at the mean, while the variable of interest is allowed to vary
+# from min to max value
+
 library(sdmTMB)
 library(ggeffects)
 library(foreach)
@@ -7,14 +11,15 @@ library(data.table)
 
 amph = readRDS("results/sdmTMB_models2/predictions/amphibians_sesvert.rds")
 amphmod = amph$mod
+amphmod = sdmTMB:::reload_model(amphmod)
 
-birds = readRDS("results/sdmTMB_models2/predictions/birds_sesvert.RData")
+birds = readRDS("results/sdmTMB_models2/predictions/birds_sesvert.rds")
 birdsmod = birds$mod
 
 mammals = readRDS("results/sdmTMB_models2/predictions/mammals_sesvert.rds")
 mammalsmod = mammals$mod
 
-repts = readRDS("results/sdmTMB_models2/predictions/reptiles_sesvert.RData")
+repts = readRDS("results/sdmTMB_models2/predictions/reptiles_sesvert.rds")
 reptsmod = repts$mod
 
 range(birdsmod$data$log_precip_dry)
@@ -32,15 +37,17 @@ var = list(
   "tmin_cold [-2.54:1.37 by=0.1]",
   "canopy_height [-1.3:3.5 by=0.1]",
   "veg_den [-1.3:9.0 by=0.1]",
-  "precip_wet [-1.4:11.5 by=0.1]",
   "precip_warm [-1.3:15.4 by=0.1]",
   "log_clim_velocity [-4.3:2.5 by=0.1]"
   )
+
 
 amphplots = foreach(v = 1:length(var)) %do% {
   g = predict_response(amphmod, var[[v]])
   g = cbind(g)
   g$term = var[[v]]
+  g$taxa = "amphibians"
+  saveRDS(g, paste0("results/sdmTMB_models2/marginal_effects/amphibians/amph_", v, ".rds"))
   g
 }
 
@@ -53,6 +60,7 @@ mammalsplots = foreach(v = 1:length(var)) %do% {
   g = cbind(g)
   g$term = var[[v]]
   g$taxa = "mammals"
+  saveRDS(g, paste0("results/sdmTMB_models2/marginal_effects/mammals/mammals_", v, ".rds"))
   g
 }
 
@@ -65,6 +73,7 @@ reptsplots = foreach(v = 1:length(var)) %do% {
   g = cbind(g)
   g$term = var[[v]]
   g$taxa = "reptiles"
+  saveRDS(g, paste0("results/sdmTMB_models2/marginal_effects/reptiles/reptiles_", v, ".rds"))
   g
 }
 
@@ -78,6 +87,7 @@ birdsplots = foreach(v = 1:length(var)) %do% {
   g = cbind(g)
   g$term = var[[v]]
   g$taxa = "birds"
+  saveRDS(g, paste0("results/sdmTMB_models2/marginal_effects/birds/birds_", v, ".rds"))
   g
 }
 
@@ -117,7 +127,7 @@ df = bind_rows(ampheffects, birdeffects, repteffects, mammaleffects) %>%
 ggplot(df, aes(x, predicted)) +
   geom_line() +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.2) +
-  facet_grid(taxa ~ term, switch = "x", scales = "free_x") +
+  facet_grid(taxa ~ term, switch = "x", scales = "free") +
   scale_y_continuous("Predicted SES Verticality") +
   theme_bw() +
   theme(strip.placement = "outside",
@@ -155,7 +165,7 @@ term = c(
 )
 
 amphplots = list()
-for(v in 1:3) {
+for(v in 1:4) {
   g = predict_response(amphmod, var[[v]])
   g = cbind(g)
   g$term = term[v]
@@ -218,7 +228,7 @@ df = bind_rows(amph.df, rept.df, mammals.df, birds.df) %>%
 ggplot(df, aes(x, predicted, color = group, fill = group)) +
   geom_line() +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.2, color = NA) +
-  facet_grid(term ~ taxa) +
+  facet_grid(term ~ taxa, scales = "free") +
   scale_y_continuous("Predicted SES Verticality") +
   scale_x_continuous("Scaled canopy height") +
   scale_color_discrete(guide = guide_legend("Scaled interaction term")) +
@@ -229,7 +239,7 @@ ggplot(df, aes(x, predicted, color = group, fill = group)) +
         legend.title = element_text(hjust = 0.5))
 
 ggsave(filename = "figures/supp_figs/conditional_effects_interactions.png",
-       height = 120, width = 150, units = "mm", dpi = 300)
+       height = 130, width = 120, units = "mm", dpi = 300)
 
 min = amphmod$data %>% 
   dplyr::select(canopy_height, precip_wet, log_precip_dry, precip_warm, tmax_warm, tmin_cold, veg_den, log_clim_velocity) %>% 
