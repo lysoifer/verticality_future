@@ -7,6 +7,7 @@ library(terra)
 library(colorspace)
 library(patchwork)
 library(ggplot2)
+library(grid)
 
 plt_rast_margin = function(r, v, plot.title, margin.title, base_text_size = 12, var, rd, scale_limits,
                            difcalc) {
