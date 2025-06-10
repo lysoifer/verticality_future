@@ -232,9 +232,17 @@ ggplot(data = richness.ch.resids, aes(tmin_cold, resid.deviance)) +
                        breaks = levels(richness.ch.mods$color)) +
   scale_y_continuous("Residuals") +
   scale_x_continuous("Minimum temperature of coldest month") +
-  facet_wrap(~taxa) +
-  theme_bw() +
-  theme(legend.position = "none")
+  scale_color_identity(guide = "legend",
+                       labels = levels(df_combined$biome2),
+                       breaks = levels(df_combined$color)) +
+  guides(color = guide_legend(nrow = 3, ncol = 2)) +
+  facet_rep_wrap(~taxa, nrow = 1) +
+  theme_classic() +
+  theme(legend.position = "none",
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.line = element_line(color = "black"))
+  
 
 # Biome level richness models ------------------------------------------------------
 
@@ -414,3 +422,6 @@ ggplot() +
         legend.title = element_blank())
 
 ggsave("figures/main_figs/vert~canopy_height_biome2.png", width = 180, height = 120, units = "mm", dpi = 300)
+
+mat = rast("data/original/env_data/chelsa/CHELSA_bio1_1981-2010_V.2.1.tif")
+plot(mat)
