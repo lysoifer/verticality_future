@@ -1,0 +1,208 @@
+---
+date: "`r Sys.Date()`"
+author: "Your Name"
+title: "Forest canopies are better generators of biodiversity in the tropics"
+output: 
+  officedown::rdocx_document:
+    mapstyles:
+      Normal: ['First Paragraph']
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.cap = TRUE)
+library(officedown)
+library(officer)
+
+fp <- fp_par(
+  text.align = "center", 
+  padding.bottom = 20, padding.top = 120, 
+  border.bottom = fp_border())
+
+ft <- fp_text(shading.color='#EFEFEF', bold = TRUE)
+```
+
+
+\newpage
+
+"The observer who leaves the center of the earth by an infinitely small amount compared to the radius can reach a new world, so to speak, and he can observe more variations in the aspect of the soil and more modifications in the atmosphere than he would if he were to pass from one latitude to another" - Humbolt pg 77 Essay on the Geography of Plants
+
+"The result is that on mountains in temperate zones, nature can develop the
+variety of organized beings and meteorological phenomena on only half the
+surface offered by tropical regions, where vegetation ceases to exist only at
+4,793 meters (2,460 toises)" - pg. 77 Essay on the Geography of Plants
+
+"Current hypotheses for large-scale geographical patterns of species diversity fail to explain the extraordinarily high biodiversity of mountain regions, particularly in the tropics (2–5). We call this challenge “Humboldt’s enigma.”" - Rahbek
+
+For centuries, ecologists have been intrigued by the role of vertical landscape structures in biogeographic patterns from local to global scales (cite). In 1799, Alexander von Humbolt began an expedition that would ultimately canonize the role of mountains in global richness patterns [@vonhumboltEssayGeographyPlants2013; @HumboldtsLegacy2019]. As vertical features on the landscape, mountains host an extraordinarly high biodiversity by increasing the land surface within a given area and producing steep climate gradients that promote high turnover in species composition relative to adjacent climatically homogeneous lowlands [@rahbekHumboldtsEnigmaWhat2019]. Yet, mountains are better generators of biodiversity in the tropics because high latitude mountains have lower elevation snow lines, which truncate the area of suitable habitat, and more variable climates that increase range size and reduce elevational turnover in composition relative to climatically stable tropical mountain slopes (cite Rahbek, Janzen, other mountain paper, and Humbolt essay on geo of plants). Over a century later, MacArthur highlighted the role of another vertical dimension in promoting high biodiversity: the vertical structure of vegetation. Yet only recently has the three-dimensional nature of terrestrial landscapes been recognized as critical to our understanding of biogeographic patterns as our ability to measure this structure and quantify its use by animals globally has increased due to the collation of large ecological databases and launch of satellite missions to measure vegetation structure.
+
+Tall and structurally complex forests have been proposed to generate biodiversity through a similar mechanism to mountains. Tall, multi-layered forests increase habitat volume and contain vertical microclimate and resource profiles, which allow species to vertically stratify habitat akin to multi-floored apartments [@bashamVerticalStratificationPatterns2023a; @xingEcologicalPatternsProcesses2023a; @macarthurLimitingSimilarityConvergence1967; @macarthurBirdSpeciesDiversity1961; @larueDiversityVolumeRelationships2023]. Thus, as forest height increases and provides more habitable space, additional species may join the assemblage, leading to greater richness within a given area compared to shorter forests (cite). This vertical stacking of species has been described as a mechanistic link between canopy height and species richness, and is thought to contribute to exceptionally high biodiversity in the tropics where canopies are often tall and structurally complex (cite). Yet relationships between canopy height or volume and species richness are often weak in temperate and boreal forests, which harbor fewer species than tropical forests with comparable vertical vegetation profiles [@larueDiversityVolumeRelationships2023; @macarthurBirdSpeciesDiversity1961; @rollLinkingVertebrateSpecies2015] - a pattern resembling Humbolt's Enigma in forests.
+
+
+
+
+Climate may play a key role in mediating the relationships between canopy height and species richness by physiologically constraining arboreal lifestyles. Vertical microclimate gradients produced by micrometeorological processes involving interactions between macroclimate, solar radiation, wind patterns, and forest structure are characterized by decreasing humidity and increasing thermal variability from the ground to the canopy and may help or hinder the evolution of diverse arboreal assemblages. In wet tropical forests, macroclimate conditions produce warmer and wetter canopy microclimates, which reduce thermal and hydric stress and may allow species to finely partition the entire three-dimensional habitat space [@oliveiraVerticalStratificationInfluences2019]. Taller canopies in tropical regions could thus support higher animal verticality and richness. In contrast, extreme cold, or the combination of heat and drought may impede the evolution of arboreal lifestyles, constraining biodiversity to lower vertical positions tat are more climatically buffered (cite). Harsh macroclimate conditions may therefore truncate the availability of vertical habitat space, thereby limiting vertical stratification and species richness despite the presence of vegetation.
+
+Despite decades of ecological inquiry into the vertical dimensions of habitat structure and biodiversity, the mechanisms that allow tall forests to generate biodiversity remain poorly understood yet are critically important for understanding biogeographic patterns, impacts of climate and landuse change on biodiversity, and the conservation value of forests. To fill this gap, we combine range maps of nearly 24,000 terrestrial vertebrate species with the TetrapodTraits and EltonTraits databases to map species richness and assemblage verticality in wooded biomes across the globe. We first examining the vegetative dimension to Humbolt's enigma by modeling relationships between species richness and canopy height in forests across latitudes and hypothesize that tropical forests will have greater richness than temperate or boreal forests for a given canopy height. We then examine the mechanistic processes driving this pattern. If vertical stratification influences species richness patterns, we expect the use or arboreal habitats by a disproportionately large number of species to be associated with high richness. We therefore begin by examining correlations between assemblage verticality and species richness. If verticality is positively associated with species richness, then mechanisms limiting verticality will limit richness. To examine these mechanisms, we model verticality of the four vertebrate groups by macroclimate and vegetative structure and investigate the microclimatic processes that underlie these macroclimatic patterns. While three-dimensional climate data is not currently available globally given the large computational requirements of resolving micrometeorological processes within forest canopies, we model vertical microclimate profiles in six sites across the globe within tropical, temperate, and boreal forests by integrating forest structure data derived from NASA's Global Ecosystem Dynamics Investigation (GEDI) mission with high temporal resolution macroclimate data in a process-based microclimate model.
+
+But only within the last decade have we been able to measure forest structure and acquire data on vertebrate use of canopy strata at a global extent, allowing us to now gain a comprehensive understanding of the impact of vertical habitat structure on species richness patterns.
+
+In forests, species assemblages stratify vertically along resource and microclimate gradients that extend from beneath the ground to the top of the canopy [@bashamVerticalStratificationPatterns2023a; @xingEcologicalPatternsProcesses2023a]. Tall, multi-layered forests increase both habitat volume and niche opportunities, enabling species to partition habitat across vertical strata akin to multi-floored apartments [@macarthurLimitingSimilarityConvergence1967; @macarthurBirdSpeciesDiversity1961; @larueDiversityVolumeRelationships2023]. 
+
+
+
+# Tall canopies generate biodiversity, but are better generators of biodiversity in the tropics
+
+
+
+# Use of vertical habitat space is associated with high species richness
+
+
+# Vegetative structure and multi-scale climatic processes moderate the capacity for tall forests to support arboreal communities and high species richness
+
+
+
+
+
+
+
+
+
+
+
+This document presents most of the features of the package `r ftext("officedown", ft)`. 
+`r fp`
+
+## Table of content
+
+<!---BLOCK_TOC--->
+
+## List of figures
+
+<!---BLOCK_TOC{seq_id: 'fig'}--->
+
+## List of tables
+
+<!---BLOCK_TOC{seq_id: 'tab'}--->
+
+
+\newpage
+
+## Sections
+
+### A two columns section
+
+<!---BLOCK_MULTICOL_START--->
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla eu pulvinar arcu, quis aliquam dui. In at cursus ante. Vestibulum non sagittis lacus. Duis vitae iaculis dui. Vivamus tempor, nibh ut pretium tempus, enim lorem dignissim quam, at euismod massa magna at magna. Sed facilisis dapibus diam nec volutpat. Maecenas facilisis dapibus egestas. Curabitur dignissim pharetra pulvinar. Nunc bibendum elit sed cursus congue. 
+
+`r run_columnbreak()`Curabitur ligula quam, iaculis faucibus orci quis, vestibulum lobortis lectus. Suspendisse fringilla nisl pulvinar, laoreet tellus sed, sollicitudin tortor. Donec consequat congue erat in iaculis. Curabitur luctus tellus ut turpis iaculis, nec laoreet ligula scelerisque.
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla eu pulvinar arcu, quis aliquam dui. In at cursus ante. Vestibulum non sagittis lacus. Duis vitae iaculis dui. Vivamus tempor, nibh ut pretium tempus, enim lorem dignissim quam, at euismod massa magna at magna. Sed facilisis dapibus diam nec volutpat. Maecenas facilisis dapibus egestas. Curabitur dignissim pharetra pulvinar. Nunc bibendum elit sed cursus congue. Curabitur ligula quam, iaculis faucibus orci quis, vestibulum lobortis lectus. Suspendisse fringilla nisl pulvinar, laoreet tellus sed, sollicitudin tortor. Donec consequat congue erat in iaculis. Curabitur luctus tellus ut turpis iaculis, nec laoreet ligula scelerisque.
+
+<!---BLOCK_MULTICOL_STOP{widths: [3,3], space: 0.2, sep: true}--->
+
+### End of two columns section
+
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla eu pulvinar arcu, quis aliquam dui. In at cursus ante. Vestibulum non sagittis lacus. Duis vitae iaculis dui. Vivamus tempor, nibh ut pretium tempus, enim lorem dignissim quam, at euismod massa magna at magna. 
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla eu pulvinar arcu, quis aliquam dui. In at cursus ante. Vestibulum non sagittis lacus. Duis vitae iaculis dui. Vivamus tempor, nibh ut pretium tempus, enim lorem dignissim quam, at euismod massa magna at magna. Sed facilisis dapibus diam nec volutpat. Maecenas facilisis dapibus egestas. Curabitur dignissim pharetra pulvinar. Nunc bibendum elit sed cursus congue. Curabitur ligula quam, iaculis faucibus orci quis, vestibulum lobortis lectus. Suspendisse fringilla nisl pulvinar, laoreet tellus sed, sollicitudin tortor. Donec consequat congue erat in iaculis. Curabitur luctus tellus ut turpis iaculis, nec laoreet ligula scelerisque.
+
+<!---BLOCK_LANDSCAPE_START--->
+
+### Landscape section
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla eu pulvinar arcu, quis aliquam dui. In at cursus ante. Vestibulum non sagittis lacus. Duis vitae iaculis dui. Vivamus tempor, nibh ut pretium tempus, enim lorem dignissim quam, at euismod massa magna at magna. Sed facilisis dapibus diam nec volutpat. 
+
+```{r, echo=FALSE}
+barplot(1:5, col=1:5)
+```
+
+<!---BLOCK_LANDSCAPE_STOP--->
+
+### Normal section
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla eu pulvinar arcu, quis aliquam dui. In at cursus ante. Vestibulum non sagittis lacus. Duis vitae iaculis dui. Vivamus tempor, nibh ut pretium tempus, enim lorem dignissim quam, at euismod massa magna at magna. Sed facilisis dapibus diam nec volutpat. Maecenas facilisis dapibus egestas. Curabitur dignissim pharetra pulvinar. Nunc bibendum elit sed cursus congue. Curabitur ligula quam, iaculis faucibus orci quis, vestibulum lobortis lectus. Suspendisse fringilla nisl pulvinar, laoreet tellus sed, sollicitudin tortor. Donec consequat congue erat in iaculis. Curabitur luctus tellus ut turpis iaculis, nec laoreet ligula scelerisque.
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla eu pulvinar arcu, quis aliquam dui. In at cursus ante. Vestibulum non sagittis lacus. Duis vitae iaculis dui. Vivamus tempor, nibh ut pretium tempus, enim lorem dignissim quam, at euismod massa magna at magna. Sed facilisis dapibus diam nec volutpat. Maecenas facilisis dapibus egestas. Curabitur dignissim pharetra pulvinar. Nunc bibendum elit sed cursus congue. Curabitur ligula quam, iaculis faucibus orci quis, vestibulum lobortis lectus. Suspendisse fringilla nisl pulvinar, laoreet tellus sed, sollicitudin tortor. Donec consequat congue erat in iaculis. Curabitur luctus tellus ut turpis iaculis, nec laoreet ligula scelerisque.
+
+
+## Tables
+
+### Table 1
+
+
+```{r tab.cap="caption 1", tab.id="mtcars"}
+head(mtcars)
+```
+
+### Table 2
+
+```{r tab.cap="iris"}
+head(iris)
+```
+
+### Table 3
+
+```{r tab.cap="cars", tab.id="cars"}
+head(cars)
+```
+
+
+## figures 
+
+
+### A boxplot
+
+```{r fig.cap="A boxplot", fig.id = "boxplot"}
+boxplot(1:8)
+```
+
+### A barplot
+
+```{r fig.cap="What a barplot", fig.id = "barplot"}
+barplot(1:8)
+```
+
+## Lists
+
+Amet nunc eros curabitur tellus massa, eros maximus porttitor sociosqu, pellentesque.
+
+* Erat mauris egestas finibus tincidunt sed in rhoncus a tellus etiam. 
+    - A adipiscing per ultricies justo tellus lorem. 
+        - Imperdiet ut dui primis, sed gravida, at sed nulla. 
+        - Sem posuere lacus consequat inceptos dapibus duis malesuada finibus. 
+    - Urna sed dui, ornare, eu turpis mus pellentesque amet amet bibendum. 
+* Himenaeos tincidunt, auctor dapibus scelerisque, montes nunc faucibus 
+sodales malesuada ridiculus sed cubilia ligula.
+
+
+1. Erat mauris egestas finibus tincidunt sed in rhoncus a tellus etiam. 
+    1. A adipiscing per ultricies justo tellus lorem. 
+        1. Imperdiet ut dui primis, sed gravida, at sed nulla. 
+        2. Sem posuere lacus consequat inceptos dapibus duis malesuada finibus. 
+    2. Urna sed dui, ornare, eu turpis mus pellentesque amet amet bibendum. 
+2. Himenaeos tincidunt, auctor dapibus scelerisque, montes nunc faucibus 
+sodales malesuada ridiculus sed cubilia ligula.
+
+
+Lorem dolor interdum orci eros pellentesque semper tristique, sodales, et sed
+ut! Porta mattis natoque et. Ac facilisi ipsum viverra elementum vestibulum
+ligula amet enim magnis luctus ullamcorper. Rhoncus rhoncus elit in at nisl.
+Tincidunt habitant sit.
+
+
+* Aptent conubia quam montes id sagittis.
+    - Mattis nisi nascetur, aliquam duis ex, tristique.
+        - Imperdiet ut dui primis, sed gravida, at sed nulla. 
+        - Donec ligula nulla ac. Nisl ac at accumsan sagittis eros felis lobortis amet 
+        nec phasellus urna bibendum sapien.
+    - Eu dui ac id, dictum proin consectetur convallis.
+* Facilisi eu lectus mauris lorem. Et sed sapien pellentesque sed etiam vehicula. 
+* In porttitor id lorem eu efficitur, nisl dis!
+
+
+## Reference
+
+see figure \@ref(fig:boxplot) and table \@ref(tab:mtcars)!
+
