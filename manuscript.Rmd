@@ -21,6 +21,12 @@ fp <- fp_par(
 ft <- fp_text(shading.color='#EFEFEF', bold = TRUE)
 ```
 
+```{r}
+# analysis scripts
+
+"scripts/03_analyses/01_canopyheight_richness_relationships.R" # canopy height richness models and plots
+```
+
 
 \newpage
 
@@ -73,8 +79,28 @@ In forests, species assemblages stratify vertically along resource and microclim
 ## Data
 The canopy height layer was obtained from Lang et al. [-@langHighresolutionCanopyHeight2023], which represents canopy height in the year 2020 at a 10 m resolution. To obtain canopy height in forests, we aggregated the data to match the resolution of Hansen et al. [-@hansenGlobalLandUse2022] global land cover and land use in 2019 (~ 30 m resolution) and used this layer to mask all grid cells with woody vegetation < 3 m, surface water and permanent ice, built-up land, cropland, recent forest loss, and land use associated with forestry and shifting cultivation (e.g., oil palm). We then aggregated and averaged the remaining pixels to the resolution of the verticality data (50 km).
 
+We classified biomes into larger categories based on the 2017 biome categories. For biomes that occurred across latitudes (e.g., Montane Grasslands and Shrublands), we classified them as tropical if they occurred within the latitudes covered by biomes classified as tropical and temperate if they occurred within the latitudes classified as temperate. Additionally, Mediterranean forests, woodlands, and scrub were partitioned into temperate forests if the ecoregion contained "forest" and temperate woodland, savanna, and shrubland if the ecoregion name did not contain the word "forest".
+
+glmmTMB was used to produce models of canopy height by richness. sdmTMB was used to produce models of verticality. DHARMa was used to check model fit and assumptions.
 
 
+```{r}
+# Fig. 1
+
+# Legend: a) canopy height, b) vertebrate richness (all vertebrates combined)
+# c) Deviance residuals for a model of total vertebrate richness by canopy height
+# d) Relationships between species richness and canopy height for each taxon in each
+# biome category. Dots indicate observed values and lines indicate negative binomial
+# model fits of richness by canopy height for each combination of taxon and biome.
+
+
+"figures/ms_figures/fig1_canopy_richness.png"
+
+```
+
+
+# Data availability statement
+canopy height:
 
 
 
