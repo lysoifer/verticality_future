@@ -187,6 +187,9 @@ AIC(fit.global.all1, fit.global.all2) # rich~canopyheight better (fit.global.all
 r2(fit.global.all1)
 r2(fit.global.all2)
 
+nd = data.frame(canopy_height2 = c(min(df_combined$canopy_height2), seq(1,floor(max(df_combined$canopy_height2)),1)))
+fit.global.all.pred = predict_response(fit.global.all1, nd)
+
 fit.resid = simulateResiduals(fit.global.all1, plot = T)
 testDispersion(fit.global.all1)
 resid.deviance = residuals(fit.global.all1, type = "deviance")
@@ -224,10 +227,10 @@ for(i in unique(df$taxa)) {
     #m4 = glmmTMB(rich ~ canopy_height2, data = d, family = nbinom2(link = "log"))
     m3 = MASS::glm.nb(rich~canopy_height2, data = d)
     m4 = MASS::glm.nb(rich~log(canopy_height2), data = d)
-    m3.resid = simulateResiduals(m3, plot = T)
-    m4.resid = simulateResiduals(m4, plot = T)
-    testDispersion(m3)
-    testDispersion(m4)
+    #m3.resid = simulateResiduals(m3, plot = T)
+    #m4.resid = simulateResiduals(m4, plot = T)
+    #testDispersion(m3)
+    #testDispersion(m4)
     
     aic.dif = AIC(m3)-AIC(m4) # negative dif means that rich ~ canopy is better than rich ~ log(canopy)
     r2.dif = r2(m3)$R2_Nagelkerke - r2(m4)$R2_Nagelkerke # positive means that rich ~ canopy is better than rich ~ log(canopy)
@@ -241,8 +244,8 @@ for(i in unique(df$taxa)) {
     # m4 = update(m3, control = glmmTMBControl(optimizer = optim, optArgs=list(method = "BFGS")))
     # 
     # m5 = update(m3, family = poisson())
-    mtest = MASS::glm.nb(rich~canopy_height2, data = d, control = glm.control(maxit = 100))
-    mtest = glm(rich~canopy_height2, data = d, family = poisson())
+    #mtest = MASS::glm.nb(rich~canopy_height2, data = d, control = glm.control(maxit = 100))
+    #mtest = glm(rich~canopy_height2, data = d, family = poisson())
     
     # Deviance residuals
     resid.deviance.m3mod = residuals(m3, type = "deviance")
@@ -255,7 +258,7 @@ for(i in unique(df$taxa)) {
     biome.taxa[[nm]] = d
     
     # predict model to range of canopy height
-    newdat = data.frame(canopy_height2 = seq(min(d$canopy_height2), max(d$canopy_height2), 1))
+    newdat = data.frame(canopy_height2 = c(min(d$canopy_height2), seq(1, floor(max(d$canopy_height2)), 1)))
     
     # predict model rich ~ canopy height
     pred.m3mod = ggeffects::predict_response(m3, newdat)
@@ -498,10 +501,87 @@ main_plot = (canopy_height.plt + total_rich.plt + total_resid.plt) / main_plot +
 ggsave("figures/ms_figures/fig1_canopy_richness.png", width = 180, height = 100, units = "mm", dpi = 300)
 
 
+# GLOBAL TOTAL VERTEBRATE PREDICTIONS -------------------------------------
+
+ggplot() +
+  geom_point(data = df_combined, aes(canopy_height2, total_richness), pch = ".", alpha = 0.2) +
+  geom_line(data = fit.global.all.pred, aes(x, predicted), color = "skyblue2") +
+  geom_ribbon(data = fit.global.all.pred, aes(x, ymin = conf.low, ymax = conf.high), alpha = 0.2, fill = "skyblue2", color = NA) +
+  scale_x_continuous("Canopy Height (m)") +
+  scale_y_continuous("Vertebrate Richness") +
+  theme_classic()
+ggsave("figures/ms_figures/supp_figs/total_richness~canopy.png", width = 90, height = 90, dpi = 300, units = "mm")
 
 
 
+# RESIDUAL MAPS PER SPECIES -----------------------------------------------
 
+global.taxa.map = global.taxa %>% 
+  dplyr::select(x,y,resid.deviance, taxa) %>% 
+  pivot_wider(names_from = "taxa", values_from = "resid.deviance") %>% 
+  rast(crs = "+proj=cea +datum=WGS84") %>% 
+  project("+proj=robin +datum=WGS84")
 
+df$taxa = factor(df$taxa, levels = c("Birds", "Mammals", "Reptiles", "Amphibians"))
 
+limits = range(global.taxa$resid.deviance)
 
+taxa.resid.plts = list()
+for(i in levels(df$taxa)) {
+  p1 = ggplot() +
+    geom_spatvector(data = wd, fill = "black", color = NA) +
+    geom_spatraster(data = global.taxa.map[[i]]) +
+    scale_fill_continuous_divergingx(palette = "Spectral", na.value = NA,
+                                     guide = guide_colorbar(title = "Deviance Residuals"),
+                                     rev = T, limits = limits) +
+    theme_void() +
+    theme(legend.position = "bottom",
+          legend.title.position = "top",
+          legend.title = element_text(hjust = 0.5, size = 8),
+          legend.key.width = unit(10, "mm"),
+          legend.key.height = unit(2, "mm"),
+          legend.text = element_text(size = 6))
+  
+  leg = ggpubr::get_legend(p1)
+  
+  p1 = p1 + theme(legend.position="none")
+  
+  # Create an overlay plot with the image in the top-left
+  image_layer <- ggplot() +
+    annotation_custom(img[[i]], xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf) +
+    theme_void()
+  
+  # Combine base plot with image overlay
+  taxa.resid.plts[[i]] = p1 + inset_element(image_layer, left = 0.1,
+                                            bottom = 0.1, right = 0.35, top = 0.35)
+  
+}
+
+tags = list(c("a", "", "b", "", "c", "", "d", "", ""))
+wrap_plots(taxa.resid.plts) / leg + 
+  plot_layout(heights = c(1,0.1)) +
+  plot_annotation(tag_levels = tags) &
+  theme(plot.tag.position = c(0.1, 0.95),
+        plot.tag = element_text(size = 8))
+ggsave("figures/ms_figures/supp_figs/deviance_resids_taxa.png", width = 180, height = 100, 
+       dpi = 300, unit= "mm")
+
+# RATES OF INCREASE IN RICHNESS -------------------------------------------
+
+ratedifs = biome.taxa.pred.m3mod %>% 
+  as.data.frame() %>% 
+  dplyr::select(x, predicted, biome2, taxa) %>% 
+  filter(x == 15 | x == 25) %>% 
+  pivot_wider(names_from = x, values_from = predicted, names_prefix = "h") %>% 
+  mutate(dif = h25-h15)
+
+# maximum richness in a cell per biome/taxa category
+# may be better to have max richness per biome/taxa category, but don't have that available right now
+# would have to recalculate from range maps
+maxrichcell = df %>% 
+  group_by(taxa, biome2) %>% 
+  summarise(maxrich = max(rich))
+
+ratedifs = left_join(ratedifs, maxrichcell, by = c("taxa", "biome2")) %>% 
+  mutate(relative_increase = dif/maxrich * 100,
+         percent_increase = dif/h15*100)
