@@ -169,13 +169,15 @@ writeRaster(precip_warm.f, "data/derivative_data/resampled_env_rasters_50km/chel
 
 # canopy height
 # canopy height from Lang et al. 2023 https://doi.org/10.1038/s41559-023-02206-6
-canopy_height = rast("data/original/canopy_height/coarsened/canopy_height_reduceRes_mosaic.tif")
-crs(canopy_height) = "+init=epsg:4326" # set crs because it was not being read correctly leading to warnings when projecting to cea
+# This layer represents canopy height after masking out non-woody and human-altered habitats
+# based on Hansen et al. 2022 land cover.
+# then aggregating and averaging to coarser resolution
+canopy_height = rast("data/derivative_data/resampled_env_rasters_50km/canopy_height_lang2023/canopy_height_agg_ForestOnly.tif")
 canopy_height = crop(canopy_height, ext(-180, 180, -64.7937, 90))
 canopy_height = project(canopy_height, "+proj=cea +datum=WGS84")
 canopy_height = resample(canopy_height, mapa)
 names(canopy_height) = "canopy_height"
-writeRaster(canopy_height, "data/derivative_data/resampled_env_rasters_50km/canopy_height.tif", overwrite = T)
+writeRaster(canopy_height, "data/derivative_data/resampled_env_rasters_50km/canopy_height_lang2023/canopy_height_agg_ForestOnly_cea.tif", overwrite = T)
 
 # vegetation density
 # Crowther et al. 2015 https://doi.org/10.1038/nature14967
@@ -206,27 +208,42 @@ clim_velocity = project(clim_velocity, mapa)
 names(clim_velocity) = "clim_velocity"
 writeRaster(clim_velocity, "data/derivative_data/resampled_env_rasters_50km/clim_velocity.tif", overwrite = T)
 
+
+
+# add biorealms -----------------------------------------------------------
+
 # realms
 # from Dinnerstein et al. 2017 https://doi.org/10.1093/biosci/bix014
 biorealm = vect("data/original/env_data/ecoregions/Ecoregions2017.shp")
+  
 biorealm = project(biorealm, "+proj=cea datum=WGS84")
 realm = rasterize(biorealm, mapa, field = "REALM")
 realm = subst(realm, "N/A", NA)
 names(realm) = "realm"
-writeRaster(realm, "data/derivative_data/resampled_env_rasters_50km/realm.tif")
+#writeRaster(realm, "data/derivative_data/resampled_env_rasters_50km/realm.tif")
 
 # biomes: also from Dinnerstein
 biome = rasterize(biorealm, mapa, field = "BIOME_NAME")
 biome = subst(biome, "N/A", NA)
 names(biome) = "biome"
-writeRaster(biome, "data/derivative_data/resampled_env_rasters_50km/biome.tif")
+#writeRaster(biome, "data/derivative_data/resampled_env_rasters_50km/biome.tif")
 
 # ecoregion: also from Dinnerstein
 ecoregion = rasterize(biorealm, mapa, field = "ECO_NAME")
 ecoregion = subst(ecoregion, "N/A", NA)
 names(ecoregion) = "ecoregion"
-writeRaster(ecoregion, "data/derivative_data/resampled_env_rasters_50km/ecoregion.tif")
+#writeRaster(ecoregion, "data/derivative_data/resampled_env_rasters_50km/ecoregion.tif")
 
+# add canopy height calculated without human modified land or bare ground
+# (masked by land cover and aggregated with median)
+canopy_height2 = rast("data/derivative_data/resampled_env_rasters_50km/canopy_height_lang2023/canopy_height_agg_ForestOnly_cea.tif")
+
+# add foliage height diversity (masked by landcover same as canopy height and aggregated with median value)
+fhd = rast("data/derivative_data/resampled_env_rasters_50km/gedi_fhd/fhd_mask_aggregated.tif")
+#fhd = rast("data/original/gedi_fhd/gediv002_fhd-pai-1m-a0_vf_20190417_20230316_12000m.tif")
+fhd = project(fhd$mean, "+proj=cea +datum=WGS84")
+fhd= resample(fhd, mapa)
+names(fhd) = "fhd"
 
 # stack rasters
 r = rast(list.files(path = "data/derivative_data/resampled_env_rasters_50km/", pattern = ".tif", full.names = T))
@@ -239,6 +256,9 @@ bionames = sapply(bionames, "[[", 2)
 #bionames[10:13] = c(hurs_mean", "hurs_range", "vpd_mean", "vpd_range")
 names(r)[3:12] =  bionames
 #r = c(r, realm, biome)
+r = c(r, canopy_height2)
+names(r)[18] = "canopy_height2"
+r = c(r, fhd)
 
 env_df = as.data.frame(r, xy = T)
 

@@ -8,10 +8,10 @@ library(rerddap)
 library(tidyverse)
 
 # REFERENCE PROJECTION MAP
-mapa <- rast(xmin = -20592508, xmax = 20588492, ymin = -5743602, ymax = 6573398,
-             crs = "+proj=cea +datum=WGS84")
-res(mapa) <- 111000
-values(mapa) = 1
+# mapa <- rast(xmin = -20592508, xmax = 20588492, ymin = -5743602, ymax = 6573398,
+#              crs = "+proj=cea +datum=WGS84")
+# res(mapa) <- 111000
+# values(mapa) = 1
 
 ## CHELSA V2.1 bioclimate data
 bio_layers = c(1,2,4,5,6,12:18)
@@ -142,9 +142,9 @@ curl::curl_download(f, dest)
 ## Nat Ecol Evol 7, 1778–1789 (2023). https://doi.org/10.1038/s41559-023-02206-6
 ## Downloaded from google earth engine where I aggregated data to 1km resolution
 
-canopy_rr1 = rast("data/original/canopy_height/coarsened/canopy_height_reduceRes_1km_1.tif")
-canopy_rr2 = rast("data/original/canopy_height/coarsened/canopy_height_reduceRes_1km_2.tif")
-canopy_height = mosaic(canopy_rr1, canopy_rr2, filename = "data/original/canopy_height/coarsened/canopy_height_reduceRes_mosaic.tif")
+# canopy_rr1 = rast("data/original/canopy_height/coarsened/canopy_height_reduceRes_1km_1.tif")
+# canopy_rr2 = rast("data/original/canopy_height/coarsened/canopy_height_reduceRes_1km_2.tif")
+# canopy_height = mosaic(canopy_rr1, canopy_rr2, filename = "data/original/canopy_height/coarsened/canopy_height_reduceRes_mosaic.tif")
 
 # elevation
 browse("srtm30plus_v11_land")

@@ -1,3 +1,5 @@
+# Model richness as a function of canopy height
+
 library(tidyverse)
 library(Data4Ecologists)
 library(terra)
@@ -5,6 +7,11 @@ library(foreach)
 library(colorspace)
 library(tidyterra)
 library(MASS)
+source("scripts/03_analyses/00_tools/tools.R")
+
+wd = vect("data/original/rnaturalearth_world.shp") %>% 
+  project("epsg:4326") %>% 
+  crop(ext(-180,180,-60,83.64))
 
 amph = read.csv("data/derivative_data/gridcell_data/env_forest/50_km/amph_comdat.csv")
 birds = read.csv("data/derivative_data/gridcell_data/env_forest/50_km/birds_comdat.csv")
@@ -30,7 +37,14 @@ df = df %>%
  # drop_na(biome2) %>% 
   filter(rich > 5)
 
+# Explore some preliminary plots
 ggplot(df, aes(canopy_height, rich)) +
+  geom_point(pch = ".", alpha = 0.2) +
+  geom_smooth(method = "lm") +
+  facet_wrap(~taxa, scales = "free_y") +
+  theme_classic()
+
+ggplot(df, aes(log(canopy_height), log(rich))) +
   geom_point(pch = ".", alpha = 0.2) +
   geom_smooth(method = "lm") +
   facet_wrap(~taxa, scales = "free_y") +
@@ -48,93 +62,79 @@ ggplot(df, aes(canopy_height, vert.mean.ses, color = biome)) +
   facet_wrap(~taxa, scales = "free_y") +
   theme_classic()
 
-richness.ch.resids = foreach(i = unique(df$taxa)) %do% {
+
+
+# Model Richness by canopy height for each taxon globally -----------------
+# I initially try a poisson regression. These does not fit the data well for any
+# taxonomic group. Then I try a negabive binomial. This works much better.
+# and residuals look ok.
+
+richness.ch.resids.global = foreach(i = unique(df$taxa)) %do% {
   d = df %>% filter(taxa == i) %>% 
       drop_na(vert.mean.ses, rich, canopy_height) %>% 
       filter(rich > 5 & canopy_height > 0) %>% 
       mutate(log_ch = log(canopy_height))
   
   # model richness by canopy height
-  # m1 = glm(rich ~ log_ch,
-  #         data = d,
-  #         family = poisson())
+  # Poisson distribution does not fit data well
+  m1 = glm(rich ~ log(canopy_height),
+          data = d,
+          family = poisson())
+  m1.resid = simulateResiduals(m1, plot = T)
   
-  m2 = MASS::glm.nb(rich ~ log_ch, data = d)
+  # negative binomial distribution
+  m2 = MASS::glm.nb(rich ~ log(canopy_height), data = d)
+  m2.resid = simulateResiduals(m2, plot = T)
   
-  # AIC(m1, m2)
+  AIC(m1, m2)
   
   # Deviance residuals
   resid.deviance = residuals(m2, type = "deviance")
   d$resid.deviance = resid.deviance
+  d$resid.dharma = residuals(m2.resid)
+  d$taxa = i
   
-  r = d %>% 
-    #dplyr::select(x,y,resid.deviance, vert.mean.ses, p.arb, vert.mean, biome2) %>%
-    # mutate(rowid = 1:nrow(d)) %>% 
-    # rast(crs = "+proj=cea +datum=WGS84") %>% 
-    # project("epsg:4326") %>% 
-    # as.data.frame(xy = T) %>% 
-    mutate(taxa = i)
-  r
+  d
 }
 
-richness.ch.resids = bind_rows(richness.ch.resids) %>% 
-  mutate(taxa = factor(taxa, levels = c("Birds", "Mammals", "Reptiles", "Amphibians")),
-         color = case_when(biome2 == "Tropical & subtropical moist" ~ "darkgreen",
-                           biome2 == "Tropical & subtropical dry" ~ "greenyellow",
-                           biome2 == "Tropical & subtropical conifer" ~ "olivedrab4",
-                           biome2 == "Tropical & subtropical savannas & shrublands" ~ "darkorange3",
-                           biome2 == "Temperate savanna, shrub, & scrub" ~ "orange1",
-                           biome2 == "Temperate & arctic" ~ "deepskyblue3"),
-         biome2 = factor(biome2, levels = c("Temperate & arctic",
-                                            "Temperate savanna, shrub, & scrub",
-                                            "Tropical & subtropical savannas & shrublands",
-                                            "Tropical & subtropical dry",
-                                            "Tropical & subtropical conifer",
-                                            "Tropical & subtropical moist")),
-         color = factor(color, levels = c("deepskyblue3", "orange1", "darkorange3",
-                                          "greenyellow", "olivedrab4", "darkgreen")))
+richness.ch.resids.global = bind_rows(richness.ch.resids.global) 
 
 
+# *- Make maps of residuals --------------------------------------------------
 
-wd = vect("data/original/rnaturalearth_world.shp") %>% 
-  project("epsg:4326") %>% 
-  crop(ext(-180,180,-60,83.64))
-
-richness.ch.resids.wgs.a = richness.ch.resids %>% 
-  dplyr::select(x,y,resid.deviance, taxa) %>% 
+# convert to wgs84 unprojected coordinate system
+richness.ch.resids.wgs.a = richness.ch.resids.global %>% 
+  dplyr::select(x,y,resid.deviance, resid.dharma, taxa) %>% 
   filter(taxa == "Amphibians") %>% 
-  rast(crs = "+proj=cea +datum=WGS84") %>%
-  project("epsg:4326") %>%
-  as.data.frame(xy = T) %>% 
+  reproj_df("+proj=cea +datum=WGS84", "epsg:4326", method = "bilinear", torast = F) %>% 
   mutate(taxa = "Amphibians")
-richness.ch.resids.wgs.b = richness.ch.resids %>% 
-  dplyr::select(x,y,resid.deviance, taxa) %>% 
+  
+richness.ch.resids.wgs.b = richness.ch.resids.global %>% 
+  dplyr::select(x,y,resid.deviance, resid.dharma, taxa) %>% 
   filter(taxa == "Birds") %>% 
-  rast(crs = "+proj=cea +datum=WGS84") %>%
-  project("epsg:4326") %>%
-  as.data.frame(xy = T) %>% 
+  reproj_df("+proj=cea +datum=WGS84", "epsg:4326", method = "bilinear", torast = F) %>% 
   mutate(taxa = "Birds")
-richness.ch.resids.wgs.m = richness.ch.resids %>% 
-  dplyr::select(x,y,resid.deviance, taxa) %>% 
+
+richness.ch.resids.wgs.m = richness.ch.resids.global %>% 
+  dplyr::select(x,y,resid.deviance, resid.dharma, taxa) %>% 
   filter(taxa == "Mammals") %>% 
-  rast(crs = "+proj=cea +datum=WGS84") %>%
-  project("epsg:4326") %>%
-  as.data.frame(xy = T) %>% 
+  reproj_df("+proj=cea +datum=WGS84", "epsg:4326", method = "bilinear", torast = F) %>% 
   mutate(taxa = "Mammals")
-richness.ch.resids.wgs.r = richness.ch.resids %>% 
-  dplyr::select(x,y,resid.deviance, taxa) %>% 
+
+richness.ch.resids.wgs.r = richness.ch.resids.global %>% 
+  dplyr::select(x,y,resid.deviance, resid.dharma, taxa) %>% 
   filter(taxa == "Reptiles") %>% 
-  rast(crs = "+proj=cea +datum=WGS84") %>%
-  project("epsg:4326") %>%
-  as.data.frame(xy = T) %>% 
+  reproj_df("+proj=cea +datum=WGS84", "epsg:4326", method = "bilinear", torast = F) %>% 
   mutate(taxa = "Reptiles")
 
+# combine dataframes together
 richness.ch.resids.wgs = bind_rows(richness.ch.resids.wgs.a,
                                    richness.ch.resids.wgs.b,
                                    richness.ch.resids.wgs.m,
                                    richness.ch.resids.wgs.r) %>% 
   mutate(taxa = factor(taxa, levels = c("Birds", "Mammals", "Reptiles","Amphibians")))
 
+# map global residuals per taxon
 thm = theme(legend.key.height = unit(3, units = "mm"),
             legend.key.width = unit(10, units = "mm"),
             plot.background = element_blank(),
@@ -151,24 +151,62 @@ thm = theme(legend.key.height = unit(3, units = "mm"),
             axis.text = element_blank())
 
 p2 = ggplot() +
+  geom_spatvector(data = wd,fill = "gray80", color = NA) +
   geom_raster(data = richness.ch.resids.wgs, aes(x,y, fill = resid.deviance)) +
-  geom_spatvector(data = wd,fill = NA, color = "black") +
   coord_sf(crs = 4326) +
   scale_fill_continuous_divergingx(palette = "RdBu", rev = T,
                                    guide = guide_colorbar(title = "Residuals")) +
-  facet_wrap(vars(taxa), ncol = 1, strip.position = "left") +
+  facet_wrap(vars(taxa), ncol = 2) +
   theme_bw() +
   thm + theme(
     legend.position = "bottom",
     legend.title.position = "top",
     strip.background = element_blank(),
-    strip.text = element_blank(),
-    axis.text.x = element_blank())
-p2.legend = ggpubr::get_legend(p2)
-p2.legend = as_ggplot(p2.legend)
-p2 = p2 + theme(legend.position = "none")
+    axis.text.x = element_blank(),
+    axis.title = element_blank(),
+    panel.background = element_rect(fill = NA, color = NA))
+# p2.legend = ggpubr::get_legend(p2)
+# p2.legend = as_ggplot(p2.legend)
+# p2 = p2 + theme(legend.position = "none")
 
-ggsave("figures/main_figs/richness~CH_residuals.png", width = 180, height = 120, units = "mm", dpi = 300)
+# This will be a supplementary figure
+ggsave("figures/main_figs/humbolts_enigma/richness~CH_residuals.png", width = 180, height = 120, units = "mm", dpi = 300)
+
+
+
+# Model total richness of all vertebrates by canopy height globally ---------------------------------
+# Sum richness of each taxon to get total richness
+df_combined = df %>% 
+  dplyr::select(x,y,rich, canopy_height, taxa, biome2) %>% 
+  pivot_wider(names_from = taxa, values_from = rich, names_prefix = "richness_") %>% 
+  mutate(log_ch = log(canopy_height)) %>% 
+  filter(canopy_height > 0)
+df_combined$total_richness = apply(df_combined[,5:8], 1, sum, na.rm = T)
+
+
+
+# richness.ch.resids.global = bind_rows(richness.ch.resids) %>% 
+#   mutate(taxa = factor(taxa, levels = c("Birds", "Mammals", "Reptiles", "Amphibians")),
+#          color = case_when(biome2 == "Tropical & subtropical moist" ~ "darkgreen",
+#                            biome2 == "Tropical & subtropical dry" ~ "greenyellow",
+#                            biome2 == "Tropical & subtropical conifer" ~ "olivedrab4",
+#                            biome2 == "Tropical & subtropical savannas & shrublands" ~ "darkorange3",
+#                            biome2 == "Temperate savanna, shrub, & scrub" ~ "orange1",
+#                            biome2 == "Temperate & arctic" ~ "deepskyblue3"),
+#          biome2 = factor(biome2, levels = c("Temperate & arctic",
+#                                             "Temperate savanna, shrub, & scrub",
+#                                             "Tropical & subtropical savannas & shrublands",
+#                                             "Tropical & subtropical dry",
+#                                             "Tropical & subtropical conifer",
+#                                             "Tropical & subtropical moist")),
+#          color = factor(color, levels = c("deepskyblue3", "orange1", "darkorange3",
+#                                           "greenyellow", "olivedrab4", "darkgreen")))
+
+
+
+
+
+
 
 
 ggplot(data = richness.ch.resids, aes(p.arb, resid.deviance)) +

@@ -41,6 +41,9 @@ world.rast = mask(world.rast, world.cea)
 world.df = as.data.frame(world.rast, xy = T) %>% 
   dplyr::select(x,y)
 
+wd = vect("data/original/World_Continents/World_Continents.shp")
+wd = project(wd, "+proj=cea +datum=WGS84")
+
 # load env data
 env = read.csv("data/derivative_data/env_data_50km.csv")
 
@@ -184,6 +187,16 @@ env = env %>% dplyr::select(x,y, precip_warm)
 griddat = left_join(griddat, env, by = c("x", "y"))
 fwrite(griddat, "data/derivative_data/gridcell_data/env_forest/50_km/amph_comdat.csv", row.names = F)
 
+griddat = fread("data/derivative_data/gridcell_data/env_forest/50_km/amph_comdat.csv")
+envsub = env %>% dplyr::select(x,y, canopy_height2)
+griddat = left_join(griddat, envsub, by = c("x", "y"))
+fwrite(griddat, "data/derivative_data/gridcell_data/env_forest/50_km/amph_comdat.csv", row.names = F)
+
+envsub = env %>% dplyr::select(x,y,fhd)
+griddat = left_join(griddat, envsub, by = c("x", "y"))
+fwrite(griddat, "data/derivative_data/gridcell_data/env_forest/50_km/amph_comdat.csv", row.names = F)
+
+
 # # error here because I didn't use forest env
 # tic()
 # amph_comdat = get_gridcell_vert_parallel(trait_dat = amph_spdat, occ = occr, env = env, rich_min = 5, ncore = 7, nsim = 100)
@@ -298,6 +311,17 @@ env = env %>% dplyr::select(x,y, precip_warm)
 griddat = left_join(griddat, env, by = c("x", "y"))
 fwrite(griddat,  "data/derivative_data/gridcell_data/env_forest/50_km/mammals_comdat.csv", row.names = F)
 
+
+griddat = fread("data/derivative_data/gridcell_data/env_forest/50_km/mammals_comdat.csv")
+envsub = env %>% dplyr::select(x,y, canopy_height2)
+griddat = left_join(griddat, envsub, by = c("x", "y"))
+fwrite(griddat, "data/derivative_data/gridcell_data/env_forest/50_km/mammals_comdat.csv", row.names = F)
+
+envsub = env %>% dplyr::select(x,y,fhd)
+griddat = left_join(griddat, envsub, by = c("x", "y"))
+fwrite(griddat, "data/derivative_data/gridcell_data/env_forest/50_km/mammals_comdat.csv", row.names = F)
+
+
 # tic()
 # mammals_comdat = get_gridcell_vert_parallel(trait_dat = mammals_spdat, occ = occr, env = env.forest, rich_min = 5, ncore = 7, nsim = 100)
 # write.csv(mammals_comdat, "data/derivative_data/gridcell_data/env_forest/50_km/mammals_comdat.csv", row.names = F)
@@ -395,6 +419,16 @@ griddat = fread("data/derivative_data/gridcell_data/env_forest/50_km/reptiles_co
 env = env %>% dplyr::select(x,y, precip_warm)
 griddat = left_join(griddat, env, by = c("x", "y"))
 fwrite(griddat,  "data/derivative_data/gridcell_data/env_forest/50_km/reptiles_comdat.csv", row.names = F)
+
+griddat = fread("data/derivative_data/gridcell_data/env_forest/50_km/reptiles_comdat.csv")
+envsub = env %>% dplyr::select(x,y, canopy_height2, fhd.mean)
+griddat = left_join(griddat, envsub, by = c("x", "y"))
+fwrite(griddat, "data/derivative_data/gridcell_data/env_forest/50_km/reptiles_comdat.csv", row.names = F)
+
+# add FHD
+envsub = env %>% dplyr::select(x,y,fhd)
+griddat = left_join(griddat, envsub, by = c("x", "y"))
+fwrite(griddat, "data/derivative_data/gridcell_data/env_forest/50_km/reptiles_comdat.csv", row.names = F)
 
 
 
@@ -561,6 +595,15 @@ env = env %>% dplyr::select(x,y, precip_warm)
 griddat = left_join(griddat, env, by = c("x", "y"))
 fwrite(griddat,  "data/derivative_data/gridcell_data/env_forest/50_km/birds_comdat.csv", row.names = F)
 
+griddat = fread("data/derivative_data/gridcell_data/env_forest/50_km/birds_comdat.csv")
+envsub = env %>% dplyr::select(x,y, canopy_height2, fhd.mean)
+griddat = left_join(griddat, envsub, by = c("x", "y"))
+fwrite(griddat, "data/derivative_data/gridcell_data/env_forest/50_km/birds_comdat.csv", row.names = F)
+
+# add fhd
+envsub = env %>% dplyr::select(x,y,fhd)
+griddat = left_join(griddat, envsub, by = c("x", "y"))
+fwrite(griddat, "data/derivative_data/gridcell_data/env_forest/50_km/birds_comdat.csv", row.names = F)
 
 # # takes 7051 sec sec
 # tic()

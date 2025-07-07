@@ -9,36 +9,34 @@ library(doParallel)
 library(tidyverse)
 library(data.table)
 
-amph = readRDS("results/sdmTMB_models2/predictions/amphibians_sesvert.rds")
-amphmod = amph$mod
-amphmod = sdmTMB:::reload_model(amphmod)
+amph = readRDS("results/sdmTMB_models2.3/amphibians_sesvert_tempdiu.rds")
+amphmod = amph$fullmod$modlist[[1]]
 
-birds = readRDS("results/sdmTMB_models2/predictions/birds_sesvert.rds")
-birdsmod = birds$mod
+birds = readRDS("results/sdmTMB_models2.3/birds_sesvert_tempdiu.rds")
+birdsmod = birds$fullmod
 
-mammals = readRDS("results/sdmTMB_models2/predictions/mammals_sesvert.rds")
-mammalsmod = mammals$mod
+mammals = readRDS("results/sdmTMB_models2.3/mammals_sesvert_tempdiu.rds")
+mammalsmod = mammals$fullmod
 
-repts = readRDS("results/sdmTMB_models2/predictions/reptiles_sesvert.rds")
-reptsmod = repts$mod
+repts = readRDS("results/sdmTMB_models2.3/reptiles_sesvert_tempdiu.rds")
+reptsmod = repts$fullmod
 
 range(birdsmod$data$log_precip_dry)
 range(birdsmod$data$tmax_warm)
 range(birdsmod$data$tmin_cold)
 range(birdsmod$data$canopy_height)
 range(birdsmod$data$veg_den)
-range(birdsmod$data$precip_wet)
 range(birdsmod$data$precip_warm)
-range(birdsmod$data$log_clim_velocity)
+range(birdsmod$data$temp_diu)
 
 var = list(
-  "log_precip_dry [-4.6:2.3 by=0.1]",
-  "tmax_warm [-3.6:2.7 by=0.1]",
-  "tmin_cold [-2.54:1.37 by=0.1]",
-  "canopy_height [-1.3:3.5 by=0.1]",
+  "log_precip_dry [-2.1:2.7 by=0.1]",
+  "tmax_warm [-3.8:2.9 by=0.1]",
+  "tmin_cold [-2.54:1.34 by=0.1]",
+  "canopy_height [-1.8:3.1 by=0.1]",
   "veg_den [-1.3:9.0 by=0.1]",
   "precip_warm [-1.3:15.4 by=0.1]",
-  "log_clim_velocity [-4.3:2.5 by=0.1]"
+  "temp_diu [-3.7:3.2 by=0.1]"
   )
 
 
@@ -47,7 +45,7 @@ amphplots = foreach(v = 1:length(var)) %do% {
   g = cbind(g)
   g$term = var[[v]]
   g$taxa = "amphibians"
-  saveRDS(g, paste0("results/sdmTMB_models2/marginal_effects/amphibians/amph_", v, ".rds"))
+  saveRDS(g, paste0("results/sdmTMB_models2.3/marginal_effects/amphibians/amph_", v, ".rds"))
   g
 }
 

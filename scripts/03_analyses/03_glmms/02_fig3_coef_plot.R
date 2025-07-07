@@ -9,12 +9,12 @@ library(sdmTMB)
 
 # SES Verticality Model Coefficients --------------------------------------
 
-amph = readRDS("results/sdmTMB_models2/amphibians_sesvert.rds")
-birds = readRDS("results/sdmTMB_models2/birds_sesvert.rds")
-mammals = readRDS("results/sdmTMB_models2/mammals_sesvert.rds")
-repts = readRDS("results/sdmTMB_models2/reptiles_sesvert.rds")
+amph = readRDS("results/sdmTMB_models2.3/amphibians_sesvert_tempdiu.rds")
+birds = readRDS("results/sdmTMB_models2.3/birds_sesvert_tempdiu.rds")
+mammals = readRDS("results/sdmTMB_models2.3/mammals_sesvert_tempdiu.rds")
+repts = readRDS("results/sdmTMB_models2.3/reptiles_sesvert_tempdiu.rds")
 
-mods = list(amph$bestmod, birds$bestmod, mammals$bestmod, repts$bestmod)
+mods = list(amph$fullmod$modlist[[1]], birds$fullmod, mammals$fullmod, repts$fullmod)
 mods = lapply(mods, tidy, effects = "fixed", conf.int = T)
 mods[[1]]$taxa = "Amphibians"
 mods[[2]]$taxa = "Birds"
@@ -25,24 +25,26 @@ mods = bind_rows(mods)
 mods = mods %>% 
   filter(term != "(Intercept)") %>%
   mutate(taxa = factor(taxa, levels = c("Birds", "Mammals", "Reptiles", "Amphibians")),
-         term = case_when(term == "tmin_cold:canopy_height" ~ "Tmin[cold]:canopy height",
-                          term == "tmax_warm:canopy_height" ~ "Tmax[warm]:canopy height",
-                          term == "I(tmax_warm^2):canopy_height" ~ "Tmax[warm]\u00b2:canopy height",
-                          term == "log_precip_dry:canopy_height" ~ "log(Precip[dry]):canopy height",
-                          term == "precip_warm:canopy_height" ~ "Precip[warm]:canopy height",
-                          term == "log_clim_velocity" ~ "log(climate velocity)", 
+         term = case_when(term == "tmin_cold:canopy_height2" ~ "Tmin[cold]:canopy height",
+                          term == "tmax_warm:canopy_height2" ~ "Tmax[warm]:canopy height",
+                          term == "I(tmax_warm^2):canopy_height2" ~ "Tmax[warm]\u00b2:canopy height",
+                          term == "log_precip_dry:canopy_height2" ~ "log(Precip[dry]):canopy height",
+                          term == "precip_warm:canopy_height2" ~ "Precip[warm]:canopy height",
+                          term == "temp_diu:canopy_height2" ~ "T[diu]:canopy height",
                           term == "veg_den" ~ "Vegetation density",
-                          term == "canopy_height" ~ "Canopy height",
+                          term == "canopy_height2" ~ "Canopy height",
                           term == "precip_warm" ~ "Precip[warm]",
                           term == "precip_wet" ~ "Precip[wet]",
                           term == "log_precip_dry" ~ "log(Precip[dry])",
                           term == "I(tmax_warm^2)" ~ "(Tmax[warm])\u00b2",
                           term == "tmax_warm" ~ "Tmax[warm]",
-                          term == "tmin_cold" ~ "Tmin[cold]"),
+                          term == "tmin_cold" ~ "Tmin[cold]",
+                          term == "temp_diu" ~ "T[diu]"),
         term = factor(term, levels = c(
           "Tmin[cold]:canopy height",
           "Tmax[warm]:canopy height",
           "Tmax[warm]\u00b2:canopy height",
+          "T[diu]:canopy height",
           "log(Precip[dry]):canopy height",
           "Precip[warm]:canopy height",
           "log(climate velocity)",
@@ -51,6 +53,7 @@ mods = mods %>%
           "Precip[warm]",
           "Precip[wet]",
           "log(Precip[dry])",
+          "T[diu]",
           "(Tmax[warm])\u00b2",
           "Tmax[warm]",
           "Tmin[cold]")),
@@ -72,21 +75,23 @@ mods = mods %>%
 
 mods %>% 
   ggplot(aes(x = estimate, y = term, xmin = conf.low, xmax = conf.high, fill = fillcol, color = taxacol, linetype = lty)) +
-  geom_pointrange(size = 0.5, pch = 21, position = position_dodge(width = 0.5)) +
+  geom_pointrange(size = 0.25, pch = 21, position = position_dodge(width = 0.5)) +
   geom_vline(xintercept = 0, linetype = "dashed") +
   scale_y_discrete("",
                    labels = c("Tmin[cold]:canopy height" = expression("Tmin"[cold]*":Canopy height"),
                               "Tmax[warm]:canopy height" = expression("Tmax"[warm]*":Canopy height"),
                               "Tmax[warm]\u00b2:canopy height" = expression("(Tmax"["warm"]*")\u00b2:Canopy height"),
                               "log(Precip[dry]):canopy height" = expression("log(Precip"["dry"]*"):Canopy height"),
+                              "T[diu]:canopy height" = expression("Temp"[diu]*":Canopy height"),
                               "Precip[warm]:canopy height" = expression("Precip"[warm]*":Canopy height"),
                               "Precip[warm]" = expression("Precip"[warm]),
                               "Precip[wet]" = expression("Precip"[wet]),
                               "log(Precip[dry])" = expression("log(Precip"["dry"]*")"),
+                              "T[diu]" = expression("Temp"[diu]),
                               "(Tmax[warm])\u00b2" = expression("(Tmax"["warm"]*")\u00b2"),
                               "Tmax[warm]" = expression("Tmax"[warm]),
                               "Tmin[cold]" = expression("Tmin"[cold]))) +
-  scale_x_continuous(limits = c(-0.2,0.4)) +
+  scale_x_continuous(limits = c(-0.5,0.7)) +
   scale_fill_identity(guide = "legend",
                       labels = levels(mods$taxa),
                       breaks = levels(mods$taxacol)) +
@@ -102,7 +107,7 @@ mods %>%
         panel.grid.minor = element_blank(),
         strip.background = element_rect(color = "black"),
         legend.position = "inside",
-        legend.position.inside = c(0.842,0.135),
+        legend.position.inside = c(0.842,0.134),
         legend.box.margin = margin(0,0,0,0),
         legend.box.spacing = unit(0.1, "mm"),
         legend.title = element_blank(),
@@ -111,7 +116,7 @@ mods %>%
         axis.text.x = element_text(size = 6),
         panel.grid.major.x = element_blank())
 
-ggsave("figures/main_figs/fig3_sdmTMB_coefs_only.png", width = 140, height = 120, units = "mm", dpi = 300)
+ggsave("figures/ms_figures/fig3_sdmTMB_coefs.png", width = 140, height = 120, units = "mm", dpi = 300)
 
 # Add interaction plots to coef plot --------------------------------------
 

@@ -585,3 +585,52 @@ maxrichcell = df %>%
 ratedifs = left_join(ratedifs, maxrichcell, by = c("taxa", "biome2")) %>% 
   mutate(relative_increase = dif/maxrich * 100,
          percent_increase = dif/h15*100)
+
+
+
+
+
+# SCRATCH SPACE -----------------------------------------------------------
+
+df2 = df %>% filter(rich >= 5)
+
+amph2 = df2 %>% filter(taxa == "Amphibians")
+
+m1 = lm(rich ~ vert.mean.ses, data = amph2)
+m1.resid = resid(m1)
+plot(amph2$canopy_height2, m1.resid)
+plot(amph2$precip_dry, m1.resid)
+ggplot(amph2, aes(log(precip_dry +1), m1.resid)) + geom_point() + geom_smooth(method = "lm")
+ggplot(amph2, aes(canopy_height2, m1.resid)) + geom_point() + geom_smooth(method = "lm")
+ggplot(amph2, aes(tmax_warm, m1.resid)) + geom_point() + geom_smooth(method = "lm")
+ggplot(amph2, aes(tmin_cold, m1.resid)) + geom_point() + geom_smooth(method = "lm")
+ggplot(amph2, aes(vert.mean.ses, rich)) + 
+  geom_point(alpha = 0.05) + 
+  geom_smooth(method = "glm",  method.args = list(family = "poisson"))
+
+# so it looks like precip and canopy height drive verticality, which influences richness
+# therefore, verticality mediates relationships between canopy height and richness
+# and factors limiting verticality will limit richness
+# but temperature influences richness independently of verticality
+
+m2 = lm(rich ~ vert.mean.ses + canopy_height2, data = amph2)
+summary(m2)
+
+m3 = lm(rich ~ canopy_height2, data = amph2)
+summary(m3)
+
+m1 = MASS::glm.nb(rich ~ vert.mean.ses, data = amph2)
+m1.resid = residuals(m1, type = "deviance")
+amph2$m1.resid = m1.resid
+ggplot(amph2, aes(canopy_height2, m1.resid)) +
+  geom_point(alpha = 0.05) +
+  geom_smooth(method = "lm")
+
+mod.resid = lm(m1.resid ~ canopy_height2, data = amph2)
+summary(mod.resid)
+
+cor.test(m1.resid, amph2$canopy_height2)
+
+
+
+

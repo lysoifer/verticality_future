@@ -16,6 +16,7 @@ library(data.table)
 library(soiltexture)
 library(dplyr)
 library(tidyr)
+library(terra)
 soilparams = micropoint::soilparams
 
 # Function to run micropoint - part of microclim3D package, but package currently isn't functioning
@@ -107,7 +108,7 @@ run_micropoint = function(tme, gedi, climr, vegp, soil, elev, asp, slp, dtmc,
       paii = pai_z_season[[2]]
     }
     
-    # test if height is greater than 5m (errors when there is only one paiz value - not sure why)
+    # test if height is greater than 5m (errors when there are fewer than 10 nodes to estimate the vert profile)
     #print(pai_z)
     print(h)
     
@@ -228,7 +229,7 @@ run_micropoint = function(tme, gedi, climr, vegp, soil, elev, asp, slp, dtmc,
 # Run vertical microclimate profiles --------------------------------------
 
 # Run mintemp vertical profiles
-indat = list.files("D:/projects/verticality_future/data/derivative_data/micropoint_prep/", full.names = T)
+indat = list.files("D:/projects/verticality_future/data/derivative_data/micropoint_prep2/", full.names = T)
 # run vertical profiles in the coldest month
 for(i in 1:6) {
   dat = readRDS(indat[i])
@@ -258,7 +259,7 @@ for(i in 1:6) {
     method = "temporal_month",
     reqhgts = NA,
     vertpai_method = "pai",
-    fout = paste0("results/microclim_models/",nm,"/mintemp_cold.csv"))
+    fout = paste0("results/microclim_models2/",nm,"/mintemp_cold.csv"))
   
 }
 
@@ -291,7 +292,7 @@ for(i in 1:6) {
     method = "temporal_month",
     reqhgts = NA,
     vertpai_method = "pai",
-    fout = paste0("results/microclim_models/",nm,"/tmax_warm.csv"))
+    fout = paste0("results/microclim_models2/",nm,"/tmax_warm.csv"))
   
 }
 
@@ -300,7 +301,8 @@ for(i in 1:6) {
 # VISUALIZATION -----------------------------------------------------------
 
 # Load in modeling data
-micromods = list.files("results/microclim_models/", recursive = T, full.names = T)
+micromods = list.files("results/microclim_models2/", pattern = ".csv",
+                       recursive = T, full.names = T)
 micromods.tmin = grep("mintemp", micromods, value = T) # points for the coldest month of the year
 micromods.tmax = grep("tmax", micromods, value = T) # points for the warmest month of the year
 
