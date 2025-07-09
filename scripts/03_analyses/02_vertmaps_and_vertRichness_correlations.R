@@ -10,6 +10,7 @@ library(grid)
 #library(tricolore)
 library(lemon)
 library(cowplot)
+library(gridExtra)
 
 
 # load data ----------------------------------------------------
@@ -102,45 +103,46 @@ for(i in levels(all$taxa)) {
   vert.legend = ggpubr::get_legend(map)
   #vert.legend = as_ggplot(vert.legend)
   vertmaps[[i]] = map + theme(legend.position = "none")
-  
-  
+
 }
 
 
 # PLOT VERT-RICHNESS CORRELATIONS -------------------------------------------------------
 
 corplot = list()
+cor = list()
 
 for(i in levels(all$taxa)) {
   d = all %>% filter(taxa==i)
   
+  cor[[i]] = cor.test(d$vert.mean.ses, d$rich)
+  r = round(cor[[i]]$estimate,2)
+  
   p = ggplot(d, aes(vert.mean.ses, rich)) +
     geom_point(pch = ".", alpha = 0.05) +
-    geom_smooth(method = "lm", color = "green3") +
+    geom_smooth(method = "lm", color = "cyan3", linewidth = 0.5) +
+    annotate(geom = "text", x = -Inf, y = Inf, label = paste0("r = ", r),
+             hjust = -0.1, vjust = 1.2, size = 3) +
     #facet_rep_wrap(~taxa, scales = "free_y", ncol = 1) +
-    scale_y_continuous("Richness") +
+    scale_y_continuous("Richness", position = "right") +
     scale_x_continuous("Verticality") +
     theme_classic() +
     theme(strip.background = element_blank(),
-          strip.text = element_blank(),
-          axis.title = element_blank())
+          strip.text = element_blank())
   
   corplot[[i]] = p
   
 }
 
 
-# add r2 values
-# try flipping y-axis to right side of the plot
-
-
 # PLOT PROPORTIONS ACROSS LATITUDES ---------------------------------------
 
 pal = divergingx_hcl(palette = "zissou", n = 3)
+pal2 = divergingx_hcl(palette = "spectral", n =19)
 
-cola = pal[3]
+cola = pal2[2]
 colt = pal[2]
-colf = pal[1]
+colf = pal2[17] 
 
 
 propplots = list()
@@ -172,14 +174,12 @@ for(i in levels(all$taxa)) {
   prop_legend = ggpubr::get_legend(p)
   
   p = p +
-    theme(axis.title.y = element_blank(),
-          legend.position = "none",
+    theme(legend.position = "none",
           strip.placement = "outside",
           strip.background = element_rect(color = NA, fill = NA),
           axis.line = element_line(color = "black"),
           panel.background = element_blank(),
-          strip.text = element_text(size = 10),
-          axis.title.x = element_blank())
+          strip.text = element_text(size = 10))
   
   propplots[[i]] = p
   
@@ -202,15 +202,25 @@ tight_theme <- theme(
 
 # Apply to all plots
 propplots <- lapply(propplots, `+`, tight_theme)
+for(i in 1:4) {
+  if(i!=4){propplots[[i]] = propplots[[i]]+theme(axis.title.x = element_blank())}
+  propplots[[i]] = propplots[[i]] + theme(plot.margin = margin(0,0,0,10),
+                                          axis.title.y = element_text(margin = margin(r=0)))
+  }
 vertmaps  <- lapply(vertmaps,  `+`, tight_theme)
 # fix aspect ratio for combining plots
 vertmaps_fixed <- lapply(vertmaps, function(p) {
   ggdraw(p) + theme(plot.margin = margin(0,0,0,0))
 })
-corplot  <- lapply(corplot,  `+`, tight_theme)
-corplot <- lapply(corplot, function(p){
-  p + theme(plot.margin = margin(0,10,0,0))
-})
+#corplot  <- lapply(corplot,  `+`, tight_theme)
+for(i in 1:4) {
+  p = corplot[[i]]
+  p = p + theme(plot.margin = margin(0,20,0,0),
+                axis.title.y = element_text(margin = margin(l=25)),
+                axis.text.y = element_text(margin = margin(r=25)))
+  if(i!=4) {p = p+theme(axis.title.x = element_blank())}
+  corplot[[i]]=p
+}
 
 rows = list()
 icons = list.files("figures/icons/", pattern = ".png", full.names = T)
@@ -226,9 +236,9 @@ for (i in levels(all$taxa)) {
   # Match heights to avoid vertical misalignment
   max_height = grid::unit.pmax(g_prop$heights, g_map$heights, g_cor$heights)
   g_prop$heights <- g_map$heights <- g_cor$heights <- max_height
-  #g_map$widths <- g_map$widths
-  g_prop$widths <- g_prop$widths*0.5
-  g_cor$widths <- g_cor$widths*0.5
+  g_map$widths <- g_map$widths*2
+  g_prop$widths <- g_prop$widths
+  g_cor$widths <- g_cor$widths
   
   # Combine into one row (left to right: prop | map | cor)
   row = gtable_cbind(g_prop, g_map, g_cor, size = "first")
@@ -239,7 +249,7 @@ for (i in levels(all$taxa)) {
   icon_grob <- rasterGrob(
     img,
     x = unit(1.2, "npc"),  # move right within the spanning cell
-    y = unit(0.3, "npc"),
+    y = unit(0.2, "npc"),
     just = "left",
     width = unit(1, "cm"),
     height = unit(1, "cm")
@@ -270,61 +280,60 @@ for (i in levels(all$taxa)) {
 # Combine all rows vertically
 final_gtable = do.call(gtable_rbind, rows)
 
+library(grid)
+
+tags <- list(
+  textGrob("a", x = 0, just = "left", gp = gpar(fontsize = 13)),
+  textGrob("b", x = 0, just = "left", gp = gpar(fontsize = 13)),
+  textGrob("c", x = 0, just = "left", gp = gpar(fontsize = 13))
+)
+
+# Create row for tags
+tag_row <- gtable(
+  widths = final_gtable$widths,
+  heights = unit(1.5, "lines")
+)
+
+# Assuming your columns are: 1–13 (col 1), 14–26 (col 2), 27–39 (col 3)
+tag_row <- gtable_add_grob(tag_row, tags[[1]], t = 1, l = 1,  r = 13)
+tag_row <- gtable_add_grob(tag_row, tags[[2]], t = 1, l = 14, r = 26)
+tag_row <- gtable_add_grob(tag_row, tags[[3]], t = 1, l = 27, r = 39)
+
+final_gtable <- gtable_rbind(tag_row, final_gtable)
+
 # add legend
 
-legend_patch <- wrap_elements(full = prop_legend) + 
-  wrap_elements(full = vert.legend)
+# Estimate how many columns legends will span
+total_cols <- length(final_gtable$widths)
+legend_span <- 30  # columns needed for both legends side by side
+start_col <- floor((total_cols - legend_span) / 2) + 1
+end_col <- start_col + legend_span - 1
 
-# Put legends side by side
-legend_row <- legend_patch + plot_layout(ncol = 2, widths = c(1, 1))
-
-# Combine main plot (as a patchwork object) and legends
-final_plot <- wrap_elements(full = final_gtable) / legend_row +
-  plot_layout(heights = c(10, 1))
-
-
-
-
-#legend_grob <- ggplotGrob(patchwork::wrap_elements(vert.legend))
-# Make legend gtable same width as final_gtable
+# Create legend container
 legend_gtable <- gtable(widths = final_gtable$widths, heights = unit(1, "null"))
-legend_gtable <- gtable_add_grob(legend_gtable, prop_legend, t = 1, l = 1, r = 19)
-legend_gtable <- gtable_add_grob(legend_gtable, vert.legend, t = 1, l = 20, r = ncol(legend_gtable))
+
+# Combine legends into one row
+combined_legends <- arrangeGrob(
+  grobs = list(prop_legend, vert.legend),
+  ncol = 2,
+  widths = c(1, 1)
+)
+
+legend_gtable <- gtable_add_grob(
+  legend_gtable,
+  grobs = combined_legends,
+  t = 1, l = start_col, r = end_col
+)
+
+# Combine plot and centered legend
 full_plot <- gtable_rbind(final_gtable, legend_gtable)
 
+
 # Draw the full aligned plot
+png("figures/ms_figures/fig2_vertmaps.png", width = 150, height = 150, units = "mm", res = 300)
 grid.newpage()
 grid.draw(full_plot)
-
-
-# BIVARIATE MAPS ----------------------------------------------------------
-
-library(biscale)
-
-for(i in levels(all$taxa)) {
-  d = all %>% filter(taxa == i)
-  
-  bclass = bi_class(d, x = vert.mean.ses, y = rich,
-                    style = "quantile", dim = 4)
-  
- map =  ggplot() +
-    geom_raster(data = bclass, aes(x,y,fill = bi_class)) +
-    bi_scale_fill(pal = "PinkGrn", dim = 4) +
-    coord_quickmap() +
-    bi_theme(base_size = 16) +
-    theme(legend.position = "none")
-  
-  legend = bi_legend(pal = "PinkGrn", dim = 4,
-                     xlab = "Verticality",
-                     ylab = "Richness",
-                     size = 6)
-  
-  finalPlot <- ggdraw() +
-    draw_plot(map, 0, 0, 1, 1) +  # Draw the main map plot
-    draw_plot(legend, 0.05, 0.05, 0.28, 0.28)
-
-}
-
+dev.off()
 
 
 
