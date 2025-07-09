@@ -9,6 +9,7 @@ library(colorspace)
 library(grid)
 #library(tricolore)
 library(lemon)
+library(cowplot)
 
 
 # load data ----------------------------------------------------
@@ -16,10 +17,6 @@ library(lemon)
 wd = vect("data/original/rnaturalearth_world.shp") %>% 
   crop(ext(-180,180,-60,83.64)) %>% 
   project("+proj=robin +datum=WGS84") 
-
-wd = vect("data/original/rnaturalearth_world.shp") %>% 
-  crop(ext(-180,180,-60,83.64)) %>% 
-  project("+proj=cea +datum=WGS84") 
 
 ymin = ext(wd)[3]
 ymax = ext(wd)[4]
@@ -82,14 +79,14 @@ for(i in levels(all$taxa)) {
   
   map = ggplot() +
     geom_spatvector(data = wd, fill = "black", color = NA) +
-    geom_raster(data = d, aes(x,y,fill = vert.mean.ses)) +
+    geom_tile(data = d, aes(x,y,fill = vert.mean.ses)) +
     #geom_spatvector(data = wd, fill = NA, color = "black") +
     scale_x_continuous("SES Verticality", expand = c(0,0)) +
     scale_fill_continuous_divergingx("spectral", na.value = NA, limits = col.lims,
                                      rev = T, guide = guide_colorbar(title = "Verticality")) +
     #facet_wrap(vars(taxa), ncol = 1, strip.position = "left") +
     coord_sf(crs = "+proj=robin +datum=WGS84") +
-    theme_classic() +
+    theme_void() +
     theme(strip.text = element_blank(),
           legend.position = "bottom",
           legend.title.position = "top",
@@ -99,7 +96,8 @@ for(i in levels(all$taxa)) {
           axis.title = element_blank(),
           axis.line = element_line(color = "white"),
           axis.text = element_blank(),
-          axis.ticks = element_line(color = "white"))
+          axis.ticks = element_line(color = "white"),
+          panel.background = element_blank())
   
   vert.legend = ggpubr::get_legend(map)
   #vert.legend = as_ggplot(vert.legend)
@@ -140,9 +138,9 @@ for(i in levels(all$taxa)) {
 
 pal = divergingx_hcl(palette = "zissou", n = 3)
 
-cola = pal[1]
+cola = pal[3]
 colt = pal[2]
-colf = pal[3]
+colf = pal[1]
 
 
 propplots = list()
@@ -161,13 +159,19 @@ for(i in levels(all$taxa)) {
     geom_line(aes(x = y, y = prop.mean, color = micro), size=1) +
     geom_ribbon(aes(x = y, ymin = prop.mean - prop.sd, ymax = prop.mean + prop.sd, fill = micro), alpha = 0.2) +
     scale_y_continuous("Proportion", breaks = seq(0,1,0.5)) +
-    # scale_x_continuous("Latitude", breaks = seq(-60,60,30)) +
+    scale_x_continuous("Latitude", breaks = c(0)) +
     #scale_color_discrete_divergingx("zissou1", guide = guide_legend(title = ""), rev = T) +
-    scale_color_manual(values = c(cola, colt, colf), guide = guide_legend(title = "")) +
-    scale_fill_manual(values = c(cola, colt, colf), guide = guide_legend(title = "")) +
+    scale_color_manual(values = c(cola, colt, colf), guide = guide_legend(title = "", direction = "horizontal")) +
+    scale_fill_manual(values = c(cola, colt, colf), guide = guide_legend(title = "", direction = "horizontal")) +
     #scale_fill_discrete_divergingx("zissou1", guide = guide_legend(title = ""), rev = T) +
     #facet_rep_wrap(vars(taxa), ncol = 1, strip.position = "left") +
     coord_flip(xlim = c(ymin,ymax), clip = "off") +
+    theme(legend.position = "bottom",
+          legend.margin = margin(0,0,0,0))
+  
+  prop_legend = ggpubr::get_legend(p)
+  
+  p = p +
     theme(axis.title.y = element_blank(),
           legend.position = "none",
           strip.placement = "outside",
@@ -175,7 +179,7 @@ for(i in levels(all$taxa)) {
           axis.line = element_line(color = "black"),
           panel.background = element_blank(),
           strip.text = element_text(size = 10),
-          axis.title = element_blank())
+          axis.title.x = element_blank())
   
   propplots[[i]] = p
   
@@ -199,33 +203,98 @@ tight_theme <- theme(
 # Apply to all plots
 propplots <- lapply(propplots, `+`, tight_theme)
 vertmaps  <- lapply(vertmaps,  `+`, tight_theme)
+# fix aspect ratio for combining plots
+vertmaps_fixed <- lapply(vertmaps, function(p) {
+  ggdraw(p) + theme(plot.margin = margin(0,0,0,0))
+})
 corplot  <- lapply(corplot,  `+`, tight_theme)
+corplot <- lapply(corplot, function(p){
+  p + theme(plot.margin = margin(0,10,0,0))
+})
 
 rows = list()
+icons = list.files("figures/icons/", pattern = ".png", full.names = T)
+names(icons) = basename(icons) %>%  gsub(".png", "", .)
+names(icons) = c("Birds", "Amphibians", "Reptiles", "Mammals")
 
 for (i in levels(all$taxa)) {
   # Convert each ggplot to grobs
   g_prop = ggplotGrob(propplots[[i]])
-  g_map  = ggplotGrob(vertmaps[[i]])
+  g_map  = ggplotGrob(vertmaps_fixed[[i]])
   g_cor  = ggplotGrob(corplot[[i]])
   
   # Match heights to avoid vertical misalignment
   max_height = grid::unit.pmax(g_prop$heights, g_map$heights, g_cor$heights)
   g_prop$heights <- g_map$heights <- g_cor$heights <- max_height
-  g_map$widths <- g_map$widths*3
+  #g_map$widths <- g_map$widths
+  g_prop$widths <- g_prop$widths*0.5
+  g_cor$widths <- g_cor$widths*0.5
   
   # Combine into one row (left to right: prop | map | cor)
   row = gtable_cbind(g_prop, g_map, g_cor, size = "first")
-  rows[[i]] = row
+  
+  # add icon
+  img = readPNG(icons[[i]])
+  #icon_grob <- rasterGrob(img, width = unit(1, "cm"), height = unit(1, "cm"), just = "center")
+  icon_grob <- rasterGrob(
+    img,
+    x = unit(1.2, "npc"),  # move right within the spanning cell
+    y = unit(0.3, "npc"),
+    just = "left",
+    width = unit(1, "cm"),
+    height = unit(1, "cm")
+  )
+
+  # Determine layout position (first plot panel = col A, map = col B)
+  panel_cols <- which(row$layout$name == "panel")
+
+  # Mid-column index between prop and map
+  insert_col <- panel_cols[1] + 1  # place between 1st and 2nd plot
+  insert_row <- mean(range(row$layout$t[panel_cols]))  # vertically center
+
+  row_with_icon <- gtable_add_grob(
+    row,
+    grobs = icon_grob,
+    t = insert_row,
+    l = insert_col,
+    r = insert_col + 1,
+    name = "icon",
+    z = Inf  # put on top
+  )
+  row_with_icon$layout$clip <- "off"
+
+  
+  rows[[i]] = row_with_icon
 }
 
 # Combine all rows vertically
 final_gtable = do.call(gtable_rbind, rows)
 
+# add legend
+
+legend_patch <- wrap_elements(full = prop_legend) + 
+  wrap_elements(full = vert.legend)
+
+# Put legends side by side
+legend_row <- legend_patch + plot_layout(ncol = 2, widths = c(1, 1))
+
+# Combine main plot (as a patchwork object) and legends
+final_plot <- wrap_elements(full = final_gtable) / legend_row +
+  plot_layout(heights = c(10, 1))
+
+
+
+
+#legend_grob <- ggplotGrob(patchwork::wrap_elements(vert.legend))
+# Make legend gtable same width as final_gtable
+legend_gtable <- gtable(widths = final_gtable$widths, heights = unit(1, "null"))
+legend_gtable <- gtable_add_grob(legend_gtable, prop_legend, t = 1, l = 1, r = 19)
+legend_gtable <- gtable_add_grob(legend_gtable, vert.legend, t = 1, l = 20, r = ncol(legend_gtable))
+full_plot <- gtable_rbind(final_gtable, legend_gtable)
+
 # Draw the full aligned plot
 grid.newpage()
-grid.draw(final_gtable)
-
+grid.draw(full_plot)
 
 
 # BIVARIATE MAPS ----------------------------------------------------------

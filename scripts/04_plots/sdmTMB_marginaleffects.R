@@ -33,7 +33,7 @@ var = list(
   "log_precip_dry [-2.1:2.7 by=0.1]",
   "tmax_warm [-3.8:2.9 by=0.1]",
   "tmin_cold [-2.54:1.34 by=0.1]",
-  "canopy_height [-1.8:3.1 by=0.1]",
+  "canopy_height2 [-1.8:3.1 by=0.1]",
   "veg_den [-1.3:9.0 by=0.1]",
   "precip_warm [-1.3:15.4 by=0.1]",
   "temp_diu [-3.7:3.2 by=0.1]"
@@ -41,7 +41,8 @@ var = list(
 
 
 amphplots = foreach(v = 1:length(var)) %do% {
-  g = predict_response(amphmod, var[[v]])
+  g = ggeffect(amphmod, var[[v]])
+  #g = predict_response(amphmod, var[[v]])
   g = cbind(g)
   g$term = var[[v]]
   g$taxa = "amphibians"
@@ -49,7 +50,7 @@ amphplots = foreach(v = 1:length(var)) %do% {
   g
 }
 
-saveRDS(amphplots, "results/sdmTMB_models2/marginal_effects/amph.rds")
+saveRDS(amphplots, "results/sdmTMB_models2.3/marginal_effects/amph.rds")
 
 # mammals
 
@@ -58,11 +59,11 @@ mammalsplots = foreach(v = 1:length(var)) %do% {
   g = cbind(g)
   g$term = var[[v]]
   g$taxa = "mammals"
-  saveRDS(g, paste0("results/sdmTMB_models2/marginal_effects/mammals/mammals_", v, ".rds"))
+  saveRDS(g, paste0("results/sdmTMB_models2.3/marginal_effects/mammals/mammals_", v, ".rds"))
   g
 }
 
-saveRDS(mammalsplots, "results/sdmTMB_models2/marginal_effects/mammals.rds")
+saveRDS(mammalsplots, "results/sdmTMB_models2.3/marginal_effects/mammals.rds")
 
 # reptiles
 
@@ -71,12 +72,12 @@ reptsplots = foreach(v = 1:length(var)) %do% {
   g = cbind(g)
   g$term = var[[v]]
   g$taxa = "reptiles"
-  saveRDS(g, paste0("results/sdmTMB_models2/marginal_effects/reptiles/reptiles_", v, ".rds"))
+  saveRDS(g, paste0("results/sdmTMB_models2.3/marginal_effects/reptiles/reptiles_", v, ".rds"))
   g
 }
 
 
-saveRDS(reptsplots, "results/sdmTMB_models2/marginal_effects/reptiles.rds")
+saveRDS(reptsplots, "results/sdmTMB_models2.3/marginal_effects/reptiles.rds")
 
 
 # birds
@@ -85,11 +86,11 @@ birdsplots = foreach(v = 1:length(var)) %do% {
   g = cbind(g)
   g$term = var[[v]]
   g$taxa = "birds"
-  saveRDS(g, paste0("results/sdmTMB_models2/marginal_effects/birds/birds_", v, ".rds"))
+  saveRDS(g, paste0("results/sdmTMB_models2.3/marginal_effects/birds/birds_", v, ".rds"))
   g
 }
 
-saveRDS(birdsplots, "results/sdmTMB_models2/marginal_effects/birds.rds")
+saveRDS(birdsplots, "results/sdmTMB_models2.3/marginal_effects/birds.rds")
 
 
 # plot conditional effects
