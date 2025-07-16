@@ -9,6 +9,8 @@ library(tidyterra)
 library(MASS)
 library(ggplot2)
 library(patchwork)
+library(performance)
+library(ggeffects)
 
 amph = read.csv("data/derivative_data/gridcell_data/env_forest/50_km/amph_comdat.csv")
 birds = read.csv("data/derivative_data/gridcell_data/env_forest/50_km/birds_comdat.csv")
@@ -46,69 +48,69 @@ df = df %>%
                             .default = NA))
 
 # test biome2 classifications
-test.r = df %>%
-  filter(biome2 == "Boreal" & taxa == "Birds") %>% 
-  dplyr::select(x,y,canopy_height2) %>% 
-  rast(crs = "+proj=cea +datum=WGS84")
-unique(df$biome[df$lat=="Tropical"])
-
-# only filter out rich < 5 for verticality analysis not here
-
-# including bare land (canopy height2 is no bare land (vegheight >= 3m) or human modified land,
-# canopy height is aggregated land 2023 without masking landcovers)
-canopy_height3 = rast("data/derivative_data/resampled_env_rasters_50km/canopy_height_lang2023/canopy_height_agg.tif")
-mapa = rast(extent = c(-20592508, 20588492, -5743602, 6573398), crs = "+proj=cea +datum=WGS84")
-res(mapa) = 50000
-canopy_height3 = project(canopy_height3, "+proj=cea +datum=WGS84")
-canopy_height3 = resample(canopy_height3, mapa)
-df$canopy_height3 = terra::extract(canopy_height3, df[,c("x", "y")])[,2] # including bare land (2 is not including bare land)
+# test.r = df %>%
+#   filter(biome2 == "Boreal" & taxa == "Birds") %>% 
+#   dplyr::select(x,y,canopy_height2) %>% 
+#   rast(crs = "+proj=cea +datum=WGS84")
+# unique(df$biome[df$lat=="Tropical"])
+# 
+# # only filter out rich < 5 for verticality analysis not here
+# 
+# # including bare land (canopy height2 is no bare land (vegheight >= 3m) or human modified land,
+# # canopy height is aggregated land 2023 without masking landcovers)
+# canopy_height3 = rast("data/derivative_data/resampled_env_rasters_50km/canopy_height_lang2023/canopy_height_agg.tif")
+# mapa = rast(extent = c(-20592508, 20588492, -5743602, 6573398), crs = "+proj=cea +datum=WGS84")
+# res(mapa) = 50000
+# canopy_height3 = project(canopy_height3, "+proj=cea +datum=WGS84")
+# canopy_height3 = resample(canopy_height3, mapa)
+# df$canopy_height3 = terra::extract(canopy_height3, df[,c("x", "y")])[,2] # including bare land (2 is not including bare land)
 
 df = df %>% drop_na(canopy_height2)
 df = df %>% filter(rich > 0)
 
 # Explore some preliminary plots
-ggplot(df, aes(canopy_height2, rich)) +
-  geom_point(pch = ".", alpha = 0.2) +
-  geom_smooth(method = "lm") +
-  facet_wrap(~taxa, scales = "free_y") +
-  theme_classic()
-
-# log-log relationship
-ggplot(df, aes(log(canopy_height2 +1), log(rich))) +
-  geom_point(pch = ".", alpha = 0.2) +
-  geom_smooth(method = "lm") +
-  facet_wrap(~taxa, scales = "free_y") +
-  theme_classic()
-
-ggplot(df, aes(log(canopy_height2 +1), log(rich), color = biome2)) +
-  geom_point(pch = ".", alpha = 0.2) +
-  geom_smooth(method = "lm") +
-  facet_wrap(~taxa, scales = "free_y") +
-  theme_classic()
-
-ggplot(df, aes(canopy_height2, rich, color = biome2)) +
-  geom_point(pch = ".", alpha = 0.2) +
-  geom_smooth(method = "lm") +
-  facet_wrap(~taxa, scales = "free_y") +
-  theme_classic()
-
-ggplot(df, aes(canopy_height3, rich, color = biome2)) +
-  geom_point(pch = ".", alpha = 0.2) +
-  geom_smooth(method = "lm") +
-  facet_wrap(~taxa, scales = "free_y") +
-  theme_classic()
-
-ggplot(df, aes(canopy_height2+1, rich, color = biome2)) +
-  geom_point(pch = ".", alpha = 0.2) +
-  geom_smooth(method = "glm", formula = y~log(x), method.args = list(family = "poisson")) +
-  facet_wrap(~taxa, scales = "free_y") +
-  theme_classic()
-
-ggplot(df, aes(canopy_height2, rich, color = biome2)) +
-  geom_point(pch = ".", alpha = 0.2) +
-  geom_smooth(method = "glm", formula = y~x, method.args = list(family = "poisson")) +
-  facet_wrap(~taxa, scales = "free_y") +
-  theme_classic()
+# ggplot(df, aes(canopy_height2, rich)) +
+#   geom_point(pch = ".", alpha = 0.2) +
+#   geom_smooth(method = "lm") +
+#   facet_wrap(~taxa, scales = "free_y") +
+#   theme_classic()
+# 
+# # log-log relationship
+# ggplot(df, aes(log(canopy_height2 +1), log(rich))) +
+#   geom_point(pch = ".", alpha = 0.2) +
+#   geom_smooth(method = "lm") +
+#   facet_wrap(~taxa, scales = "free_y") +
+#   theme_classic()
+# 
+# ggplot(df, aes(log(canopy_height2 +1), log(rich), color = biome2)) +
+#   geom_point(pch = ".", alpha = 0.2) +
+#   geom_smooth(method = "lm") +
+#   facet_wrap(~taxa, scales = "free_y") +
+#   theme_classic()
+# 
+# ggplot(df, aes(canopy_height2, rich, color = biome2)) +
+#   geom_point(pch = ".", alpha = 0.2) +
+#   geom_smooth(method = "lm") +
+#   facet_wrap(~taxa, scales = "free_y") +
+#   theme_classic()
+# 
+# ggplot(df, aes(canopy_height3, rich, color = biome2)) +
+#   geom_point(pch = ".", alpha = 0.2) +
+#   geom_smooth(method = "lm") +
+#   facet_wrap(~taxa, scales = "free_y") +
+#   theme_classic()
+# 
+# ggplot(df, aes(canopy_height2+1, rich, color = biome2)) +
+#   geom_point(pch = ".", alpha = 0.2) +
+#   geom_smooth(method = "glm", formula = y~log(x), method.args = list(family = "poisson")) +
+#   facet_wrap(~taxa, scales = "free_y") +
+#   theme_classic()
+# 
+# ggplot(df, aes(canopy_height2, rich, color = biome2)) +
+#   geom_point(pch = ".", alpha = 0.2) +
+#   geom_smooth(method = "glm", formula = y~x, method.args = list(family = "poisson")) +
+#   facet_wrap(~taxa, scales = "free_y") +
+#   theme_classic()
 
 
 # Global richness by canopy height ----------------------------------------
@@ -119,6 +121,7 @@ ggplot(df, aes(canopy_height2, rich, color = biome2)) +
 global.taxa = list()
 global.taxa.pred = list()
 global.taxa.mod = list()
+global.taxa.pd = list()
 for(i in unique(df$taxa)) {
   d = df %>% filter(taxa == i) %>% 
     drop_na(rich, canopy_height2) %>% 
@@ -142,10 +145,16 @@ for(i in unique(df$taxa)) {
   m3 = MASS::glm.nb(rich~canopy_height2, data=d)
   m4 =  MASS::glm.nb(rich~log(canopy_height2), data=d)
   
+  # calculate percent deviance explained
+  mnull = MASS::glm.nb(rich~1, data = d) # intercept-only model
+  m3.pd = (1-(m3$deviance/mnull$deviance))*100
+  m4.pd = (1-(m4$deviance/mnull$deviance))*100
+  
+
   # m3 is consistently performing better
   AIC(m3, m4)
-  r2(m3)
-  r2(m4)
+  m3.pd
+  m3.pd
   
   # m3.resid = simulateResiduals(m3, plot = T)
   # testDispersion(m3)
@@ -164,11 +173,25 @@ for(i in unique(df$taxa)) {
   
   global.taxa.pred[[i]] = pred
   global.taxa.mod[[i]] = m3
+  global.taxa.pd[[i]] = m3.pd
 }
 
 # global model for each taxonomic group
 global.taxa = bind_rows(global.taxa) 
 global.taxa.pred = bind_rows(global.taxa.pred)
+
+global.taxa.tidy = data.frame()
+for(i in 1:length(global.taxa.mod)) {
+  m = global.taxa.mod[[i]]
+  m.tidy = tidy(m, conf.int = T, conf.level = 0.95) %>% 
+    mutate(taxa = names(global.taxa.mod)[i])
+  global.taxa.tidy = rbind(global.taxa.tidy, m.tidy)
+}
+
+# add percent deviance to tidy df
+global.taxa.pd = data.frame(taxa = names(global.taxa.pd), estimate = unlist(global.taxa.pd), term = "CPDE (%)")
+global.taxa.tidy = bind_rows(global.taxa.tidy, global.taxa.pd)
+
 
 
 # Global model all taxa combined ------------------------------------------
@@ -184,146 +207,230 @@ fit.global.all1 = MASS::glm.nb(total_richness ~ canopy_height2, data = df_combin
 fit.global.all2 = MASS::glm.nb(total_richness ~ log(canopy_height2), data = df_combined)
 
 AIC(fit.global.all1, fit.global.all2) # rich~canopyheight better (fit.global.all1)
-r2(fit.global.all1)
-r2(fit.global.all2)
+# percent deviance
+mnull = MASS::glm.nb(total_richness~1, data = df_combined)
+fit.global.all.pd = (1-(fit.global.all1$deviance/mnull$deviance))*100
 
 nd = data.frame(canopy_height2 = c(min(df_combined$canopy_height2), seq(1,floor(max(df_combined$canopy_height2)),1)))
 fit.global.all.pred = predict_response(fit.global.all1, nd)
 
-fit.resid = simulateResiduals(fit.global.all1, plot = T)
-testDispersion(fit.global.all1)
+# fit.resid = simulateResiduals(fit.global.all1, plot = T)
+# testDispersion(fit.global.all1)
 resid.deviance = residuals(fit.global.all1, type = "deviance")
 df_combined$resid.deviance = resid.deviance
 
+fit.global.tidy = tidy(fit.global.all1, conf.int = T, conf.level = 0.95)
+global.pd = data.frame(term = "CPDE (%)", estimate = fit.global.all.pd)
+fit.global.tidy = bind_rows(fit.global.tidy, global.pd)
 
 # Models by taxon and biome2 ----------------------------------------------
 # model richness by canopy height for each taxon in each of the coarser biome/lat classifications
 
-biome.taxa = list() # data used in models with deviance residuals for m3 and m4 models
-biome.taxa.pred.m3mod = list() # rich~canopy height predictions
-biome.taxa.mod.m3mod = list() # rich~canopy height models
-biome.taxa.pred.m4logmod = list() # rich~log(canopy height) predictions
-biome.taxa.mod.m4logmod = list() # rich~log(canopy height) models
-biome.taxa.mod.aicdif = list() # store difference in AIC values between model with canopy height and model with log(canopy height)
-biome.taxa.mod.r2dif = list() # store difference in pseudo-R2 values between model with canopy height and model with log(canopy height)
+# biome.taxa = list() # data used in models with deviance residuals for m3 and m4 models
+# biome.taxa.pred.m3mod = list() # rich~canopy height predictions
+# biome.taxa.mod.m3mod = list() # rich~canopy height models
+# biome.taxa.pred.m4logmod = list() # rich~log(canopy height) predictions
+# biome.taxa.mod.m4logmod = list() # rich~log(canopy height) models
+# biome.taxa.mod.aicdif = list() # store difference in AIC values between model with canopy height and model with log(canopy height)
+# biome.taxa.mod.r2dif = list() # store difference in pseudo-R2 values between model with canopy height and model with log(canopy height)
+# 
+# for(i in unique(df$taxa)) {
+#   for(b in unique(df$biome2)) {
+#     
+#     nm = paste(i,b,sep = "_")
+#     
+#     # filter to given taxon and biome2
+#     d = df %>% filter(taxa == i & biome2 == b) %>% 
+#       drop_na(rich, canopy_height2) %>% 
+#       filter(rich > 0 & canopy_height2 > 0) %>% 
+#       mutate(log_ch = log(canopy_height2))
+#     
+#     # m2 = glmmTMB(rich ~ canopy_height2, data = d, family = poisson(link = "log"))
+#     # m2.resid = simulateResiduals(m2, plot = T)
+#     
+#     # negative binomial distribution
+#     # reptiles: somewhat underdispersed
+#     #m3 = glmmTMB(rich ~ log(canopy_height2), data = d, family = nbinom2(link = "log"))
+#     #m4 = glmmTMB(rich ~ canopy_height2, data = d, family = nbinom2(link = "log"))
+#     m3 = MASS::glm.nb(rich~canopy_height2, data = d)
+#     m4 = MASS::glm.nb(rich~log(canopy_height2), data = d)
+#     #m3.resid = simulateResiduals(m3, plot = T)
+#     #m4.resid = simulateResiduals(m4, plot = T)
+#     #testDispersion(m3)
+#     #testDispersion(m4)
+#     
+#     aic.dif = AIC(m3)-AIC(m4) # negative dif means that rich ~ canopy is better than rich ~ log(canopy)
+#     r2.dif = r2(m3)$R2_Nagelkerke - r2(m4)$R2_Nagelkerke # positive means that rich ~ canopy is better than rich ~ log(canopy)
+#     
+#     biome.taxa.mod.aicdif[[nm]] = aic.dif
+#     biome.taxa.mod.r2dif[[nm]] = r2.dif
+#     
+#     # checked for Mammals, Amphibians, and Reptiles in boreal biome2
+#     # does not change parameter estimates, but model convergence no longer an issue
+#     # so no need to worry about returning model convergence issues for these three
+#     # m4 = update(m3, control = glmmTMBControl(optimizer = optim, optArgs=list(method = "BFGS")))
+#     # 
+#     # m5 = update(m3, family = poisson())
+#     #mtest = MASS::glm.nb(rich~canopy_height2, data = d, control = glm.control(maxit = 100))
+#     #mtest = glm(rich~canopy_height2, data = d, family = poisson())
+#     
+#     # Deviance residuals
+#     resid.deviance.m3mod = residuals(m3, type = "deviance")
+#     d$resid.deviance.m3mod = resid.deviance.m3mod
+#     resid.deviance.m4logmod = residuals(m4, type = "deviance")
+#     d$resid.deviance.m4logmod = resid.deviance.m4logmod
+#     d$taxa = i
+#     d$biome2 = b
+#     
+#     biome.taxa[[nm]] = d
+#     
+#     # predict model to range of canopy height
+#     newdat = data.frame(canopy_height2 = c(min(d$canopy_height2), seq(1, floor(max(d$canopy_height2)), 1)))
+#     
+#     # predict model rich ~ canopy height
+#     pred.m3mod = ggeffects::predict_response(m3, newdat)
+#     pred.m3mod$taxa = i
+#     pred.m3mod$biome2 = b
+#     biome.taxa.pred.m3mod[[nm]] = pred.m3mod
+#     biome.taxa.mod.m3mod[[nm]] = m3
+#     
+#     # predict model rich ~ log(canopy height)
+#     pred.m4logmod = ggeffects::predict_response(m4, newdat)
+#     pred.m4logmod$taxa = i
+#     pred.m4logmod$biome2 = b
+#     biome.taxa.pred.m4logmod[[nm]] = pred.m4logmod
+#     biome.taxa.mod.m4logmod[[nm]] = m4
+#   }
+# }
+# 
+# # check if rich~canopy or rich~log(canopy) is better
+# biome.taxa.mod.aicdif = unlist(biome.taxa.mod.aicdif)
+# sum(biome.taxa.mod.aicdif > 0) # rich~canopy better for all except reptiles in temperate forest
+# 
+# biome.taxa.mod.r2dif = unlist(biome.taxa.mod.r2dif)
+# sum(biome.taxa.mod.r2dif < 0) # rich~canopy better for all except reptiles in temperate forest
+# 
+# 
+# # biome model for each taxonomic group
+# biome.taxa = bind_rows(biome.taxa) 
+# biome.taxa.pred.m3mod = bind_rows(biome.taxa.pred.m3mod)
+# biome.taxa.pred.m4logmod = bind_rows(biome.taxa.pred.m4logmod)
+# 
+# 
+# # checking convergence issues - no need to worry - see notes above
+# # for(i in 1:length(biome.taxa.mod.m3mod)) {
+# #   
+# #   summ = summary(biome.taxa.mod.m3mod[[i]])
+# #   if(!is.null(summ[[20]])) {print(names(biome.taxa.mod.m3mod[i]))}
+# #   
+# #   summ = summary(biome.taxa.mod.m4logmod[[i]])
+# #   if(!is.null(summ[[20]])) {print(names(biome.taxa.mod.m4logmod[i]))}
+# #   
+# #   
+# #   #print(names(biome.taxa.mod.m3mod)[i])
+# #   #print(performance::check_convergence(biome.taxa.mod.m3mod[[i]]))
+# # }
+# 
+# tidymods = data.frame()
+# for(i in 1:length(biome.taxa.mod.m3mod)) {
+#   nms = unlist(strsplit(names(biome.taxa.mod.m3mod)[i], "_"))
+#   tidymod = tidy(biome.taxa.mod.m3mod[[i]])
+#   tidymod$taxa = nms[1]
+#   tidymod$biome2 = nms[2]
+#   tidymods = rbind(tidymods, tidymod)
+# }
+# 
+# tidymods %>% 
+#   filter(term == "canopy_height2") %>% 
+#   ggplot() +
+#   geom_point(aes(estimate, biome2)) +
+#   facet_wrap(~taxa)
 
+# BIOME INTERACTION MODELS BY TAXON -------------------------------------------------------------
+
+biome.df = list()
+biome.mod = list()
+biome.pred = list()
+biome.pd = list()
+df$biome2 = factor(df$biome2)
 for(i in unique(df$taxa)) {
-  for(b in unique(df$biome2)) {
-    
-    nm = paste(i,b,sep = "_")
-    
-    # filter to given taxon and biome2
-    d = df %>% filter(taxa == i & biome2 == b) %>% 
-      drop_na(rich, canopy_height2) %>% 
-      filter(rich > 0 & canopy_height2 > 0) %>% 
-      mutate(log_ch = log(canopy_height2))
-    
-    # m2 = glmmTMB(rich ~ canopy_height2, data = d, family = poisson(link = "log"))
-    # m2.resid = simulateResiduals(m2, plot = T)
-    
-    # negative binomial distribution
-    # reptiles: somewhat underdispersed
-    #m3 = glmmTMB(rich ~ log(canopy_height2), data = d, family = nbinom2(link = "log"))
-    #m4 = glmmTMB(rich ~ canopy_height2, data = d, family = nbinom2(link = "log"))
-    m3 = MASS::glm.nb(rich~canopy_height2, data = d)
-    m4 = MASS::glm.nb(rich~log(canopy_height2), data = d)
-    #m3.resid = simulateResiduals(m3, plot = T)
-    #m4.resid = simulateResiduals(m4, plot = T)
-    #testDispersion(m3)
-    #testDispersion(m4)
-    
-    aic.dif = AIC(m3)-AIC(m4) # negative dif means that rich ~ canopy is better than rich ~ log(canopy)
-    r2.dif = r2(m3)$R2_Nagelkerke - r2(m4)$R2_Nagelkerke # positive means that rich ~ canopy is better than rich ~ log(canopy)
-    
-    biome.taxa.mod.aicdif[[nm]] = aic.dif
-    biome.taxa.mod.r2dif[[nm]] = r2.dif
-    
-    # checked for Mammals, Amphibians, and Reptiles in boreal biome2
-    # does not change parameter estimates, but model convergence no longer an issue
-    # so no need to worry about returning model convergence issues for these three
-    # m4 = update(m3, control = glmmTMBControl(optimizer = optim, optArgs=list(method = "BFGS")))
-    # 
-    # m5 = update(m3, family = poisson())
-    #mtest = MASS::glm.nb(rich~canopy_height2, data = d, control = glm.control(maxit = 100))
-    #mtest = glm(rich~canopy_height2, data = d, family = poisson())
-    
-    # Deviance residuals
-    resid.deviance.m3mod = residuals(m3, type = "deviance")
-    d$resid.deviance.m3mod = resid.deviance.m3mod
-    resid.deviance.m4logmod = residuals(m4, type = "deviance")
-    d$resid.deviance.m4logmod = resid.deviance.m4logmod
-    d$taxa = i
-    d$biome2 = b
-    
-    biome.taxa[[nm]] = d
-    
-    # predict model to range of canopy height
-    newdat = data.frame(canopy_height2 = c(min(d$canopy_height2), seq(1, floor(max(d$canopy_height2)), 1)))
-    
-    # predict model rich ~ canopy height
-    pred.m3mod = ggeffects::predict_response(m3, newdat)
-    pred.m3mod$taxa = i
-    pred.m3mod$biome2 = b
-    biome.taxa.pred.m3mod[[nm]] = pred.m3mod
-    biome.taxa.mod.m3mod[[nm]] = m3
-    
-    # predict model rich ~ log(canopy height)
-    pred.m4logmod = ggeffects::predict_response(m4, newdat)
-    pred.m4logmod$taxa = i
-    pred.m4logmod$biome2 = b
-    biome.taxa.pred.m4logmod[[nm]] = pred.m4logmod
-    biome.taxa.mod.m4logmod[[nm]] = m4
-  }
+  
+  d = df %>% filter(taxa == i) %>% 
+    drop_na(rich, canopy_height2) %>% 
+    filter(rich > 0 & canopy_height2 > 0) %>% 
+    mutate(log_ch = log(canopy_height2))
+  
+  fit1 = glm(rich ~ canopy_height2*biome2 - 1 - canopy_height2, data = d, family = poisson())
+  #simulateResiduals(fit1, plot = T)
+  
+  fit2 = MASS::glm.nb(rich ~ canopy_height2*biome2 - 1 - canopy_height2, data = d)
+  #simulateResiduals(fit2, plot = T)
+  
+  fit3 = MASS::glm.nb(rich ~ log(canopy_height2)*biome2 - 1 - log(canopy_height2), data = d)
+  #simulateResiduals(fit3, plot = T)
+  
+  AIC(fit2, fit3)
+
+  # percent deviance
+  mnull = MASS::glm.nb(rich ~ 1, data = d)
+  fit2.pd = (1-(fit2$deviance/mnull$deviance))*100
+  fit3.pd = (1-(fit3$deviance/mnull$deviance))*100
+  fit2.pd
+  fit3.pd
+  
+  biome.pd[[i]] = fit2.pd
+  
+  # manual prediction (same as ggeffects::predict_response)
+  # nd = expand.grid(c(1,10,20), levels(d$biome2), stringsAsFactors = F)
+  # names(nd) = c("canopy_height2", "biome2")
+  # test = predict(fit2, nd, se.fit = T)
+  # nd$pred = test$fit
+  # nd$pred.se = test$se.fit
+  # nd = nd %>% 
+  #   mutate(pred.resp = exp(pred),
+  #          conf.high = exp(pred+pred.se*qnorm(0.975)),
+  #          conf.low = exp(pred-pred.se*qnorm(0.975)))
+  
+  chmax = d %>% 
+    group_by(biome2) %>% 
+    summarize(chmax = round(max(canopy_height2)))
+  
+  pred = predict_response(fit2, terms = c("canopy_height2 [1:43]", "biome2")) %>% 
+    as.data.frame() %>% 
+    rename(canopy_height = x, richness = predicted, biome2 = group) %>% 
+    mutate(taxa = i) %>% 
+    left_join(chmax, by = "biome2") %>% 
+    filter(canopy_height <= chmax)
+  
+  biome.mod[[i]] = fit2
+  biome.pred[[i]] = pred
+  biome.df[[i]] = d
+  
 }
 
-# check if rich~canopy or rich~log(canopy) is better
-biome.taxa.mod.aicdif = unlist(biome.taxa.mod.aicdif)
-sum(biome.taxa.mod.aicdif > 0) # rich~canopy better for all except reptiles in temperate forest
-
-biome.taxa.mod.r2dif = unlist(biome.taxa.mod.r2dif)
-sum(biome.taxa.mod.r2dif < 0) # rich~canopy better for all except reptiles in temperate forest
-
-
-# biome model for each taxonomic group
-biome.taxa = bind_rows(biome.taxa) 
-biome.taxa.pred.m3mod = bind_rows(biome.taxa.pred.m3mod)
-biome.taxa.pred.m4logmod = bind_rows(biome.taxa.pred.m4logmod)
-
-
-# checking convergence issues - no need to worry - see notes above
-# for(i in 1:length(biome.taxa.mod.m3mod)) {
-#   
-#   summ = summary(biome.taxa.mod.m3mod[[i]])
-#   if(!is.null(summ[[20]])) {print(names(biome.taxa.mod.m3mod[i]))}
-#   
-#   summ = summary(biome.taxa.mod.m4logmod[[i]])
-#   if(!is.null(summ[[20]])) {print(names(biome.taxa.mod.m4logmod[i]))}
-#   
-#   
-#   #print(names(biome.taxa.mod.m3mod)[i])
-#   #print(performance::check_convergence(biome.taxa.mod.m3mod[[i]]))
-# }
+biome.pred = bind_rows(biome.pred) %>% 
+  mutate(taxa = factor(taxa, levels = c("Birds", "Mammals", "Reptiles", "Amphibians")))
 
 
 # Result tables -----------------------------------------------------------
 
 # summary table for models of richness by canopy height for each biome
-biome.taxa.mod.summ = data.frame()
-for(i in 1:length(biome.taxa.mod.m3mod)) {
-  nm = names(biome.taxa.mod.m3mod)[i]
-  t = stringr::str_split_i(nm, "_", 1)
-  b = stringr::str_split_i(nm, "_", 2)
-  tidymod = broom.mixed::tidy(biome.taxa.mod.m3mod[[i]], conf.int = T, conf.level = 0.95)
-  tidymod$taxa = t
-  tidymod$biome2 = b
-  
-  biome.taxa.mod.summ = rbind(biome.taxa.mod.summ, tidymod)
+biome.mod.tidy = data.frame()
+for(i in 1:length(biome.mod)) {
+  nm = names(biome.mod)[i]
+  tidymod = broom.mixed::tidy(biome.mod[[i]], conf.int = T, conf.level = 0.95)
+  tidymod$taxa = nm
+  biome.mod.tidy = rbind(biome.mod.tidy, tidymod)
 }
 
-biome.taxa.mod.summ %>% 
-  filter(term == "canopy_height2") %>% 
-  ggplot() +
-  geom_pointrange(aes(x = estimate, xmin = conf.low, xmax = conf.high, y = taxa, color = biome2))
+biome.pd = data.frame(taxa = names(biome.pd), estimate = unlist(biome.pd), term = "CPDE (%)")
+biome.mod.tidy = bind_rows(biome.mod.tidy, biome.pd)
+
+
+# biome.taxa.mod.summ %>% 
+#   filter(term == "canopy_height2") %>% 
+#   ggplot() +
+#   geom_pointrange(aes(x = estimate, xmin = conf.low, xmax = conf.high, y = taxa, color = biome2))
 
 # PLOT RESULTS ------------------------------------------------------------
 
@@ -382,6 +489,8 @@ total_resid.plt = ggplot() +
   scale_fill_continuous_divergingx(palette = "Spectral", na.value = NA,
                                    guide = guide_colorbar(title = ""),
                                    rev = T) +
+  # annotate(geom = "text", x = Inf, y = -Inf, hjust = 1.7, vjust = -0.5,
+  #          label = paste0("R\u00b2 = ", round(global.r2[[1]], 2)), size = 2) +
   theme_void() +
   ggtitle("Residuals") +
   theme(legend.position = "inside",
@@ -399,7 +508,7 @@ total.global.map = canopy_height.plt + total_rich.plt + total_resid.plt +
 
 # *- Biome per taxa response ----------------------------------------------
 
-biome.taxa.pred.df = biome.taxa.pred.m3mod %>% 
+biome.pred.df = biome.pred %>% 
   as.data.frame() %>% 
   mutate(taxa = factor(taxa, levels = c("Birds", "Mammals", "Reptiles", "Amphibians")),
          biome2 = factor(biome2, levels = c("Tropical forest", "Tropical woodland, savanna, and shrubland",
@@ -412,7 +521,8 @@ biome.taxa.pred.df = biome.taxa.pred.m3mod %>%
                          biome2 == "Boreal" ~ "#56B4E9"),
          col = factor(col, levels = c("#008234", "#50DE00","#E08A00", "#FFCB76", "#56B4E9")))
 
-biome.taxa = biome.taxa %>% 
+biome.df = biome.df %>% 
+  bind_rows() %>% 
   mutate(taxa = factor(taxa, levels = c("Birds", "Mammals", "Reptiles", "Amphibians")),
          biome2 = factor(biome2, levels = c("Tropical forest", "Tropical woodland, savanna, and shrubland",
                                             "Temperate forest", "Temperate woodland, savanna, and shrubland",
@@ -428,9 +538,9 @@ img = list.files("figures/icons/", full.names = T, pattern = ".svg")
 nms = gsub("svg", "png", img)
 
 
-for(i in 1:4) {
-  rsvg_png(img[i], file = nms[i], width = 300)
-}
+# for(i in 1:4) {
+#   rsvg_png(img[i], file = nms[i], width = 300)
+# }
 img = list.files("figures/icons", full.names = T, pattern = ".png")
 img = list(img[1], img[4], img[3], img[2])
 names(img) = c("Birds", "Mammals", "Reptiles", "Amphibians")
@@ -440,22 +550,24 @@ img = lapply(img, grid::rasterGrob, interpolate = T)
 taxa = c("Birds", "Mammals", "Reptiles", "Amphibians")
 plts = list()
 for(i in taxa) {
-  split_df = biome.taxa.pred.df %>% filter(taxa == i)
-  split_df2 = biome.taxa %>% filter(taxa == i)
+  split_df = biome.pred.df %>% filter(taxa == i)
+  split_df2 = biome.df %>% filter(taxa == i)
   
   base_plot = ggplot() +
     geom_point(data = split_df2, aes(canopy_height2, rich, color = col), pch = ".", alpha = 0.05) +
-    geom_line(data = split_df, aes(x, predicted, color = col), linewidth = 0.5) +
-    geom_ribbon(data = split_df, aes(x, ymin = conf.low, ymax = conf.high, fill = col),
+    geom_line(data = split_df, aes(canopy_height, richness, color = col), linewidth = 0.5) +
+    geom_ribbon(data = split_df, aes(canopy_height, ymin = conf.low, ymax = conf.high, fill = col),
                 color = NA, alpha = 0.2) +
+    # annotate(geom = "text", label = paste0("R\u00b2 = ", round(biome.r2[[i]][[1]],2)),
+    #          x = -Inf, y = Inf, hjust = -0.1, vjust = 4.9, size = 2) +
     scale_x_continuous("Canopy Height (m)") +
     scale_y_continuous("Richness") +
     scale_color_identity(guide = guide_legend(nrow = 2, ncol = 3, byrow = F), 
-                         labels = levels(biome.taxa.pred.df$biome2),
-                         breaks = levels(biome.taxa.pred.df$col)) +
+                         labels = levels(biome.pred.df$biome2),
+                         breaks = levels(biome.pred.df$col)) +
     scale_fill_identity(guide = guide_legend(nrow = 2, ncol = 3, byrow = F), 
-                        labels = levels(biome.taxa.pred.df$biome2),
-                        breaks = levels(biome.taxa.pred.df$col)) +
+                        labels = levels(biome.pred.df$biome2),
+                        breaks = levels(biome.pred.df$col)) +
     theme_classic() +
     theme(panel.grid = element_blank(),
           legend.title = element_blank(),
@@ -568,11 +680,11 @@ ggsave("figures/ms_figures/supp_figs/deviance_resids_taxa.png", width = 180, hei
 
 # RATES OF INCREASE IN RICHNESS -------------------------------------------
 
-ratedifs = biome.taxa.pred.m3mod %>% 
+ratedifs = biome.pred %>% 
   as.data.frame() %>% 
-  dplyr::select(x, predicted, biome2, taxa) %>% 
-  filter(x == 15 | x == 25) %>% 
-  pivot_wider(names_from = x, values_from = predicted, names_prefix = "h") %>% 
+  dplyr::select(canopy_height, richness, biome2, taxa) %>% 
+  filter(canopy_height == 15 | canopy_height == 25) %>% 
+  pivot_wider(names_from = canopy_height, values_from = richness, names_prefix = "h") %>% 
   mutate(dif = h25-h15)
 
 # maximum richness in a cell per biome/taxa category
@@ -592,45 +704,45 @@ ratedifs = left_join(ratedifs, maxrichcell, by = c("taxa", "biome2")) %>%
 
 # SCRATCH SPACE -----------------------------------------------------------
 
-df2 = df %>% filter(rich >= 5)
-
-amph2 = df2 %>% filter(taxa == "Amphibians")
-
-m1 = lm(rich ~ vert.mean.ses, data = amph2)
-m1.resid = resid(m1)
-plot(amph2$canopy_height2, m1.resid)
-plot(amph2$precip_dry, m1.resid)
-ggplot(amph2, aes(log(precip_dry +1), m1.resid)) + geom_point() + geom_smooth(method = "lm")
-ggplot(amph2, aes(canopy_height2, m1.resid)) + geom_point() + geom_smooth(method = "lm")
-ggplot(amph2, aes(tmax_warm, m1.resid)) + geom_point() + geom_smooth(method = "lm")
-ggplot(amph2, aes(tmin_cold, m1.resid)) + geom_point() + geom_smooth(method = "lm")
-ggplot(amph2, aes(vert.mean.ses, rich)) + 
-  geom_point(alpha = 0.05) + 
-  geom_smooth(method = "glm",  method.args = list(family = "poisson"))
-
-# so it looks like precip and canopy height drive verticality, which influences richness
-# therefore, verticality mediates relationships between canopy height and richness
-# and factors limiting verticality will limit richness
-# but temperature influences richness independently of verticality
-
-m2 = lm(rich ~ vert.mean.ses + canopy_height2, data = amph2)
-summary(m2)
-
-m3 = lm(rich ~ canopy_height2, data = amph2)
-summary(m3)
-
-m1 = MASS::glm.nb(rich ~ vert.mean.ses, data = amph2)
-m1.resid = residuals(m1, type = "deviance")
-amph2$m1.resid = m1.resid
-ggplot(amph2, aes(canopy_height2, m1.resid)) +
-  geom_point(alpha = 0.05) +
-  geom_smooth(method = "lm")
-
-mod.resid = lm(m1.resid ~ canopy_height2, data = amph2)
-summary(mod.resid)
-
-cor.test(m1.resid, amph2$canopy_height2)
-
-
-
-
+# df2 = df %>% filter(rich >= 5)
+# 
+# amph2 = df2 %>% filter(taxa == "Amphibians")
+# 
+# m1 = lm(rich ~ vert.mean.ses, data = amph2)
+# m1.resid = resid(m1)
+# plot(amph2$canopy_height2, m1.resid)
+# plot(amph2$precip_dry, m1.resid)
+# ggplot(amph2, aes(log(precip_dry +1), m1.resid)) + geom_point() + geom_smooth(method = "lm")
+# ggplot(amph2, aes(canopy_height2, m1.resid)) + geom_point() + geom_smooth(method = "lm")
+# ggplot(amph2, aes(tmax_warm, m1.resid)) + geom_point() + geom_smooth(method = "lm")
+# ggplot(amph2, aes(tmin_cold, m1.resid)) + geom_point() + geom_smooth(method = "lm")
+# ggplot(amph2, aes(vert.mean.ses, rich)) + 
+#   geom_point(alpha = 0.05) + 
+#   geom_smooth(method = "glm",  method.args = list(family = "poisson"))
+# 
+# # so it looks like precip and canopy height drive verticality, which influences richness
+# # therefore, verticality mediates relationships between canopy height and richness
+# # and factors limiting verticality will limit richness
+# # but temperature influences richness independently of verticality
+# 
+# m2 = lm(rich ~ vert.mean.ses + canopy_height2, data = amph2)
+# summary(m2)
+# 
+# m3 = lm(rich ~ canopy_height2, data = amph2)
+# summary(m3)
+# 
+# m1 = MASS::glm.nb(rich ~ vert.mean.ses, data = amph2)
+# m1.resid = residuals(m1, type = "deviance")
+# amph2$m1.resid = m1.resid
+# ggplot(amph2, aes(canopy_height2, m1.resid)) +
+#   geom_point(alpha = 0.05) +
+#   geom_smooth(method = "lm")
+# 
+# mod.resid = lm(m1.resid ~ canopy_height2, data = amph2)
+# summary(mod.resid)
+# 
+# cor.test(m1.resid, amph2$canopy_height2)
+# 
+# 
+# 
+# 
