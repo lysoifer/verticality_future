@@ -1,5 +1,5 @@
 ---
-bibliography: "`r rbbt::bbt_write_bib('r-refs.bib', overwrite = TRUE)`"
+bibliography: "r-refs.bib"
 csl: science.csl
 output: 
   officedown::rdocx_document:
@@ -141,84 +141,20 @@ In drier forests and higher latitudes, lower precipitation and light hinder the 
 
 Vertical features in the landscape, including mountains and trees bring distinct climates within close proximity of each other [@rahbekHumboldtsEnigmaWhat2019; @leahyVerticalNicheElevation2021; @vinodThermalSensitivityForest2023]. By absorbing and reflecting solar radiation and reducing vertical air mixing, dense forests produce vertical microclimate gradients that capture a remarkable volume of climatic variation given their geographic footprint [@defrenneForestMicroclimatesClimate2021]. These steep climate gradients can support high rates of turnover from the ground to the canopy that yield vertically stratified and species rich assemblages [@bashamVerticalStratificationCollapses2020; @xingSpeciesTurnoverAnt2022; @oliveiraVerticalStratificationInfluences2019; @camargoForestVerticalComplexity2018]. However, more extreme microclimates in the canopy than the understory may place physiological constraints on arboreal lifestyles depending on background macroclimate conditions, effectively truncating the available volume of forest and limiting the capacity for tall forests to support high richness [@oliveiraVerticalStratificationInfluences2019].
 
-Constraints of low dry season precipitation on verticality (Fig. \@ref(fig:fig3)) were accompanied by steep gradients in minimum relative humidity, which microclimate models estimated declined x% from the ground to the top of the canopy (Fig. \@ref(fig:fig4)). Low precipitation may exaggerate the drier canopy conditions and risk desiccation in hot or cold climates, where evapotranspiration to maintain body temperatures below thermal maxima or basking to maintain body temperatures above thermal minima can quickly lead to desiccation without adequate physiological defenses [@scheffersIncreasingArborealityAltitude2013; @tracyNotJustSmall2010; @mckechnieAvianThermoregulationHeat2017]. By imposing environmental filters on the functional
-morphologies that can inhabit canopy environments, dry climates therefore reduce assemblage
-verticality and limit the number of species that an increase in canopy height can support, in line
-with the physiological tolerance hypothesis [@curriePredictionsTestsClimatebased2004]. For example,
-in the seasonally dry forests of of Panama, water limitation in the canopy causes the vertical
-stratification of frog communities to collapse toward the ground during the dry season - a shift
-coincident with declines in richness and homogenization of arboreal diversity
-[@bashamVerticalStratificationCollapses2020]. Dry climates can therefore reduce the capacity for
-increasingly tall canopies to support greater biodiversity (Fig. \@ref(fig:fig1)), just as cold
-climates limit the capacity for tall mountains to generate biodiversity by reducing the elevation of
-the snow line [@rahbekHumboldtsEnigmaWhat2019; @vonhumboltEssayGeographyPlants2013;
-@janzenWhyMountainPasses1967]. In contrast, high dry season precipitation in tropical moist forests
-supports highly vertical assemblages by reducing physiological constraints on arboreal life
-strategies in the upper canopy. Species are therefore able to finely partition the entire volume of
-forested habitat, leading to a dense packing of species in the canopy and allowing increases in
-canopy height to yield rapid increases in species richness
-[@oliveiraVerticalStratificationInfluences2019] (Fig. \@ref(fig:fig1)).
+Constraints of low dry season precipitation on verticality (Fig. \@ref(fig:fig3)) were accompanied by steep gradients in minimum relative humidity, which microclimate models estimated declined x% from the ground to the top of the canopy (Fig. \@ref(fig:fig4)). Low precipitation may exaggerate the drier canopy conditions and risk desiccation in hot or cold climates, where evapotranspiration to maintain body temperatures below thermal maxima or basking to maintain body temperatures above thermal minima can quickly lead to desiccation without adequate physiological defenses [@scheffersIncreasingArborealityAltitude2013; @tracyNotJustSmall2010; @mckechnieAvianThermoregulationHeat2017]. By imposing environmental filters on the functional morphologies that can inhabit canopy environments, dry climates therefore reduce assemblage verticality and limit the number of species that an increase in canopy height can support, in line with the physiological tolerance hypothesis [@curriePredictionsTestsClimatebased2004]. For example, in the seasonally dry forests of of Panama, water limitation in the canopy causes the vertical stratification of frog communities to collapse toward the ground during the dry season - a shift coincident with declines in richness and homogenization of arboreal diversity [@bashamVerticalStratificationCollapses2020]. Dry climates can therefore reduce the capacity for increasingly tall canopies to support greater biodiversity (Fig. \@ref(fig:fig1)), just as cold climates limit the capacity for tall mountains to generate biodiversity by reducing the elevation of the snow line [@rahbekHumboldtsEnigmaWhat2019; @vonhumboltEssayGeographyPlants2013; @janzenWhyMountainPasses1967]. In contrast, high dry season precipitation in tropical moist forests supports highly vertical assemblages by reducing physiological constraints on arboreal life strategies in the upper canopy. Species are therefore able to finely partition the entire volume of forested habitat, leading to a dense packing of species in the canopy and allowing increases in canopy height to yield rapid increases in species richness [@oliveiraVerticalStratificationInfluences2019] (Fig. \@ref(fig:fig1)).
 
-Maximum and minimum temperatures had less consistent effects across taxa (Fig. \@ref(fig:fig3)), but
-may still place physiological constraints on arboreal life strategies that influence the capacity
-for taller canopies to support richer species assemblages, particularly in regions exhibiting
-steeper vertical gradients characterized by hotter maximum and colder minimum temperatures. For
-example, high maximum temperatures generally reduced verticality and/or reduced the positive impact
-of canopy height on verticality, barring mammals for which verticality responded positively to
-maximum temperatures. High temperatures may cause ectotherm body temperatures to exceed critical
-thermal limits [@sundayThermalsafetyMarginsNecessity2014]. While consistent water availability in
-the canopies of tropical wet forests may allow ectotherms to maintain body temperature below
-critical limits, the drier conditions of temperate forests combined with steeper vertical gradients
-in maximum temperatures and canopy temperatures that exceed 45°C may impede the use of arboreal
-habitats and require that animals thermoregulate by moving to terrestrial or fossorial habitats
-[@sundayThermalsafetyMarginsNecessity2014] (Fig. \@ref(fig:fig4)). Moreover, low minimum
-temperatures reduced positive effects of canopy height on verticality for birds and reptiles (Fig.
-\@ref(fig:fig3)). Cold temperatures at higher latitudes can cause ectotherm body temperatures to
-exceed critical thermal minima outside fossorial habitats or impose energetic constraints to
-endotherms, particularly in the windier conditions that characterize the canopy
-[@sundayThermalsafetyMarginsNecessity2014] [REPLACE MAMMAL EXAMPLE WITH BIRD PHYSIOLOGY]. The
-physiological constraints imposed by minimum temperatures may act across the entire canopy given
-given their shallow vertical gradient, (Fig. \@ref(fig:fig4)), posing severe limitations on the
-capacity for taller canopies to increase species richness in boreal forests.
+Maximum and minimum temperatures had less consistent effects across taxa (Fig. \@ref(fig:fig3)), but may still place physiological constraints on arboreal life strategies that influence the capacity for taller canopies to support richer species assemblages, particularly in regions exhibiting steeper vertical gradients characterized by hotter maximum and colder minimum temperatures. For example, high maximum temperatures generally reduced verticality and/or reduced the positive impact of canopy height on verticality, barring mammals for which verticality responded positively to maximum temperatures. High temperatures may cause ectotherm body temperatures to exceed critical thermal limits [@sundayThermalsafetyMarginsNecessity2014]. While consistent water availability in the canopies of tropical wet forests may allow ectotherms to maintain body temperature below critical limits, the drier conditions of temperate forests combined with steeper vertical gradients in maximum temperatures and canopy temperatures that exceed 45°C may impede the use of arboreal habitats and require that animals thermoregulate by moving to terrestrial or fossorial habitats [@sundayThermalsafetyMarginsNecessity2014] (Fig. \@ref(fig:fig4)). Moreover, while models indicated that higher minimum temperatures were associated with lower verticality for birds and amphibians because verticality is low in hot but drier tropical regions while remaining high in cooler but wet tropical montane regions, low minimum temperatures reduced positive effects of canopy height on verticality for birds and reptiles (Fig. \@ref(fig:fig3)). The interaction with canopy height reflects the physiological constraints that cold temperatures can impose on arboreal life strategies. Cold temperatures at higher latitudes can cause ectotherm body temperatures to exceed critical thermal minima outside fossorial habitats or impose energetic constraints on endotherms, particularly in the windier conditions of the upper canopy [@sundayThermalsafetyMarginsNecessity2014; @villen-perezWoodlandMediterraneanBirds2014; @wolfThermalEffectsRadiation1996]. For example, birds that typically forage in the upper canopy shift to lower canopy strata during periods of cold winter temperatures [@villen-perezWoodlandMediterraneanBirds2014]. Cold temperatures therefore limit the degree to which animals can specialization to upper canopy strata and consequently prevent taller canopies from increasing species richness.
 
-Temporal climate variability may also play a role in the capacity for verticality to mediate
-relationships between species richness and canopy height by impacting climatic distinctness. In
-montane regions, climatic distinctness across elevations declines with latitude due to increasing
-seasonal temperature variation toward the poles [@rahbekHumboldtsEnigmaWhat2019;
-@janzenWhyMountainPasses1967]. Low seasonal variation in the tropics produces narrow and distinct
-climate bands that exhibit little overlap across elevations. Unique climates across elevations
-restrict species' range size, leading to high rates of turnover across elevations that allow
-tropical mountains to generate extraordinary levels of biodiversity [@janzenWhyMountainPasses1967;
-@sheldonFiftyYearsMountain2018; @ghalamborAreMountainPasses2006; @rahbekHumboldtsEnigmaWhat2019]. In
-contrast, high thermal variation in temperate regions increases the similarity between climates
-experienced at high and low elevations, reducing the capacity for temperate mountains to support
-high rates of turnover and thus high levels of biodiversity [@rahbekHumboldtsEnigmaWhat2019;
-@ghalamborAreMountainPasses2006].
+Temporal climate variability may also play a role in the capacity for verticality to mediate relationships between species richness and canopy height by impacting climatic distinctness. In montane regions, climatic distinctness across elevations declines with latitude due to increasing seasonal temperature variation toward the poles [@rahbekHumboldtsEnigmaWhat2019; @janzenWhyMountainPasses1967]. Low seasonal variation in the tropics produces narrow and distinct climate bands that exhibit little overlap across elevations. Unique climates across elevations restrict species' range size, leading to high rates of turnover across elevations that allow tropical mountains to generate extraordinary levels of biodiversity [@janzenWhyMountainPasses1967; @sheldonFiftyYearsMountain2018; @ghalamborAreMountainPasses2006; @rahbekHumboldtsEnigmaWhat2019]. In contrast, high thermal variation in temperate regions increases the similarity between climates experienced at high and low elevations, reducing the capacity for temperate mountains to support high rates of turnover and thus high levels of biodiversity [@rahbekHumboldtsEnigmaWhat2019; @ghalamborAreMountainPasses2006].
 
-Within wooded habitats, diurnal temperature range may influence the distinctness of vertical climate
-bands from the ground to the canopy, and thus the vertical turnover of species. Our models of
-verticality indicate that greater diurnal temperature variation reduces verticality of mammals,
-though effects for other classes were insignificant (Fig. \@ref(fig:fig3)). Furthermore,
-microclimate models indicated that increases in daily temperature variation, as well as the rate of
-increase in temperature variation from the ground to the canopy, were greater in higher latitude
-forests (Fig. \@ref(fig:fig4)c). High daily temperature variation reduced the distinctness of
-climate bands across the vertical profile, with vertical zonation collapsing nearly completely
-during morning hours in temperate and boreal forests (Fig. \@ref(fig:fig4)B). Without unique
-climatic niches across the forest profile, these regions are unlikely to support rapid vertical
-turnover, limiting the number of species that may be added to the assemblage for a given increase in
-canopy height, even in wetter temperate regions with climate conditions that physiologically support
-arboreal strategies. In contrast, tropical canopies maintained more distinct vertical climate bands
-throughout the day, with the lowest and highest bands exhibiting little to no temperature overlap.
-Narrow and distinct vertical climate niches may therefore support rapid vertical turnover, leading
-to greater increases in richness with canopy height and enhancing the capacity for tropical canopies
-generate biodiversity.
+Within wooded habitats, diurnal temperature range may influence the distinctness of vertical climate bands from the ground to the canopy, and thus the vertical turnover of species. Our models of verticality indicate that greater diurnal temperature variation reduces verticality of mammals, though effects for other classes were insignificant (Fig. \@ref(fig:fig3)). Furthermore, microclimate models indicated that increases in daily temperature variation, as well as the rate of increase in temperature variation from the ground to the canopy, were greater in higher latitude forests (Fig. \@ref(fig:fig4)c). High daily temperature variation reduced the distinctness of climate bands across the vertical profile, with vertical zonation collapsing nearly completely during morning hours in temperate and boreal forests (Fig. \@ref(fig:fig4)B). Without unique climatic niches across the forest profile, these regions are unlikely to support rapid vertical turnover, limiting the number of species that may be added to the assemblage for a given increase in canopy height, even in wetter temperate regions with climate conditions that physiologically support arboreal strategies. In contrast, tropical canopies maintained more distinct vertical climate bands throughout the day, with the lowest and highest bands exhibiting little to no temperature overlap. Narrow and distinct vertical climate niches may therefore support rapid vertical turnover, leading to greater increases in richness with canopy height and enhancing the capacity for tropical canopies generate biodiversity.
 
 [TRY LABELLING MICROCLIM OVERLAP FIG AS BOREAL, TEMPERATE, TROPICAL COLUMNS AND EASTERN AND WETERN
 HEMISPHERE ROWS TO SAVE SPACE ALSO REORDE PROFILE PANELS INTO THE ORDER THEY ARE DISCUSSED]
 
 # Canopy height in a changing world
 
-Decades of research have elucidated the mechanisms that allow mountains to generate high levels of biodiversity, particularly in the tropics [CITE]. Yet only recently has the three-dimensional nature of terrestrial landscapes been widely recognized as a critical dimension to our understanding of biogeographic patterns [@fredstonReimaginingSpeciesMove2025; @xingEcologicalPatternsProcesses2023a]. We bring the vertical dimension of habitats to the forefront of global biogeography by showing that the climatic characteristics of wooded ecosystems from macro- to micro-scales mediate the capacity for tall forests to support high levels of biodiversity via impacts on the vertical structure of vertebrate assemblages. Tropical rainforests, with wet and thermally stable climates that increase the structural complexity of vegetation, reduce physiological stress in the canopy, and produce distinct vertical climate bands, are able to support fine-scale partitioning of resources and climatic niches throughout the entire forest volume. Consequently, taller trees in tropical forests support higher biodiversity and greater increases in species richness than temperate and boreal ecosystems of equivalent heights where climatic conditions reduce the structural complexity of vegetation, pose physiological constraints on arboreal lifestyles, and reduce vertical climate zonation from the ground to the canopy. 
+Centuries of research have elucidated the mechanisms that allow mountains to generate high levels of biodiversity, particularly in the tropics [@vonhumboltEssayGeographyPlants2013; @janzenWhyMountainPasses1967; @rahbekHumboldtsEnigmaWhat2019]. Yet only recently has the three-dimensional nature of terrestrial landscapes been widely recognized as a critical dimension to our understanding of biogeographic patterns [@fredstonReimaginingSpeciesMove2025; @xingEcologicalPatternsProcesses2023a]. We bring the vertical dimension of habitats to the forefront of global biogeography by showing that the climatic characteristics of wooded ecosystems from macro- to micro-scales mediate the capacity for tall forests to support high levels of biodiversity via impacts on the vertical structure of vertebrate assemblages. Tropical rainforests, with wet and thermally stable climates that increase the structural complexity of vegetation, reduce physiological stress in the canopy, and produce distinct vertical climate bands, are able to support fine-scale partitioning of resources and climatic niches throughout the entire forest volume. Consequently, taller trees in tropical forests support higher biodiversity and greater increases in species richness than temperate and boreal ecosystems of equivalent heights where climatic conditions reduce the structural complexity of vegetation, pose physiological constraints on arboreal lifestyles, and reduce vertical climate zonation from the ground to the canopy. 
 
 While tall forests, particularly in the tropics, are crucial for supporting species rich assemblages, regions containing tall forests are globally rare, under-protected, and threatened by anthropogenic disturbance and climate change [@huangPrioritizingGlobalTall2023; @bourgoinHumanDegradationTropical2024; @bennettLargerTreesSuffer2015; @rowlandDeathDroughtTropical2015]. For example, disturbances from fire and logging produce persistent reductions of canopy height in the tropics [@bourgoinHumanDegradationTropical2024], with potential negative effects on the capacity for these forests to support high levels of biodiversity. Furthermore, climate change is increasing the frequency of extreme heat and drought [@seneviratneWeatherClimateExtreme2021]. In addition to directly reducing forest height [@bennettLargerTreesSuffer2015; @rowlandDeathDroughtTropical2015], these trends could truncate the volume of physiological suitability habitat for arboreal species. Climate change may therefore flatten the vertical structure of species assemblages toward the ground [@oliveiraVerticalStratificationInfluences2019; @scheffersIncreasingArborealityAltitude2013; @bashamVerticalStratificationCollapses2020], just as warming temperatures are causing upslope shifts in species' distributions [@lenoirSpeciesBetterTrack2020; @chanClimateVelocitiesSpecies2024]. Improving our understanding of the vertical structure of species assemblages as canopies heat up and dry out will be critical for evaluating the continued capacity of tropical forests to generate extraordinarily high levels of biodiversity.
 
@@ -235,23 +171,17 @@ We thank Patrick Burns for access to the processed GEDI L2b points.
 
 # Figures
 
-```{r fig1, fig.id="fig1"}
+```{r fig1, fig.id="fig1", fig.cap="Spatial distribution of a) canopy height, b) vertebrate richness (for all vertebrates), and c) deviance residuals for a negative binomial model of total vertebrate richness by canopy height. d) Relationships between species richness and canopy height for each taxon in different biomes. Dots indicate observed values and lines indicate negative binomial model fits of richness as a function of the interaction between canopy height and biome.", fig.height=100, fig.width=180}
+
 # Fig. 1
-
-# Legend: Spatial distribution of a) canopy height, b) vertebrate richness (all vertebrates combined), and
-# c) deviance residuals for a negative binomial model of total vertebrate richness by canopy height
-# d) Relationships between species richness and canopy height for each taxon in each
-# biome category. Dots indicate observed values and lines indicate negative binomial
-# model fits of richness by canopy height.
-
 
 include_graphics("figures/ms_figures/fig1_canopy_richness.png", error = F)
 
 ```
 
-```{r fig2, fig.id="fig2", fig.cap="Global variation in the vertical structure of vertebrate assemblages and its association with species richness for birds, mammals, reptiles, and amphibians. a) The average ± SD proportion of species exhibiting arboreal (red), terrestrial (yellow), and fossorial (blue) strategies across latitudes. Proportions can exceed one because species can exhibit multiple vertical strategies. b) The verticality of vertebrate communities in wooded biomes across the globe. High verticality (red) indicates that the assemblage has a higher vertical niche position than expected by random chance." c) Correlations between verticality and species richness globally. Lines indicate linear best fit line with 95% CIs. }
-# Fig. 1
+```{r fig2, fig.id="fig2", fig.cap="Global variation in the vertical structure of vertebrate assemblages and its association with species richness for birds, mammals, reptiles, and amphibians. a) The average ± SD proportion of species exhibiting arboreal (red), terrestrial (yellow), and fossorial (blue) strategies across latitudes. Proportions can exceed one because species can exhibit multiple vertical strategies. b) The verticality of vertebrate communities in wooded biomes across the globe. High verticality (red) indicates that the assemblage has a higher vertical niche position than expected by random chance." c) Correlations between verticality and species richness globally. Lines indicate linear best fit line with 95% CIs., fit.width = 150, fig.height=150}
 
+# Fig. 2
 
 include_graphics("figures/ms_figures/fig2_vertmaps.png", error = F)
 
@@ -272,7 +202,7 @@ profile plot - make consistent - replace map with concept figure similar to Rahb
 strata plots for other variables? Or add to supplement - probable supplement - text sizing - point
 size in map if we keep the map
 
-```{r fig4, fig.id="fig4", fig.cap=", fig.width=140, fig.height=120}
+```{r fig4, fig.id="fig4", fig.cap="a) Locations of modeled vertical microclimate profiles. b) Average hourly microclimate across relative heights in the canopy. Relative height is calculated as absolute height above ground divided height of the canopy. Shading represents the range of temperatures experienced in the uppermost vertical band (0.9-1 relative height) and the lowermost vertical band (0-0.1 relative height). c) Vertical profiles of microclimate variables and plant area volume density (PAVD) (median +/- SD) in tropical, temperate, and boreal forest sites. PAVD was obtained from GEDI shots.", fig.width=140, fig.height=120}
 
 # Fig. 4
 
@@ -300,32 +230,11 @@ nbirds = nrow(bird_spdat)
 
 ```
 
-We mapped global richness and verticality of terrestrial vertebrate assemblages in wooded habitats
-[@dinersteinEcoregionBasedApproachProtecting2017] within 50-km grid cells using a cylindrical equal
-area projection. Range maps were obtained from the IUCN Red List for mammals and amphibians
-[@iucnIUCNRedList2023], BirdLife International for bird breeding and resident ranges
-[@birdlifeinternationalandhandbookofthebirdsoftheworldBirdSpeciesDistribution2022], and the Global
-Assessment of Reptile Distributions (GARD) for reptiles [@rollGlobalDistributionTetrapods2017;
-@caetanoAutomatedAssessmentReveals2022]. Overall, we obtained range maps for `r nbirds` birds,
-`r nmammals` mammals, `r nrept` reptiles, and `r namph` amphibians.
+We mapped global richness and verticality of terrestrial vertebrate assemblages in wooded habitats [@dinersteinEcoregionBasedApproachProtecting2017] within 50-km grid cells using a cylindrical equal area projection. Range maps were obtained from the IUCN Red List for mammals and amphibians [@iucnIUCNRedList2023], BirdLife International for bird breeding and resident ranges [@birdlifeinternationalandhandbookofthebirdsoftheworldBirdSpeciesDistribution2022], and the Global Assessment of Reptile Distributions (GARD) for reptiles [@rollGlobalDistributionTetrapods2017; @caetanoAutomatedAssessmentReveals2022]. Overall, we obtained range maps for `r nbirds` birds, `r nmammals` mammals, `r nrept` reptiles, and `r namph` amphibians.
 
-To calculate the verticality of each assemblage (i.e., grid cell), we assigned each species a
-verticality score from zero to one and then took the average verticality of all species whose ranges
-overlapped with the grid cell. For mammals, reptiles, and amphibians, verticality scores were based
-on their use of fossorial (0), terrestrial (0.5), and arboreal (1) habitats as defined in the
-TetrapodTraits database [@mouraPhylogenyinformedCharacterisationGlobal2024a]. For birds, we
-calculated verticality scores based on their use of different foraging strata as identified in the
-EltonTraits database [@wilmanEltonTraitsSpecieslevelForaging2014], which provides a finer scale
-vertical classification than the dataset from Moura et al.
-[-@mouraPhylogenyinformedCharacterisationGlobal2024a]. For birds, verticality scores were as
-follows: foraging below the water surface, around the water surface, and on the ground = 0.5,
-foraging in the understory = 0.667; foraging in the mid-high canopy = 0.8337; foraging in or above
-the upper canopy = 1. For all taxa, if species used multiple vertical habitats, vertical scores were
-averaged. For example, if a species occurred in terrestrial (0.5) and arboreal (1) habitats, it
-would receive a verticality score of 0.75. Species that occupied only aerial vertical niches or that
-did not occur in terrestrial habitats (e.g., marine mammals) were excluded from the analysis.
+To calculate the verticality of each assemblage (i.e., grid cell), we assigned each species a verticality score from zero to one and then took the average verticality of all species whose ranges overlapped with the grid cell. For mammals, reptiles, and amphibians, verticality scores were based on their use of fossorial (0), terrestrial (0.5), and arboreal (1) habitats as defined in the TetrapodTraits database [@mouraPhylogenyinformedCharacterisationGlobal2024a]. For birds, we calculated verticality scores based on their use of different foraging strata as identified in the EltonTraits database [@wilmanEltonTraitsSpecieslevelForaging2014], which provides a finer scale vertical classification than the dataset from Moura et al. [-@mouraPhylogenyinformedCharacterisationGlobal2024a]. For birds, verticality scores were as follows: foraging below the water surface, around the water surface, and on the ground = 0.5, foraging in the understory = 0.667; foraging in the mid-high canopy = 0.8337; foraging in or above the upper canopy = 1. For all taxa, if species used multiple vertical habitats, vertical scores were averaged. For example, if a species occurred in terrestrial (0.5) and arboreal (1) habitats, it would receive a verticality score of 0.75. Species that occupied only aerial vertical niches or that did not occur in terrestrial habitats (e.g., marine mammals) were excluded from the analysis.
 
-To examine spatial patterns of assemblage verticality independently of species richness and accounting for biogeographic history, we calculated the standard effect size (SES) of mean verticality (hereafter ‘verticality’): $SES=(x_i-\bar{x})/sd(x)$ where x is a vector of expected mean verticality scores given random selection of species from a species pool. For each vertebrate class, we defined species pools as all species inhabiting wooded habitats within a given biogeographic realm (Dinerstein et al. 2017) and generated a null distribution of expected verticality for each grid cell based on 100 simulations. Realms included Palearctic, Nearctic, Indomalayan, Neotropic, Oceania, Afrotropic, and Australasia. For each simulation, we randomized verticality within the grid cell by randomly drawing the same number of verticality scores from the respective species pool as the observed richness in the cell. Highly positive SES verticality scores represent assemblages having higher verticality than expected given the species richness, while low SES verticality scores represent assemblages having much lower verticality than expected given the species richness.
+To examine spatial patterns of assemblage verticality independently of species richness and accounting for biogeographic history, we calculated the standard effect size (SES) of mean verticality (hereafter ‘verticality’): $SES=(x_i-\bar{x})/sd(x)$ where x is a vector of expected mean verticality scores given random selection of species from a species pool. For each vertebrate class, we defined species pools as all species inhabiting wooded habitats within a given biogeographic realm [@dinersteinEcoregionBasedApproachProtecting2017] and generated a null distribution of expected verticality for each grid cell based on 100 simulations. Realms included Palearctic, Nearctic, Indomalayan, Neotropic, Oceania, Afrotropic, and Australasia. For each simulation, we randomized verticality within the grid cell by randomly drawing the same number of verticality scores from the respective species pool as the observed richness in the cell. Highly positive SES verticality scores represent assemblages having higher verticality than expected given the species richness, while low SES verticality scores represent assemblages having much lower verticality than expected given the species richness.
 
 
 ## Environmental data
@@ -339,54 +248,62 @@ All environmental data were resampled to the spatial resolution and projection o
 
 ## Vertebrate richness models
 
-Vertebrate richness is expected to increase with increasing canopy height. We first modeled richness as a function of canopy height using a generalized linear model with a Poisson distribution and a log-link. Models were produced for global richness across all vertebrate class, global richness for each vertebrate class, and biome richness for each vertebrate class. Initial model evaluation indicated over-dispersion in model residuals. We therefore fit a negative binomial model with a log-link function. Since richness often exhibits a log-log relationship with covariates, we additionally fit a model of richness as a function of log(canopy height), and compared this model to the original using AIC and pseudo-R^2^ values. We report results of richness as a function of canopy height, as it consistently performed better except for the model for reptiles in temperate forests.
+Vertebrate richness is expected to increase with increasing canopy height. We first modeled richness as a function of canopy height using a generalized linear model with a Poisson distribution and a log-link. Models were produced for global richness across all vertebrate classes and global richness for each vertebrate class. For each vertebrate class, we then modeled richness as a function of the interactive effect between canopy height and biome using a means parameterization. Initial model evaluation indicated over-dispersion in model residuals. We therefore fit negative binomial models with a log-link function. Since richness often exhibits a log-log relationship with covariates, we additionally fit models of richness as a function of log(canopy height) or the interactive effect of log(canopy height) and biome, and compared this model to the original using AIC and conditional percent deviance explained (CPDE). Models fit with canopy height rather than log(canopy height) consistently performed better, and we report these results.
 
 We classified biomes into larger categories based on the [@dinersteinEcoregionBasedApproachProtecting2017] 2017 biome categories. For biomes that occurred across latitudes (e.g., Montane Grasslands and Shrublands), we classified them as tropical if they occurred within the latitudes covered by biomes classified as tropical and temperate if they occurred within the latitudes classified as temperate. Additionally, Mediterranean forests, woodlands, and scrub were partitioned into temperate forests if the ecoregion contained "forest" and temperate woodland, savanna, and shrubland if the ecoregion name did not contain the word "forest".
 
-
-We also examined relationships between richness and verticality using Pearson correlations.
+We additionally examined relationships between richness and verticality using Pearson correlations.
 
 ## Verticality models
 
-We examined relationships between verticality and environmental covariates using spatial linear mixed models (LMMs). Grid cells with fewer than five species were excluded, because they may provide unrealiable estimates of the SES. To linearize the relationships between predictor and response variables, we log10-transformed precipitation of the driest month. We then scaled all predictor variables to mean zero and variance one and examined their multicollinearity using Pearson correlations. We excluded precipitation seasonality, temperature seasonality, and foliage height diversity due to strong correlations (|r| > 0.8) with dry season precipitation, minimum temperature of the coldest month, and canopy height, respectively. Additionally, we included a quadratic effect for maximum temperature of the warmest month, since extremely high temperatures may inhibit arboreal life strategies.
+We examined relationships between the verticality of each taxon and environmental covariates described above using spatial linear mixed models (LMMs). Grid cells with fewer than five species were excluded, because they may provide unreliable estimates of the SES. To linearize the relationships between predictor and response variables, we log10-transformed precipitation of the driest month. We then scaled all predictor variables to mean zero and variance one and examined their multicollinearity using Pearson correlations and variance inflation factors. We excluded precipitation seasonality, temperature seasonality, and foliage height diversity due to strong correlations (|r| > 0.8) with dry season precipitation, minimum temperature of the coldest month, and canopy height, respectively. The remaining variables all had VIF < 5. Additionally, we included a quadratic effect for maximum temperature of the warmest month, because extremely high temperatures are expected to inhibit arboreal life strategies as well as interaction effects between the climatic covariates and canopy height. Interactions were included because we expect the impact of canopy height on verticality to decline when harsh macroclimate conditions, including extreme cold, hot, or dry conditions, reduce the suitability of canopy microhabitats for arboreal life strategies, or when high climate variability reduces distinctness of vertical climate bands. The fixed effects therefore included Tmax~warm~, Tmax~warm~^2^, Tmin~cold~, Temp~diu~, Precip~warm~, log10(Precip~dry~), vegetation density, and canopy height, as well as interactions between canopy height and the climatic covariates.
 
-Spatial LMMs were fit using the R package sdmTMB [@andersonSdmTMBPackageFast2024], which approximates a spatial random effect using a finite element analysis mesh as implemented in R-INLA [@thorsonSpatioTemporalModelsEcologists2024]. The full model can be described as:
+Spatial LMMs were fit using the R package sdmTMB [@andersonSdmTMBPackageFast2024], which accounts for spatially autocorrelated data using stochastic partial differential equations (SPDE) to approximate spatial Gaussian random fields as Gaussian Markov Random Fields (GMRF) with a Matérn covariance function [@lindgrenExplicitLinkGaussian2011]. The full model can be described as:
 
 $$
 \begin{align}
-y_s ∼ 𝜇_{s}, \\
+y_s ∼ N(𝜇_{s}, \sigma^2), \\
 𝜇_s = 𝜲_s𝛽 + ⍵_s, \\
-⍵_s ∼ MVNormal(0,𝚺_⍵)
+⍵_s ∼ MVNormal(0,𝚺_⍵),
 \end{align}
 $$
 
-where $y_s$ is verticality at location $s$ defined by x and y coordinates, $𝜇_s$ is the expected verticality. $Χ_s$ is a vector of main effect covariates and 𝛽 represents a corresponding vector of estimated main effect coefficients, including additive effects of Tmax~warm~, Tmax~warm~^2^, Tmin~cold~, Temp~diu~, Precip~warm~, log10(Precip~dry~), vegetation density, and canopy height, as well as interactions between canopy height and the five climatic variables. Interactions were included because we expect the impact of canopy height on verticality to decline when harsh macroclimate conditions, including extreme cold, hot, or dry conditions, reduce the suitability of canopy microhabitats for arboreal life strategies, or when high climate variability reduces distinctness of vertical climate bands. $⍵_s$ represents a spatial random effect at location $s$, and describes additional spatial variation in the data not explained by the environmental covariates. The spatial random effect was modeled as a Gaussian random field with a covariance matrix modeled by the Matérn covariance function, which defines the decay rate of correlation with distance. Gaussian random fields were approximated for models of verticality for each taxa using a spatial mesh optimized such that the edge length was as large as possible to reduce computational time while remaining less than five times the spatial range of the model [@andersonSdmTMBPackageFast2024; @krainskiAdvancedSpatialModeling2019].
+where the response variable at location $s$ is normally distributed with mean $\mu_s$ and variance $\sigma^2$; $𝜇_s$ is the expected verticality. $Χ_s$ is a design matrix at location $s$; 𝛽 is a vector of fixed-effect coefficients; $⍵_s$ represents a spatial random effect at location $s$; and $\Sigma_{\omega}$ represents the covariance matrix of the spatial random field. The SPDE method requires a finite element analysis mesh, which consists of a set of triangles covering the spatial domain, and allows for the approximation of the spatial random effect at mesh vertices [@thorsonSpatioTemporalModelsEcologists2024]. We created a mesh for each vertebrate class using *fmesher* and tuned each mesh, such that the maximum edge length was as large as possible to reduce computational time while remaining less than five times the spatial range of the model [@andersonSdmTMBPackageFast2024; @krainskiAdvancedSpatialModeling2019].
 
-We validated models first using the ‘sanity’ function from the sdmTMB package. We additionally calculated quantile residuals using the DHARMa R package [@hartigDHARMaResidualDiagnostics2022] to assess residual normality and lack of patterning across space.
-
+We evaluated models using the sanity check function in sdmTMB and by examining quantile residuals using the DHARMa R package [@hartigDHARMaResidualDiagnostics2022]. To determine the degree to which environmental factors improve model performance, we compare this model to a spatial random effect model with  model with We also report conditional percent deviance explained (CPDE).
 
 ## Microclimate models
 
-To examine vertical microclimate gradients, we mechanistically modeled microclimates from the ground to the canopy using the ‘micropoint’ R package [@macleanMicropointCanopyPoint2025]. Models were produced for boreal forests, temperate forests, and tropical forests from the Americas and from Eurasia.
+To examine vertical microclimate gradients, we mechanistically modeled microclimates from the ground to the canopy using the ‘micropoint’ R package [@macleanMicropointCanopyPoint2025; @macleanMicroclimfFastModelling2025]. Point models of vertical climate profiles were produced for boreal, temperate, and tropical forests from the Americas and Eurasia within six 1° x 1° tiles located in regions with relatively flat topography that contained relatively large areas of tree cover based on Google satellite imagery and that were within the latitudinal bounds of the GEDI data, which provided information on vegetation structure (see below). Boreal forests included regions in Canada (50°,-90°) and Russia (50°,137°); temperate forests included regions in the midwestern United States (37°,-92°) and Europe (48°,10°); tropical forests included regions in northern Peru (-6°,-76°) and Malaysia (4°,117°), where coordinates indicate the lower left corners of tiles. 
 
-### Vegetation data
-
-Modeling microclimates within the canopy requires detailed information on the vertical distribution of vegetation, which we obtained from spaceborne lidar data acquired through NASA's GEDI. The footprint level L2b data was preprocessed by Burns et al. [-@burnsGriddedGEDIVegetation2024; @burnsMultiresolutionGriddedMaps2024] to filter out low quality points and gridded into 1° x 1° tiles. We selected six tiles in which we modeled microclimates, representing boreal, temperate, and tropical forests in the Americas and Eurasia in non-mountainous regions that contained relatively large areas of tree cover based on Google satellite imagery and that were within the latitudinal bounds of the GEDI data. As the highest latitude is 51.6°N, we were only able to produce microclimate models for southern boreal forests. Boreal forests included regions in Canada (50.75°,-89.54°) and Russia (50.8°,137.77°); temperate forests included regions in the midwestern United States (37.69°,-91.08°) and Europe (48.33°,10.50°); tropical forests included regions in northern Peru (-5.14°,-75.57°) and Malaysia (4.95°,117.69°).
-
-Points that fell in areas outside closed forest, as identified by Copernicus Global Dynamic Land Cover 2019 v3 [@buchhornCopernicusGlobalLand2020], areas that experienced deforestation between 2001 and 2024, as identified by Hansen global forest watch [@hansenHighResolutionGlobalMaps2013], and areas above 500 m in elevation were excluded from analysis. We restricted analysis to low elevation forests to control for any elevational impacts on vertical climate gradients. From the remaining points, we identified those that were recorded during the months with the average coldest minimum temperature and average warmest maximum temperature for the year in which they were obtained. These months were identified using ERA5 climate data [@hersbachERA5HourlyData2023]. For minimum and maximum temperature subsets, we selected up to 100 GEDI points within each 1° x 1° tile. However, there were not 100 points that matched our selection criteria in temperate forests during minimum temperature months because GEDI only produces reliable vertical profiles during leaf-on conditions (cite) (26 points in temperate USA and 14 points in temperate Europe). All temperate forest points therefore fell in mixed rather than deciduous forests. There were also only 65 points that met our selection criteria in temperate European forests during the warmest month.
-
-For each point, GEDI data provided information on canopy height, plant area index (PAI), and vertical distribution of the PAI. The GEDI data describes the vertical distribution of PAI as the cumulative PAI from the top of the canopy to the stratum representing the vertical space from 0-5 m above the ground. For example, the PAI 0-5 m includes nearly all of the canopy space and is therefore nearly equal to the total PAI in most cases, while PAI 10-15 m describes the PAI from the top of the canopy to 10-15 m above the ground. However, the microclimate models require that the vertical PAI distribution represent the PAI within individual height bins and that the sum of the vertical PAI profile equal the total PAI. We therefore subtracted total PAI – PAI 0-5 m to represent the PAI in the 0-5 m bin, PAI 0-5 m – PAI 5-10 m to represent the PAI in the 5-10 m bin, and so forth. 
+Points within these tiles were selected as locations of GEDI footprint level L2b data, which was preprocessed by Burns et al. [-@burnsGriddedGEDIVegetation2024; @burnsMultiresolutionGriddedMaps2024] to filter out low quality points. From the high quality points, we excluded points that 1) fell outside closed forest, as identified by Copernicus Global Dynamic Land Cover 2019 v3 [@buchhornCopernicusGlobalLand2020], 2) were located in areas that experienced deforestation between 2001 and 2024, as identified by Hansen global forest watch [@hansenHighResolutionGlobalMaps2013], 3) were obtained from coverage rather than power beams, 4) represented vegetation less than 10 m tall, and 4) occurred above 500 m in elevation. We restricted analysis to low elevation forests to control for any elevational impacts on vertical climate gradients. From the remaining points, we identified those that were recorded during the months with the average coldest minimum temperature and average warmest maximum temperature for the year in which they were obtained. These months were identified using the ECMWF ERA5 reanalysis product [@hersbachERA5HourlyData2023]. For minimum and maximum temperature subsets, we selected up to 100 GEDI points within each 1° x 1° tile. However, there were only 26 points in temperate USA and 14 points in temperate Europe during minimum temperature months because GEDI only produces reliable vertical profiles during leaf-on conditions (cite). The points retained therefore represented mixed rather than deciduous forest types. Furthermore, only 65 points met our selection criteria in temperate European forests during the warmest month. For each point, the microclimate model was run for the month and year in which the point was obtained at 0.15 cm above ground, 2 m above ground, and then from 5 m to the top of the canopy at 5 m intervals (equivalent to the vertical resolution of GEDI data) to produce hourly estimates of air temperature and relative humidity.
 
 ### Climate data
 
-We used ERA5 for macroclimate forcing data. To reduce gridding effects of the data, we averaged the four closest grid cells to the location of the GEDI point using inverse distance weighting. ERA5 data was processed into the format required by the model using the 'mcera5' R package [@klingesMcera5DrivingMicroclimate].
- [DETAILS ON DIURNAL TEMPERATURE CORRECTION AND LAND SEA MASK]
+The ECMWF ERA5 reanalysis product [@hersbachERA5HourlyData2023] was used for meteorological inputs to the model, which provided near surface, open-air climate conditions at a 0.25$^\circ$ spatial resolution and hourly temporal resolution. ERA5 climate data was processed using the *mcera5* R package, which converts ERA5 variables into those required by the model and applies a coastal diurnal temperature correction to terrestrial locations located within predominanrly marine grid cells [@klingesMcera5DrivingMicroclimate2022]. Meteorological conditions at the GEDI point of interest were then extracted from the climate grid by taking the weighted average of climate conditions across the four nearest neighboring cells, where the weight was defined as the inverse distance to the point. Finally, we applied an elevational correction that adjusts temperature and pressure at the location of interest by accounting for the difference in elevation between the center of the ERA5 grid cell and the point of interest using a humidity-dependent lapse rate.
 
-### Soil data
+### Vegetation data
 
-Soil data was obtained from the soilgrids database at a 250 m resolution using the soilDB R package, and included sand, silt, and clay content at the top soil layer (0-5 cm below the ground). [DESCRIBE METHODS USED TO CONVERT TO SOIL DATA USED BY MICROCLIMATE MODEL].
+Vegetation structure influences the amount of radiation and vertical air mixing. We obtained information on vegetation from the GEDI footprint level L2b data.
+For each point, GEDI data provided information on canopy height (RH100; the height at which 100% of the waveform was returned), plant area index (PAI), and the vertical distribution of the PAI. The GEDI data describes the vertical distribution of PAI as the cumulative PAI from the top of the canopy to the stratum representing the vertical space from 0-5 m above the ground. For example, the PAI 0-5 m includes nearly all of the canopy space and is therefore nearly equal to the total PAI in most cases, while PAI 10-15 m describes the PAI from the top of the canopy to 10-15 m above the ground. However, the microclimate models require that the vertical PAI distribution represent the PAI within individual height bins and that the sum of the vertical PAI profile equal the total PAI. We therefore subtracted total PAI – PAI 0-5 m to represent the PAI in the 0-5 m bin, PAI 0-5 m – PAI 5-10 m to represent the PAI in the 5-10 m bin, and so forth. 
+
+*Micropoint* requires a number of additional parameters describing vegetation structure that are not available from remote sensing products, such leaf angle distribution and stomatal conductance, among others. We use *microclimf's* 'vegpfromhab()' function to estimate these parameters based on land cover type. Land cover was determined based on MODIS land cover type (MCD12Q1) version 6.1 for the year 2022.
+
+Vegetation parameters were assumed to remain constant for the month and year in which the GEDI shot was obtained.
+
+[WE SHOULD PRODUCE MODELS AT DRIEST MONTH OF THE YEAR]
+
+### Topography and soil composition
+
+To characterize topography, we extracted elevation from the lowest mode return of the GEDI shot. Slope and aspect were calculated using *terrain()* based on SRTM elevation data at a 1 km resolution, which was obtained using the *geodata* R package. Sand, silt, and clay content in the top soil layer (0-5 cm below the ground) were obtained from the SoilGrids 2.0 at a 250 m resolution using the soilDB R package, and included sand, silt, and clay content at the top soil layer (0-5 cm below the ground). Soil type was determined based on the relative percentage of sand, silt, and clay based on USDA soil classifications using the *soiltexture* R package. Soil properties were then defined for the given soil class as default values provided by *micropoint*.
+
+### Microclimate analysis
+
+To examine global patterns of vertical microclimate profiles, we calculated the average minimum temperature of the coldest month, maximum temperature of the warmest month, minimum relative humidity of the warmest month, and diurnal temperature range of the coldest month. For each forest type (boreal, temperate, and tropical), we graphed the median climate value within vertical intervals, each representing 10% of the total canopy height. Therefore, values at the top of the canopy always occur in the 0.9-1 relative height interval regardless of the absolute height of the canopy. We additionally examined diurnal temperature fluctuations across forest types by taking the mean value across points for a given relative height and hour of the day.
 
 
+### Software
+All analyses were conducted using R Statistical Software (v4.4.1; @rcite). 
 
 MASS was used to produce models of canopy height by richness. sdmTMB was used to produce models of
 verticality. DHARMa was used to check model fit and assumptions. ggeffects was used to generate
@@ -395,19 +312,63 @@ ggplot2
 
 # Supplementary tables
 
-```{r richness-mods-results, tab.id="richness-mod-results", tab.lp="stab"}
-# table from: "scripts/03_analyses/01_canopyheight_richness_relationships.R"
+```{r richness-mods-results, tab.id="richness-mod-results", tab.lp="stab". tab.cap="Coefficient estimates (with 95% confidence intervals) and conditional percent deviance explained (CPDE) for global models of richness as a function of canopy height for all taxa and each vertebrate class and for biome models of richness as a fucntion of canopy height x biome. Biome models used a means parameterization such that the effect of biome represents the mean estimated richness at a canopy height of zero and the interaction effect represents the estimated impact of canopy height on richness for each biome."}
 
-fit.global.tidy %>% 
-  mutate(term = ifelse(term == "canopy_height2", "canopy height", term)) %>% 
-  mutate(across(.cols = estimate:p.value, .fns = function(x) {round(x,2)})) %>% 
-  rename(SE = std.error, "p-value" = p.value) %>% 
-  flextable()
+# tables from: "scripts/03_analyses/01_canopyheight_richness_relationships.R"
+
+tidy.global = fit.global.tidy %>% 
+  mutate(term = ifelse(term == "canopy_height2", "Canopy height", term),
+         taxa = "All vertebrates") %>% 
+  mutate(across(.cols = estimate:conf.high, .fns = function(x) {round(x,2)})) %>% 
+  mutate(estimate = ifelse(term != "CPDE (%)",
+                           paste0(estimate, " (", conf.low, ", ", conf.high, ")"),
+                           paste0(estimate))) %>% 
+  dplyr::select(taxa, term, estimate) %>% 
+  pivot_wider(names_from = "taxa", values_from = "estimate")
+
+tidy.global.taxa = global.taxa.tidy %>% 
+  dplyr::select(taxa, term, estimate, conf.low, conf.high) %>% 
+  mutate(term = ifelse(term == "canopy_height2", "Canopy height", term)) %>%
+  mutate(across(.cols = estimate:conf.high, .fns = function(x){round(x,3)})) %>% 
+  arrange(taxa) %>% 
+  mutate(estimate = ifelse(term != "CPDE (%)",
+                           paste0(estimate, " (", conf.low, ", ", conf.high, ")"),
+                           paste0(estimate)),
+         taxa = factor(taxa, levels = c("Birds", "Mammals", "Reptiles", "Amphibians"))) %>% 
+  dplyr::select(taxa, term, estimate) %>% 
+  pivot_wider(names_from = "taxa", values_from = "estimate")
+
+tidy.global = left_join(tidy.global, tidy.global.taxa, by = "term") %>% 
+  mutate(model = "Global model") %>% 
+  relocate(model)
+
+tidy.biome = biome.mod.tidy %>% 
+  dplyr::select(taxa, term, estimate, conf.low, conf.high) %>% 
+  mutate(term = gsub("e2", "e = ", term),
+         term = gsub(":", " x ", term),
+         term = gsub("2", "", term)) %>% 
+  mutate(across(.cols = estimate:conf.high, .fns = function(x){round(x,3)})) %>% 
+  mutate(estimate = ifelse(term != "CPDE (%)",
+                           paste0(estimate, " (", conf.low, ", ", conf.high, ")"),
+                           paste0(estimate)),
+         taxa = factor(taxa, levels = c("Birds", "Mammals", "Reptiles", "Amphibians"))) %>% 
+  dplyr::select(taxa, term, estimate) %>% 
+  pivot_wider(names_from = "taxa", values_from = "estimate") %>% 
+  mutate(model = "Biome model") %>% 
+  relocate(model)
+
+tidymods = bind_rows(tidy.global, tidy.biome)
+
+tidymods %>% 
+  flextable() %>% 
+  hline(i = 3, part = "body", border = fp_border(color = "black", width = 3)) %>% 
+  merge_v(j = c("model")) %>% 
+  autofit()
 
 ```
 
 
-```{r vert-model-results, tab.id="vert-model-results", tab.cap="Coefficient estimates for standardized predictor variables and pseudo-R^2^ values for each model."}
+```{r vert-model-results, tab.id="vert-model-results", tab.lp="stab", tab.cap="Coefficient estimates for standardized predictor variables and pseudo-R^2^ values for each model."}
 
 
 amphmod = readRDS("results/sdmTMB_models2.3/amphibians_sesvert_tempdiu.rds")
@@ -482,122 +443,15 @@ include_graphics("figures/ms_figures/supp_figs/biome_mean_verticality.png", erro
 include_graphics("figures/ms_figures/supp_figs/biome_mean_proportion_strategies.png", error = F)
 ```
 
+```{r splot-microtempdiu, fig.id="microtempdiu", fig.lp="suppfig", width = 120, height = 70, fig.cap="Average hourly microclimate across relative heights in the canopy. Relative height is calculated as absolute height above ground divided height of the canopy."}
+
+include_graphics("figures/ms_figures/supp_figs/microclim_temp_diu_mintempMonth.png", error = F)
+
+```
+
 
 \newpage
 
 ## Reference
-
-
-# SCRATCH SPACE
-
-"The observer who leaves the center of the earth by an infinitely small amount compared to the
-radius can reach a new world, so to speak, and he can observe more variations in the aspect of the
-soil and more modifications in the atmosphere than he would if he were to pass from one latitude to
-another" - Humbolt pg 77 Essay on the Geography of Plants
-
-"Current hypotheses for large-scale geographical patterns of species diversity fail to explain the
-extraordinarily high biodiversity of mountain regions, particularly in the tropics (2–5). We call
-this challenge “Humboldt’s enigma.”" - Rahbek
-
-
--   TRY RELATIVIZING RATES OF INCREASE BECAUSE THERE ARE MORE SPECIES IN THE TROPICS. EG. INCREASE
-    IN 1 SPECIES OUT OF 10 TOTAL SPECIES = INCREASE IN 10 SPECIES IF THERE ARE 100 SPECIES IN THE
-    REGION
--   on second thought, I don't think this is necessary because we want to know why more species
-    can't exist in trees in boreal regions
-
-Just as topographic complexity and climate explain Humbolt's enigma in mountains, vegetative
-complexity and climate may play key roles in mediating the relationship between canopy height and
-species richness by impacting the availability of vertical niche opportunities and physiologically
-constraining arboreal lifestyles [CITE]. Densely layered forest structures not only provide habitat
-across the forest profile, but produce vertical microclimate gradients via interactions with
-macroclimate conditions, solar radiation, and wind speed. From the humid and thermally stable
-understory to the dry and thermally variable canopy that experiences both hot and cold temperature
-extremes [CITE], this vertical gradient may interact with latitudinal climate gradients to help or
-hinder the capacity for tall forests to generate high levels of biodiversity. For example, increased
-exposure to extreme cold in the canopies of high latitude forests may truncate the volume of habitat
-that can support arboreal species and thus limit richness despite tall canopies
-[@oliveiraVerticalStratificationInfluences2019]. Moreover, relatively low thermal variability in the
-canopies of tropical forests may increase the distinctness of vertical climate bands that support
-high turnover and thus enhance the capacity for tall forests to generate biodiversity in the tropics
-[CITE].
-
-in wet tropical forests, macroclimate conditions produce warmer and wetter canopy microclimates,
-which reduce thermal and hydric stress and may allow species to finely partition the entire
-three-dimensional habitat space [@oliveiraVerticalStratificationInfluences2019]. Taller canopies in
-tropical regions could thus support higher animal verticality and richness. In contrast, extreme
-cold, or the combination of heat and drought may impede the evolution of arboreal lifestyles,
-constraining biodiversity to lower vertical positions tat are more climatically buffered (cite).
-Harsh macroclimate conditions may therefore truncate the availability of vertical habitat space,
-thereby limiting vertical stratification and species richness despite the presence of vegetation.
-
-Integrating new technologies can shed light on the mechanisms driving decades-old ecological
-patterns.
-
-But only within the last decade have we been able to measure forest structure and acquire data on
-vertebrate use of canopy strata at a global extent, allowing us to now gain a comprehensive
-understanding of the impact of vertical habitat structure on species richness patterns.
-
-In forests, species assemblages stratify vertically along resource and microclimate gradients that
-extend from beneath the ground to the top of the canopy [@bashamVerticalStratificationPatterns2023a;
-@xingEcologicalPatternsProcesses2023a]. Tall, multi-layered forests increase both habitat volume and
-niche opportunities, enabling species to partition habitat across vertical strata akin to
-multi-floored apartments [@macarthurLimitingSimilarityConvergence1967;
-@macarthurBirdSpeciesDiversity1961; @larueDiversityVolumeRelationships2023].
-
-In contrast, lower structural complexity in parts the Afrotropics
-[@ehbrechtGlobalPatternsClimatic2021a] may reduce niche opportunities for arboreal species, yielding
-less vertical assemblages and lower richness than expected based on the height of the canopy (Fig.
-\@ref(fig:fig1)).
-
-where verticality declines, species may use terrestrial habitats during the dry season to maintain
-moisture requirements assemblage verticality declines because species exhibit semi-arboreal life
-strategies, which reduces assemblage verticality.
-
-"short tropical forests show higher complexity relative to other forests of similar heights" - de
-Conto et al. 2023
-
--   highest risk for to exceeding critical maxima in tropical lowlands and mid-latitudes (Sunday et
-    al. 2014)
--   tolerance of max temps remains stable across latitudes - suggests advantage for temperate
-    ectotherms (Sunday et al. 2011)
--   increasing tolerance of low min temps with latitude (Sunday et al.
-    2011) 
-
-          -   Declines in tolerance of low minimum temperatures toward the equator suggest that the
-              cooler temperatures in the canopy may limit arboreality
--   in terrestrial ectotherms, upper thermal limits decline marginally with latitude, while lower
-    thermal limits decline steeply with latitude (Sunday et al. 2019) - so upper thermal limits most
-    problematic in hot environments where species have lower thermal safety margins - safety margin
-    will be even lower in the canopy
-    -   steep vertical gradients in maximum temperatures reduce thermal safety margins, which may
-        pose challenges to fully arboreal life strategies, particularly in temperate regions where
-        maximum temperature gradients were greatest (fig) and where ectotherms are at the highest
-        ris for exceeding critical thermal maxima (Sunday et al. 2014)
--   operative temps are typically higher than critical thermal maxima, suggesting that terrestrial
-    ectotherms must rely on behavioral adjustments to survive extreme heat (Sunday et al. 2014) -
-    this would force terrestriality, particularly in temperate latitudes where the vertical climate
-    gradient is very steep
--   max air temps highest at mid-latitudes (Sunday et al. 2014) - I can show this with a map in the
-    supp figures
--   heat tolerance varied little with latitude (Sundary et al. 2014)
--   upper thermal tolerance limits were generally lower than maximum operative temps for ectotherms
-    (Sunday et al. 2014)
--   cold tolerance limits generally lower than lowest operative temps (Sunday et al. 2014)
--   reptiles usually have operative temps higher than critical maxima when in the sun, so must use
-    behavioral thermoregulation - particularly at lower to mid latitudes (Sunday et al. 2014) -
-    Therefore, in temperate forests where vertical max temp gradients are steep and canopies are
-    drier than the tropics, with canopies exceeding xC, high temps may prevent verticality
--   amphibians can have operative temps that remain below critical maxima when water is available
-    (Sunday et al. 2014)
--   burrowing or evapotranspiration can reduce body temps (Sunday et al.
-    2014) 
--   when water is not available, amphibians are forced to seek shade under high temps to maintain
-    temps below thermal safety margin (Sunday et al. 2014)
--   at high latitudes, reptile operative temperatue declines below CTmin, so they need to burrow to
-    stay warm enough (Sunday et al.
-    2014) 
-
-
 
 
