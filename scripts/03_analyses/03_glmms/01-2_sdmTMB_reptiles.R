@@ -99,6 +99,14 @@ f1 = formula(vert.mean.ses ~ tmax_warm + I(tmax_warm^2) + tmin_cold + temp_diu +
                tmax_warm:canopy_height2 + I(tmax_warm^2):canopy_height2 +
                log_precip_dry:canopy_height2 + temp_diu:canopy_height2)
 
+f2 = formula(vert.mean.ses ~ tmax_warm + I(tmax_warm^2) + tmin_cold + temp_diu +
+               precip_warm + log_precip_dry + 
+               canopy_height2 + veg_den)
+
+f3 = formula(vert.mean.ses ~ 1)
+
+forms = list(f1, f2, f3)
+
 samp = dat %>% sample_n(1000)
 samp.cor = ncf::correlog(x = samp$x, y = samp$y, z = samp$vert.mean.ses, increment = 50000/1e5, resamp = 99)
 ncf:::plot.correlog(samp.cor)
@@ -120,11 +128,13 @@ taxon = "Reptiles"
 response_var = "SES verticality"
 fname_end = "reptiles_sesvert"
 
-fullmod = compareMods_AIC(f = list(f1), dat, mesh, taxon = taxon, response_var = response_var, family = gaussian(), reml = T)
+mods.spatial = compareMods_AIC(f = forms, dat, mesh, taxon = taxon,
+                               response_var = response_var, family = gaussian(), reml = F, spatial = "on")
+mods.nonspatial = compareMods_AIC(f = forms, dat, mesh, taxon = taxon,
+                                  response_var = response_var, family = gaussian(), reml = F, spatial = "off")
 
-fullmod = fullmod$modlist[[1]]
-#bestmod = run_extra_optimization(bestmod)
-saveRDS(list(mesh = mesh, fullmod = fullmod), "results/sdmTMB_models2.3/reptiles_sesvert_tempdiu.rds")
+
+saveRDS(list(mesh = mesh, mods.spatial = mods.spatial, mods.nonspatial = mods.nonspatial), "results/sdmTMB_models2.3/reptiles_sesvert_tempdiu.rds")
 
 
 
