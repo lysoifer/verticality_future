@@ -22,41 +22,46 @@ wd = vect("data/original/rnaturalearth_world.shp") %>%
 ymin = ext(wd)[3]
 ymax = ext(wd)[4]
 
-amph = fread("data/derivative_data/gridcell_data/env_forest/50_km/amph_comdat.csv") %>% 
+amph1 = fread("data/derivative_data/gridcell_data/env_forest/50_km/amph_comdat.csv") %>% 
   dplyr::select(x, y, rich, p.arb, p.fos, p.ter, vert.mean, vert.mean.ses, biome) %>% 
   filter(rich >= 5) %>% 
   filter(!is.na(vert.mean.ses)) %>% 
-  drop_na() %>% 
+  drop_na()
+  
+amph = amph1 %>% 
   rast(crs = "+proj=cea +datum=WGS84") %>% 
   project("+proj=robin +datum=WGS84") %>% 
   as.data.frame(xy = T) %>% 
   mutate(taxa = "Amphibians")
 
-mammals = fread("data/derivative_data/gridcell_data/env_forest/50_km/mammals_comdat.csv") %>% 
+mammals1 = fread("data/derivative_data/gridcell_data/env_forest/50_km/mammals_comdat.csv") %>% 
   dplyr::select(x, y, rich, p.arb, p.fos, p.ter, vert.mean, vert.mean.ses, biome) %>% 
   filter(rich >= 5) %>% 
   filter(!is.na(vert.mean.ses)) %>% 
-  drop_na() %>% 
+  drop_na()
+mammals = mammals1 %>% 
   rast(crs = "+proj=cea +datum=WGS84") %>% 
   project("+proj=robin +datum=WGS84") %>% 
   as.data.frame(xy = T) %>% 
   mutate(taxa = "Mammals")
 
-birds = fread("data/derivative_data/gridcell_data/env_forest/50_km/birds_comdat.csv") %>% 
+birds1 = fread("data/derivative_data/gridcell_data/env_forest/50_km/birds_comdat.csv") %>% 
   dplyr::select(x, y, rich, p.arb, p.fos, p.ter, vert.mean, vert.mean.ses, biome) %>% 
   filter(rich >= 5) %>% 
   filter(!is.na(vert.mean.ses)) %>% 
-  drop_na()%>% 
+  drop_na()
+birds = birds1 %>% 
   rast(crs = "+proj=cea +datum=WGS84") %>% 
   project("+proj=robin +datum=WGS84") %>% 
   as.data.frame(xy = T) %>%  
   mutate(taxa = "Birds")
 
-repts = fread("data/derivative_data/gridcell_data/env_forest/50_km/reptiles_comdat.csv") %>% 
+repts1 = fread("data/derivative_data/gridcell_data/env_forest/50_km/reptiles_comdat.csv") %>% 
   dplyr::select(x, y, rich, p.arb, p.fos, p.ter, vert.mean, vert.mean.ses, biome) %>% 
   filter(rich >= 5) %>% 
   filter(!is.na(vert.mean.ses)) %>% 
-  drop_na()%>% 
+  drop_na()
+repts = repts1 %>% 
   rast(crs = "+proj=cea +datum=WGS84") %>% 
   project("+proj=robin +datum=WGS84") %>% 
   as.data.frame(xy = T) %>%  
@@ -69,6 +74,14 @@ min = min(all$vert.mean.ses, na.rm = T)
 max = max(all$vert.mean.ses, na.rm = T)
 col.lims = range(all$vert.mean.ses, na.rm = T)
 
+
+
+# SUMMARY STATS -----------------------------------------------------------
+
+all2 = rbind(amph1, mammals1, birds1, repts1)
+parb.mean = all2 %>% 
+  group_by(biome) %>% 
+  summarize(parb.mean = mean(p.arb, na.rm = T))
 
 
 # PLOT VERTICALITY --------------------------------------------------------
@@ -91,9 +104,10 @@ for(i in levels(all$taxa)) {
     theme(strip.text = element_blank(),
           legend.position = "bottom",
           legend.title.position = "top",
-          legend.title = element_text(hjust = 0.5, size = 10),
+          legend.title = element_text(hjust = 0.5, size = 8),
           legend.key.height = unit(3, units = "mm"),
           legend.key.width = unit(10, units = "mm"),
+          legend.text = element_text(size = 6),
           axis.title = element_blank(),
           axis.line = element_line(color = "white"),
           axis.text = element_blank(),
@@ -120,15 +134,18 @@ for(i in levels(all$taxa)) {
   
   p = ggplot(d, aes(vert.mean.ses, rich)) +
     geom_point(pch = ".", alpha = 0.05) +
+    #geom_hex(bins = 100) +
     geom_smooth(method = "lm", color = "cyan3", linewidth = 0.5) +
     annotate(geom = "text", x = -Inf, y = Inf, label = paste0("r = ", r),
              hjust = -0.1, vjust = 1.2, size = 3) +
     #facet_rep_wrap(~taxa, scales = "free_y", ncol = 1) +
-    scale_y_continuous("Richness", position = "right") +
+    scale_y_continuous("Richness") +
     scale_x_continuous("Verticality") +
     theme_classic() +
     theme(strip.background = element_blank(),
-          strip.text = element_blank())
+          strip.text = element_blank(),
+          axis.title = element_text(size = 8),
+          axis.text = element_text(size = 6))
   
   corplot[[i]] = p
   
@@ -179,7 +196,9 @@ for(i in levels(all$taxa)) {
           strip.background = element_rect(color = NA, fill = NA),
           axis.line = element_line(color = "black"),
           panel.background = element_blank(),
-          strip.text = element_text(size = 10))
+          strip.text = element_text(size = 10),
+          axis.title = element_text(size = 8),
+          axis.text = element_text(size = 6))
   
   propplots[[i]] = p
   
@@ -205,7 +224,7 @@ propplots <- lapply(propplots, `+`, tight_theme)
 for(i in 1:4) {
   if(i!=4){propplots[[i]] = propplots[[i]]+theme(axis.title.x = element_blank())}
   propplots[[i]] = propplots[[i]] + theme(plot.margin = margin(0,0,0,10),
-                                          axis.title.y = element_text(margin = margin(r=0)))
+                                          axis.title.y = element_text(margin = margin(r=5)))
   }
 vertmaps  <- lapply(vertmaps,  `+`, tight_theme)
 # fix aspect ratio for combining plots
@@ -213,14 +232,14 @@ vertmaps_fixed <- lapply(vertmaps, function(p) {
   ggdraw(p) + theme(plot.margin = margin(0,0,0,0))
 })
 #corplot  <- lapply(corplot,  `+`, tight_theme)
-for(i in 1:4) {
-  p = corplot[[i]]
-  p = p + theme(plot.margin = margin(0,20,0,0),
-                axis.title.y = element_text(margin = margin(l=25)),
-                axis.text.y = element_text(margin = margin(r=25)))
-  if(i!=4) {p = p+theme(axis.title.x = element_blank())}
-  corplot[[i]]=p
-}
+# for(i in 1:4) {
+#   p = corplot[[i]]
+#   p = p + theme(plot.margin = margin(0,10,0,0),
+#                 axis.title.y = element_text(margin = margin(l=25)),
+#                 axis.text.y = element_text(margin = margin(r=25)))
+#   if(i!=4) {p = p+theme(axis.title.x = element_blank())}
+#   corplot[[i]]=p
+# }
 
 rows = list()
 icons = list.files("figures/icons/", pattern = ".png", full.names = T)
