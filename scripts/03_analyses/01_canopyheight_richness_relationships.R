@@ -352,17 +352,26 @@ biome.mod.tidy = bind_rows(biome.mod.tidy, biome.pd)
 # Fig 1. REVISED
 
 # *- richness by canopy height for all taxa by biome ----------------------
+
+# combine global model df with biome model df for plotting
+global.all.pred = fit.global.all.pred %>% 
+  as.data.frame() %>% 
+  rename(canopy_height = x, richness = predicted, biome2 = group) %>% 
+  mutate(biome2 = "Global")
+
 biome.all.pred = fit.biome.all.pred %>% 
   as.data.frame() %>% 
+  bind_rows(global.all.pred) %>% 
   mutate(biome2 = factor(biome2, levels = c("Tropical forest", "Tropical woodland, savanna, and shrubland",
                                             "Temperate forest", "Temperate woodland, savanna, and shrubland",
-                                            "Boreal")),
+                                            "Boreal", "Global")),
          col = case_when(biome2 == "Tropical forest" ~ "#008234",
                          biome2 == "Tropical woodland, savanna, and shrubland" ~ "#50DE00",
                          biome2 == "Temperate forest" ~ "#E08A00",
                          biome2 == "Temperate woodland, savanna, and shrubland" ~ "#FFCB76",
-                         biome2 == "Boreal" ~ "#56B4E9"),
-         col = factor(col, levels = c("#008234", "#50DE00","#E08A00", "#FFCB76", "#56B4E9")))
+                         biome2 == "Boreal" ~ "#56B4E9",
+                         biome2 == "Global" ~ "black"),
+         col = factor(col, levels = c("#008234", "#50DE00","#E08A00", "#FFCB76", "#56B4E9", "black")))
 
 df_combined = df_combined %>% 
   mutate(biome2 = factor(biome2, levels = c("Tropical forest", "Tropical woodland, savanna, and shrubland",
@@ -464,14 +473,15 @@ total_resid.plt = ggplot() +
 
 
 total.global.map = canopy_height.plt / total_rich.plt / total_resid.plt +
-  plot_layout(nrow = 3)
+  plot_layout(nrow = 3) & theme(plot.tag.position = c(0.1, 0.9),
+                                plot.tag = element_text(size = 6))
 
+ch_rich.plt  = ch_rich.plt + theme(plot.tag.position = c(0.03, 0.95),
+                                   plot.tag = element_text(size = 6))
 
-(total.global.map | ch_rich.plt + 
-  plot_layout(widths = c(1,0.1))) +
-  plot_annotation(tag_levels = "a") &
-  theme(plot.tag.position = c(0.03, 0.95),
-        plot.tag = element_text(size = 6))
+(ch_rich.plt | total.global.map + 
+    plot_layout(widths = c(1,0.1))) +
+  plot_annotation(tag_levels = "a")
 
 ggsave('figures/ms_figures/fig1-2_canopy_richness.png', width = 140, height = 100,
        units = "mm", dpi = 300)
