@@ -211,7 +211,7 @@ We thank Patrick Burns for access to the processed GEDI L2b points and Alex Baec
 
 # Figures
 
-```{r fig1, fig.id="fig1", fig.cap="a) Relationships between species richness and canopy height across all vertebrate taxa globally and in different biomes. Dots indicate observed values and lines indicate negative binomial model fits of richness as a function of canopy height (black) or richness as a function of the interaction between canopy height and biome. b-d) Spatial distribution of canopy height, vertebrate richness (for all vertebrates), and deviance residuals for the global model of vertebrate richness.", fig.height=100, fig.width=140}
+```{r fig1, fig.id="fig1", fig.cap="a) Relationships between species richness and canopy height across all vertebrate taxa globally and in different biomes. Dots indicate observed values and lines indicate negative binomial model fits ± 95% CI of richness as a function of canopy height (black) or richness as a function of the interaction between canopy height and biome. b-d) Spatial distribution of canopy height, vertebrate richness (for all vertebrates), and deviance residuals for the global model of vertebrate richness.", fig.height=100, fig.width=140}
 
 # Fig. 1
 
@@ -447,14 +447,9 @@ tab %>%   flextable() %>%
 
 # Supplementary figures
 
-```{r splot-global-chrich, fig.id="global-chrich",  fig.lp="suppfig", fig.autonum.start_at=1, fig.cap="Global relationship between total vertebrate richness and canopy height. Line indicates predictions from a negative binomial model of richness by canopy height ± 95% CI. Points indicate observed richness by canopy height.", , fig.width=90, fig.height=90}
+```{r taxa-rich-ch, fig.id="taxa-rich-ch",  fig.lp="suppfig", fig.autonum.start_at=1, fig.cap=" a) Relationships between species richness and canopy height for birds, mammals, reptiles, and amphibians globally and in different biomes. Dots indicate observed values and lines indicate negative binomial model fits ± 95% CI of richness as a function of canopy height (black) or richness as a function of the interaction between canopy height and biome. b)  Deviance residuals from negative binomial models of global richness by canopy height for each vertebrate class.", fig.width=180, fig.height=200}
 
-include_graphics("figures/ms_figures/supp_figs/total_richness~canopy.png", error = F)
-```
-
-```{r splot-resids-taxa, fig.id="resids-taxa", fig.lp="suppfig", fig.cap="Deviance residuals from negative binomial models of richness by canopy height for each vertebrate class: a) birds, b) mammals, c) reptiles, d) amphibians.", fig.width=180, fig.height=100}
-
-include_graphics("figures/ms_figures/supp_figs/deviance_resids_taxa.png", error = F)
+include_graphics("figures/ms_figures/supp_figs/richness~canopyHeight_taxa.png", error = F)
 ```
 
 ```{r splot-meanvert-biome, fig.id = "meanvert-biome", fig.lp="suppfig", fig.cap="Distribution of verticality within a) biomes as classified by Dinerstein et al. (2017) and b) ecoregions aggregated to coarser classifications. Red diamonds indicate mean assemblage verticality. Ecoregions that do not contain woody vegetation were excluded.", fig.width = 180, fig.height = 130}
