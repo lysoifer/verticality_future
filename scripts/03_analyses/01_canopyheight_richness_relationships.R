@@ -486,92 +486,43 @@ ch_rich.plt  = ch_rich.plt + theme(plot.tag.position = c(0.03, 0.95),
 ggsave('figures/ms_figures/fig1-2_canopy_richness.png', width = 140, height = 100,
        units = "mm", dpi = 300)
 
-
-# Fig. 1 OLD ------------------------------------------------------------------
-
-# Legend: a) canopy height, b) vertebrate richness (all vertebrates combined)
-# c) Deviance residuals for a model of total vertebrate richness by canopy height
-# d) Relationships between species richness and canopy height for each taxon in each
-# biome category. Dots indicate observed values and lines indicate negative binomial
-# model fits of richness by canopy height for each combination of taxon and biome.
-
-# *- Total canopy, richness, and resid maps -------------------------------
-
-wd = vect("data/original/rnaturalearth_world.shp") %>% 
-  crop(ext(-180,180,-60,90)) %>% 
-  project("+proj=robin +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m")
-
-# Map of canopy richness, canopy height, and residuals for total_richness model
-df_combined.r = df_combined %>% 
-  dplyr::select(x,y,canopy_height2, total_richness, resid.deviance) %>% 
-  rast(crs = "+proj=cea +datum=WGS84") %>% 
-  project("+proj=robin +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m")
-
-total_rich.plt = ggplot() + 
-  geom_spatvector(data = wd, fill = "black", color = NA) +
-  geom_spatraster(data = df_combined.r, aes(fill = total_richness)) +
-  scale_fill_continuous_sequential(palette = "Sunset", na.value = NA,
-                                   guide = guide_colorbar(title = "")) +
-  theme_void() +
-  ggtitle("Vertebrate Richness") +
-  theme(legend.position = "inside",
-        legend.justification = c(0.1,0),
-        legend.key.size = unit(2, "mm"),
-        legend.text = element_text(size = 4),
-        legend.title = element_text(size = 4),
-        plot.title = element_text(hjust = 0.5, size = 6))
-  
-canopy_height.plt = ggplot() + 
-  geom_spatvector(data = wd, fill = "black", color = NA) +
-  geom_spatraster(data = df_combined.r, aes(fill = canopy_height2)) +
-  scale_fill_continuous_sequential(palette = "YlGn", na.value = NA,
-                                   guide = guide_colorbar(title = "m")) +
-  theme_void() +
-  ggtitle("Canopy Height") +
-  theme(legend.position = "inside",
-        legend.justification = c(0.1,0),
-        legend.key.size = unit(2, "mm"),
-        legend.text = element_text(size = 4),
-        legend.title = element_text(size = 4),
-        plot.title = element_text(hjust = 0.5, size = 6))
-
-total_resid.plt = ggplot() + 
-  geom_spatvector(data = wd, fill = "black", color = NA) +
-  geom_spatraster(data = df_combined.r, aes(fill = resid.deviance)) +
-  scale_fill_continuous_divergingx(palette = "Spectral", na.value = NA,
-                                   guide = guide_colorbar(title = ""),
-                                   rev = T) +
-  # annotate(geom = "text", x = Inf, y = -Inf, hjust = 1.7, vjust = -0.5,
-  #          label = paste0("R\u00b2 = ", round(global.r2[[1]], 2)), size = 2) +
-  theme_void() +
-  ggtitle("Residuals") +
-  theme(legend.position = "inside",
-        legend.justification = c(0.1,0),
-        legend.key.size = unit(2, "mm"),
-        legend.text = element_text(size = 4),
-        legend.title = element_text(size = 4),
-        plot.title = element_text(hjust = 0.5, size = 6))
-
-
-total.global.map = canopy_height.plt + total_rich.plt + total_resid.plt +
-  plot_layout(nrow = 1)
+# Legend: " a) Relationships between species richness and canopy height across 
+# all vertebrate taxa globally and in different biomes. Dots indicate observed 
+# values and lines indicate negative binomial model fits of richness as a function
+# of canopy height (black) or richness as a function of the interaction between 
+# canopy height and biome. b-d) Spatial distribution of canopy height, vertebrate
+# richness (for all vertebrates), and deviance residuals for the global model 
+# of vertebrate richness."
 
 
 
-# *- Biome per taxa response ----------------------------------------------
+
+# SUPPLEMENTARY FIGURE 1 --------------------------------------------------
+
+
+# *- richness ~ canopy height per taxon -----------------------------------
+
+# Plot taxa specific responses globally and per biome
+
+global.taxa.pred2 = global.taxa.pred %>% 
+  as.data.frame() %>% 
+  rename(canopy_height = x, richness = predicted, biome2 = group) %>% 
+  mutate(biome2 = "Global")
 
 biome.pred.df = biome.pred %>% 
   as.data.frame() %>% 
+  bind_rows(global.taxa.pred2) %>% 
   mutate(taxa = factor(taxa, levels = c("Birds", "Mammals", "Reptiles", "Amphibians")),
          biome2 = factor(biome2, levels = c("Tropical forest", "Tropical woodland, savanna, and shrubland",
                                             "Temperate forest", "Temperate woodland, savanna, and shrubland",
-                                            "Boreal")),
+                                            "Boreal", "Global")),
          col = case_when(biome2 == "Tropical forest" ~ "#008234",
                          biome2 == "Tropical woodland, savanna, and shrubland" ~ "#50DE00",
                          biome2 == "Temperate forest" ~ "#E08A00",
                          biome2 == "Temperate woodland, savanna, and shrubland" ~ "#FFCB76",
-                         biome2 == "Boreal" ~ "#56B4E9"),
-         col = factor(col, levels = c("#008234", "#50DE00","#E08A00", "#FFCB76", "#56B4E9")))
+                         biome2 == "Boreal" ~ "#56B4E9",
+                         biome2 == "Global" ~ "black"),
+         col = factor(col, levels = c("#008234", "#50DE00","#E08A00", "#FFCB76", "#56B4E9", "black")))
 
 biome.df = biome.df %>% 
   bind_rows() %>% 
@@ -589,10 +540,6 @@ biome.df = biome.df %>%
 img = list.files("figures/icons/", full.names = T, pattern = ".svg")
 nms = gsub("svg", "png", img)
 
-
-# for(i in 1:4) {
-#   rsvg_png(img[i], file = nms[i], width = 300)
-# }
 img = list.files("figures/icons", full.names = T, pattern = ".png")
 img = list(img[1], img[4], img[3], img[2])
 names(img) = c("Birds", "Mammals", "Reptiles", "Amphibians")
@@ -614,10 +561,10 @@ for(i in taxa) {
     #          x = -Inf, y = Inf, hjust = -0.1, vjust = 4.9, size = 2) +
     scale_x_continuous("Canopy Height (m)") +
     scale_y_continuous("Richness") +
-    scale_color_identity(guide = guide_legend(nrow = 2, ncol = 3, byrow = F), 
+    scale_color_identity(guide = guide_legend(nrow = 3, ncol = 2, byrow = T), 
                          labels = levels(biome.pred.df$biome2),
                          breaks = levels(biome.pred.df$col)) +
-    scale_fill_identity(guide = guide_legend(nrow = 2, ncol = 3, byrow = F), 
+    scale_fill_identity(guide = guide_legend(nrow = 3, ncol = 2, byrow = T), 
                         labels = levels(biome.pred.df$biome2),
                         breaks = levels(biome.pred.df$col)) +
     theme_classic() +
@@ -640,45 +587,23 @@ for(i in taxa) {
   image_layer <- ggplot() +
     annotation_custom(img[[i]], xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf) +
     theme_void()
-
+  
   # Combine base plot with image overlay
   plts[[i]] = base_plot + inset_element(image_layer, left = 0, bottom = 0.8, right = 0.2, top = 1)
   
 }
 
-shared_y_title <- grid::textGrob("Richness", rot = 90, gp = grid::gpar(fontsize = 6))
+shared_x_title <- grid::textGrob("Canopy Height (m)", gp = grid::gpar(fontsize = 6))
 
-main_plot <- (wrap_elements(shared_y_title) | plts[[1]] | plts[[2]] | plts[[3]] | plts[[4]]) +
-  plot_layout(widths = c(0.05,1,1,1,1)) &
-  theme(axis.title.y = element_blank())
+main_plot <- (plts[[1]] | plts[[2]] | plts[[3]] | plts[[4]] | wrap_elements(shared_x_title)) +
+  plot_layout(ncol = 1, nrow = 5, heights = c(1,1,1,1,0.05)) &
+  theme(axis.title.x = element_blank())
 
-main_plot = main_plot/wrap_elements(legend) +
-  plot_layout(heights = c(1,0.3))
-
-tags = list(c("a", "b", "c", "d", "", "", "", "", "", "", "", "", ""))
-main_plot = (canopy_height.plt + total_rich.plt + total_resid.plt) / main_plot + 
-  plot_layout(heights = c(0.8,1)) + 
-  plot_annotation(tag_levels = tags) &
-  theme(plot.tag.position = c(0.02, 0.98),
-        plot.tag = element_text(size = 6))
-
-ggsave("figures/ms_figures/fig1_canopy_richness.png", width = 180, height = 100, units = "mm", dpi = 300)
+main_plot = wrap_plots(plts,nrow = 5, ncol = 1)/wrap_elements(legend) +
+   plot_layout(heights = c(1,1,1,1,0.3))
 
 
-# GLOBAL TOTAL VERTEBRATE PREDICTIONS -------------------------------------
-
-ggplot() +
-  geom_point(data = df_combined, aes(canopy_height2, total_richness), pch = ".", alpha = 0.2) +
-  geom_line(data = fit.global.all.pred, aes(x, predicted), color = "skyblue2") +
-  geom_ribbon(data = fit.global.all.pred, aes(x, ymin = conf.low, ymax = conf.high), alpha = 0.2, fill = "skyblue2", color = NA) +
-  scale_x_continuous("Canopy Height (m)") +
-  scale_y_continuous("Vertebrate Richness") +
-  theme_classic()
-ggsave("figures/ms_figures/supp_figs/total_richness~canopy.png", width = 90, height = 90, dpi = 300, units = "mm")
-
-
-
-# RESIDUAL MAPS PER SPECIES -----------------------------------------------
+# *- residual maps per taxon ----------------------------------------------
 
 global.taxa.map = global.taxa %>% 
   dplyr::select(x,y,resid.deviance, taxa) %>% 
@@ -721,14 +646,50 @@ for(i in levels(df$taxa)) {
   
 }
 
-tags = list(c("a", "", "b", "", "c", "", "d", "", ""))
-wrap_plots(taxa.resid.plts) / leg + 
-  plot_layout(heights = c(1,0.1)) +
-  plot_annotation(tag_levels = tags) &
-  theme(plot.tag.position = c(0.1, 0.95),
-        plot.tag = element_text(size = 8))
-ggsave("figures/ms_figures/supp_figs/deviance_resids_taxa.png", width = 180, height = 100, 
-       dpi = 300, unit= "mm")
+# plotting deviance residuals individually
+# tags = list(c("a", "", "b", "", "c", "", "d", "", ""))
+# wrap_plots(taxa.resid.plts) / leg + 
+#   plot_layout(heights = c(1,0.1)) +
+#   plot_annotation(tag_levels = tags) &
+#   theme(plot.tag.position = c(0.1, 0.95),
+#         plot.tag = element_text(size = 8))
+# ggsave("figures/ms_figures/supp_figs/deviance_resids_taxa.png", width = 180, height = 100, 
+#        dpi = 300, unit= "mm")
+
+residmaps = wrap_plots(taxa.resid.plts, nrow = 5, ncol = 1) / leg + 
+  plot_layout(heights = c(1,1,1,1,0.3))
+
+(wrap_elements(main_plot) | wrap_elements(residmaps)) +
+  plot_layout(widths = c(0.8,1)) +
+  plot_annotation(tag_levels = "a") & 
+  theme(plot.tag = element_text(size = 8),
+        plot.tag.position = c(0.1,0.98))
+
+ggsave("figures/ms_figures/supp_figs/richness~canopyHeight_taxa.png", dpi = 300, width = 180, height = 200, units = "mm")
+
+# Legend: a) Relationships between species richness and canopy height for birds,
+# mammals, reptiles, and amphibians globally and in different biomes.
+# Dots indicate observed values and lines indicate negative binomial model fits
+# ± 95% CI of richness as a function of canopy height (black) or richness as a
+# function of the interaction between canopy height and biome. b)  Deviance
+# residuals from negative binomial models of global richness by canopy height
+# for each vertebrate class.
+
+
+# GLOBAL TOTAL VERTEBRATE PREDICTIONS -------------------------------------
+
+# ggplot() +
+#   geom_point(data = df_combined, aes(canopy_height2, total_richness), pch = ".", alpha = 0.2) +
+#   geom_line(data = fit.global.all.pred, aes(x, predicted), color = "skyblue2") +
+#   geom_ribbon(data = fit.global.all.pred, aes(x, ymin = conf.low, ymax = conf.high), alpha = 0.2, fill = "skyblue2", color = NA) +
+#   scale_x_continuous("Canopy Height (m)") +
+#   scale_y_continuous("Vertebrate Richness") +
+#   theme_classic()
+# ggsave("figures/ms_figures/supp_figs/total_richness~canopy.png", width = 90, height = 90, dpi = 300, units = "mm")
+# 
+
+
+
 
 # RATES OF INCREASE IN RICHNESS -------------------------------------------
 
@@ -750,51 +711,3 @@ ratedifs = left_join(ratedifs, maxrichcell, by = c("taxa", "biome2")) %>%
   mutate(relative_increase = dif/maxrich * 100,
          percent_increase = dif/h15*100)
 
-
-
-
-
-# SCRATCH SPACE -----------------------------------------------------------
-
-# df2 = df %>% filter(rich >= 5)
-# 
-# amph2 = df2 %>% filter(taxa == "Amphibians")
-# 
-# m1 = lm(rich ~ vert.mean.ses, data = amph2)
-# m1.resid = resid(m1)
-# plot(amph2$canopy_height2, m1.resid)
-# plot(amph2$precip_dry, m1.resid)
-# ggplot(amph2, aes(log(precip_dry +1), m1.resid)) + geom_point() + geom_smooth(method = "lm")
-# ggplot(amph2, aes(canopy_height2, m1.resid)) + geom_point() + geom_smooth(method = "lm")
-# ggplot(amph2, aes(tmax_warm, m1.resid)) + geom_point() + geom_smooth(method = "lm")
-# ggplot(amph2, aes(tmin_cold, m1.resid)) + geom_point() + geom_smooth(method = "lm")
-# ggplot(amph2, aes(vert.mean.ses, rich)) + 
-#   geom_point(alpha = 0.05) + 
-#   geom_smooth(method = "glm",  method.args = list(family = "poisson"))
-# 
-# # so it looks like precip and canopy height drive verticality, which influences richness
-# # therefore, verticality mediates relationships between canopy height and richness
-# # and factors limiting verticality will limit richness
-# # but temperature influences richness independently of verticality
-# 
-# m2 = lm(rich ~ vert.mean.ses + canopy_height2, data = amph2)
-# summary(m2)
-# 
-# m3 = lm(rich ~ canopy_height2, data = amph2)
-# summary(m3)
-# 
-# m1 = MASS::glm.nb(rich ~ vert.mean.ses, data = amph2)
-# m1.resid = residuals(m1, type = "deviance")
-# amph2$m1.resid = m1.resid
-# ggplot(amph2, aes(canopy_height2, m1.resid)) +
-#   geom_point(alpha = 0.05) +
-#   geom_smooth(method = "lm")
-# 
-# mod.resid = lm(m1.resid ~ canopy_height2, data = amph2)
-# summary(mod.resid)
-# 
-# cor.test(m1.resid, amph2$canopy_height2)
-# 
-# 
-# 
-# 
