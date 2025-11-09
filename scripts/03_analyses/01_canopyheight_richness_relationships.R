@@ -392,24 +392,29 @@ ch_rich.plt = ggplot(biome.all.pred) +
   geom_ribbon(aes(canopy_height, ymin = conf.low, ymax = conf.high, fill =col),
               alpha = 0.2) +
   scale_color_identity(guide = guide_legend(nrow = 3, ncol = 2, byrow = T), 
-                       labels = levels(biome.all.pred$biome2),
+                       #labels = levels(biome.all.pred$biome2),
+                       labels = c("Tropical forest",  "Tropical woodland,\nsavanna, and shrubland",
+                                  "Temperate forest", "Temperate woodland,\nsavanna, and shrubland",
+                                  "Boreal forest", "Global"),
                        breaks = levels(biome.all.pred$col)) +
   scale_fill_identity(guide = guide_legend(nrow = 3, ncol = 2, byrow = T), 
-                      labels = levels(biome.all.pred$biome2),
+                      #labels = levels(biome.all.pred$biome2),
+                      labels = c("Tropical forest",  "Tropical woodland,\nsavanna, and shrubland",
+                                 "Temperate forest", "Temperate woodland,\nsavanna, and shrubland",
+                                 "Boreal forest", "Global"),
                       breaks = levels(biome.all.pred$col)) +
   scale_x_continuous("Canopy Height (m)") +
   scale_y_continuous("Richness") +
   theme_bw() +
   theme(panel.grid = element_blank(),
         legend.title = element_blank(),
-        axis.title = element_text(size = 6),
-        axis.text = element_text(size = 4),
-        legend.text = element_text(size = 5),
+        axis.title = element_text(size = 7),
+        axis.text = element_text(size = 6),
+        legend.text = element_text(size = 7),
         legend.key.size = unit(3, "mm"),
         axis.line = element_line(linewidth = 0.25),
         axis.ticks = element_line(linewidth = 0.1),
-        legend.position = "bottom",
-        plot.margin = margin(0,0,0,0))
+        legend.position = "bottom")
 
 # *- Total canopy, richness, and resid maps -------------------------------
 
@@ -427,14 +432,13 @@ total_rich.plt = ggplot() +
   geom_spatvector(data = wd, fill = "black", color = NA) +
   geom_spatraster(data = df_combined.r, aes(fill = total_richness)) +
   scale_fill_continuous_sequential(palette = "Sunset", na.value = NA,
-                                   guide = guide_colorbar(title = "")) +
+                                   guide = guide_colorbar(title = "Richness")) +
   theme_void() +
-  ggtitle("Vertebrate Richness") +
   theme(legend.position = "inside",
         legend.justification = c(0.1,0),
         legend.key.size = unit(2, "mm"),
-        legend.text = element_text(size = 4),
-        legend.title = element_text(size = 4),
+        legend.text = element_text(size = 6),
+        legend.title = element_text(size = 7),
         plot.title = element_text(hjust = 0.5, size = 6),
         plot.margin = margin(1,0,1,0))
 
@@ -442,14 +446,13 @@ canopy_height.plt = ggplot() +
   geom_spatvector(data = wd, fill = "black", color = NA) +
   geom_spatraster(data = df_combined.r, aes(fill = canopy_height2)) +
   scale_fill_continuous_sequential(palette = "YlGn", na.value = NA,
-                                   guide = guide_colorbar(title = "m")) +
+                                   guide = guide_colorbar(title = "Canopy\nheight (m)")) +
   theme_void() +
-  ggtitle("Canopy Height") +
   theme(legend.position = "inside",
         legend.justification = c(0.1,0),
         legend.key.size = unit(2, "mm"),
-        legend.text = element_text(size = 4),
-        legend.title = element_text(size = 4),
+        legend.text = element_text(size = 6),
+        legend.title = element_text(size = 7),
         plot.title = element_text(hjust = 0.5, size = 6),
         plot.margin = margin(1,0,1,0))
 
@@ -457,19 +460,18 @@ total_resid.plt = ggplot() +
   geom_spatvector(data = wd, fill = "black", color = NA) +
   geom_spatraster(data = df_combined.r, aes(fill = resid.deviance)) +
   scale_fill_continuous_divergingx(palette = "Spectral", na.value = NA,
-                                   guide = guide_colorbar(title = ""),
+                                   guide = guide_colorbar(title = "Residuals"),
                                    rev = T) +
   # annotate(geom = "text", x = Inf, y = -Inf, hjust = 1.7, vjust = -0.5,
   #          label = paste0("R\u00b2 = ", round(global.r2[[1]], 2)), size = 2) +
   theme_void() +
-  ggtitle("Residuals") +
   theme(legend.position = "inside",
         legend.justification = c(0.1,0),
         legend.key.size = unit(2, "mm"),
-        legend.text = element_text(size = 4),
-        legend.title = element_text(size = 4),
+        legend.text = element_text(size = 6),
+        legend.title = element_text(size = 7),
         plot.title = element_text(hjust = 0.5, size = 6),
-        plot.gin = margin(1,0,1,0))
+        plot.margin = margin(1,0,1,0))
 
 
 total.global.map = canopy_height.plt / total_rich.plt / total_resid.plt +
@@ -480,10 +482,16 @@ ch_rich.plt  = ch_rich.plt + theme(plot.tag.position = c(0.03, 0.95),
                                    plot.tag = element_text(size = 6))
 
 (ch_rich.plt | total.global.map + 
-    plot_layout(widths = c(1,0.1))) +
-  plot_annotation(tag_levels = "a")
+    plot_layout(widths = c(1,0.2))) +
+  plot_annotation(tag_levels = "A")
 
 ggsave('figures/ms_figures/fig1-2_canopy_richness.png', width = 140, height = 100,
+       units = "mm", dpi = 300)
+
+# save individual plots to put together in inkscape
+ggsave('figures/ms_figures/fig1-1_leftpanel.png', width = 70, height = 100, plot = ch_rich.plt,
+       units = "mm", dpi = 300)
+ggsave('figures/ms_figures/fig1-1_rightpanel.png', width = 80, height = 100, plot = total.global.map,
        units = "mm", dpi = 300)
 
 # Legend: " a) Relationships between species richness and canopy height across 
@@ -710,4 +718,70 @@ maxrichcell = df %>%
 ratedifs = left_join(ratedifs, maxrichcell, by = c("taxa", "biome2")) %>% 
   mutate(relative_increase = dif/maxrich * 100,
          percent_increase = dif/h15*100)
+
+
+
+# SUPPLEMENTARY FIG 2 - MADA INSET ----------------------------------------
+
+library(geodata)
+mada = gadm("MDG", level = 0)
+mada = project(mada, df_combined.r)
+df_combined.crop = crop(df_combined.r, mada)
+df_combined.crop = mask(df_combined.crop, mada)
+
+mada.rich = ggplot() + 
+  geom_spatraster(data = df_combined.crop, aes(fill = total_richness)) +
+  geom_spatvector(data = mada, color = "black", fill = NA) +
+  scale_fill_continuous_sequential(palette = "Sunset", na.value = NA,
+                                   guide = guide_colorbar(title = "Richness")) +
+  theme_void() +
+  theme(legend.position = "inside",
+        legend.justification = c(0.1,0.9),
+        legend.key.width = unit(2, "mm"),
+        legend.key.height = unit(4, "mm"),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 9),
+        plot.title = element_text(hjust = 0.5, size = 6),
+        plot.margin = margin(1,0,1,0))
+
+mada.ch = ggplot() + 
+  geom_spatraster(data = df_combined.crop, aes(fill = canopy_height2)) +
+  geom_spatvector(data = mada, color = "black", fill = NA) +
+  scale_fill_continuous_sequential(palette = "YlGn", na.value = NA,
+                                   guide = guide_colorbar(title = "Canopy\nheight (m)")) +
+  theme_void() +
+  theme(legend.position = "inside",
+        legend.justification = c(0.1,0.9),
+        legend.key.width = unit(2, "mm"),
+        legend.key.height = unit(4, "mm"),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 9),
+        plot.title = element_text(hjust = 0.5, size = 6),
+        plot.margin = margin(1,0,1,0))
+
+mada.resid = ggplot() + 
+  geom_spatraster(data = df_combined.crop, aes(fill = resid.deviance)) +
+  geom_spatvector(data = mada, color = "black", fill = NA) +
+  scale_fill_continuous_divergingx(palette = "Spectral", na.value = NA,
+                                   guide = guide_colorbar(title = "Residuals"),
+                                   rev = T) +
+  # annotate(geom = "text", x = Inf, y = -Inf, hjust = 1.7, vjust = -0.5,
+  #          label = paste0("R\u00b2 = ", round(global.r2[[1]], 2)), size = 2) +
+  theme_void() +
+  theme(legend.position = "inside",
+        legend.justification = c(0.1,0.9),
+        legend.key.width = unit(2, "mm"),
+        legend.key.height = unit(4, "mm"),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 9),
+        plot.title = element_text(hjust = 0.5, size = 6),
+        plot.margin = margin(1,0,1,0))
+
+mada.ch + mada.rich + mada.resid +
+  plot_annotation(tag_levels = "A") &
+  theme(plot.tag.position = c(0.1,0.96),
+                plot.tag.location = "plot")
+
+ggsave("figures/ms_figures/supp_figs/deviance_resids_mada.png", width = 180, height = 120, units = "mm", dpi = 300)
+
 
